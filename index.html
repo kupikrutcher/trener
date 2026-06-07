@@ -111,7 +111,7 @@ body{
 .field{width:100%;font-size:21px;font-weight:600;letter-spacing:.32em;text-align:center;font-family:inherit;
   color:var(--ink);background:var(--bg);border:1px solid var(--line-strong);border-radius:13px;padding:16px 12px;outline:none;
   transition:border-color .2s,box-shadow .2s,background .3s}
-.field::placeholder{letter-spacing:.08em;font-weight:400;color:var(--muted);opacity:.55}
+.field::placeholder{letter-spacing:.01em;font-weight:400;font-size:13.5px;color:var(--muted);opacity:.55}
 .field:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .field.good{border-color:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
 .field.wrong{border-color:var(--bad);box-shadow:0 0 0 3px var(--bad-soft);animation:shake .35s}
@@ -318,7 +318,7 @@ function render(){
     <div class="qtext">${fmtQ(q.text)}</div>
     <div class="az">
       <label class="lab" for="inp">Твой ответ — только цифры</label>
-      <input id="inp" class="field" inputmode="numeric" autocomplete="off" placeholder="235">
+      <input id="inp" class="field" inputmode="numeric" autocomplete="off" placeholder="Ты точно знаешь правильный ответ">
       <button class="btn" id="check" onclick="check()">Проверить</button>
       <button class="linkfin" onclick="finishEarly()">Завершить тест</button>
     </div>
