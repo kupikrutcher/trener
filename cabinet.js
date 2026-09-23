@@ -6,6 +6,16 @@ const CAB = !!API_URL;
 let me = null;              // {login, full_name, role, avatar}
 let sentFor = null;         // results текущего прохождения, которое уже отправлено
 let afterLogin = null;
+let submitted = new Set();  // названия ДЗ, которые ученик уже отправлял — по ним ответы открыты
+
+/* ученик видит правильные ответы и пояснения только в ДЗ, которое уже отправил; в разборе — всегда */
+function answersLocked(){
+  return !!(CAB && me && me.role!=='teacher' && !review && !submitted.has(curBase));
+}
+async function loadSubmitted(){
+  submitted=new Set();
+  if(me && me.role!=='teacher'){ try{ (await api('my_subs')).subs.forEach(s=>submitted.add(s.test_name)); }catch(e){} }
+}
 
 function cabEl(){ return document.getElementById('acct'); }
 function firstName(n){ const p=(n||'').trim().split(/\s+/); return p[1]||p[0]||''; }
@@ -36,6 +46,7 @@ function busy(btn,on,text){ if(!btn)return; btn.disabled=on; if(text) btn.textCo
 async function loadMe(){
   me=null;
   if(getToken()){ try{ me=(await api('me')).me; }catch(e){} }
+  await loadSubmitted();
   paintAcct();
 }
 /* серая фигурка по плечи — если своей картинки нет */
@@ -106,12 +117,13 @@ async function doLogin(){
   busy(btn,true,'Входим…');
   try{ const r=await api('login',{ login, password:pass }); setToken(r.token); me=r.me; }
   catch(e){ busy(btn,false,'Войти'); $('#lerr').textContent=e.message; return; }
+  await loadSubmitted();
   paintAcct();
   toast('Привет, '+firstName(me.full_name)+'!');
   const f=afterLogin; afterLogin=null;
   f ? f() : openCabinet();
 }
-function doLogout(){ setToken(''); me=null; paintAcct(); home(); }
+function doLogout(){ setToken(''); me=null; submitted=new Set(); paintAcct(); home(); }
 
 /* первый вход учителя: адрес сайта с #setup и код из настроек функции */
 function cabSetup(){
@@ -184,7 +196,8 @@ async function sendWork(){
   });
   try{ await api('submit',{ test_name:curBase, p1, p2 }); }
   catch(e){ busy(btn,false,'Отправить работу учителю'); toast('Не отправилось: '+e.message); return; }
-  sentFor=results; renderSendBox(); toast('Работа отправлена');
+  sentFor=results; submitted.add(curBase); toast('Работа отправлена — ответы и пояснения открыты');
+  finishEarly();
 }
 
 /* ---------- кабинет ученика ---------- */

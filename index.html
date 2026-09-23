@@ -66,13 +66,13 @@ body{
 .track>i{display:block;height:100%;width:0;background:var(--accent);transition:width .55s cubic-bezier(.22,1,.36,1)}
 .meta{display:flex;justify-content:space-between;margin-top:12px;font-size:12.5px;color:var(--muted);letter-spacing:.02em}
 .meta b{color:var(--ink);font-weight:600}
-.qnav{display:flex;gap:6px;overflow-x:auto;margin-top:16px;padding:3px 2px 8px;scrollbar-width:thin;scroll-behavior:smooth;
+.qnav{display:flex;gap:6px;overflow-x:auto;margin-top:12px;padding:7px 2px 10px;scrollbar-width:thin;scroll-behavior:smooth;
   -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%);
   mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%)}
 .qnav::-webkit-scrollbar{height:4px}.qnav::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:99px}
 .qn{flex:none;min-width:34px;height:34px;padding:0 6px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);
   color:var(--muted);font:600 13px/1 inherit;font-family:inherit;cursor:pointer;transition:background .2s,border-color .2s,color .2s,box-shadow .2s}
-.qn:first-child{margin-left:10px}.qn:last-child{margin-right:10px}
+.qn:first-child{margin-left:12px}.qn:last-child{margin-right:12px}
 .qn:hover{border-color:var(--accent);color:var(--accent)}
 .qn.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
 .qn.bad{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
@@ -566,6 +566,9 @@ function nextOpen(){
   for(let k=1;k<=bank.length;k++){const i=(idx+k)%bank.length;if(!results[i])return i}
   return -1;
 }
+/* правильные ответы и пояснения ученику открываются после отправки ДЗ учителю (см. cabinet.js) */
+function answersOpen(){ return !(window.answersLocked && answersLocked()); }
+const LOCK_NOTE='Правильный ответ и пояснение откроются после отправки работы учителю.';
 function nextLabel(){if(review)return idx+1<bank.length?'Дальше':'Все задания';return nextOpen()>=0?'Дальше':'Результат'}
 /* оценка учителя за задание части 2 в режиме разбора */
 function reviewGrade(q){
@@ -625,9 +628,10 @@ function showP1(r,scroll){
   v.className='verdict show '+(ok?'ok':'bad');
   v.innerHTML=`
     <div class="vrow"><span class="vdot">${ok?'✓':'✕'}</span>${ok?'Верно':(r.user?'Неверно':'Нет ответа')}</div>
+    ${!answersOpen()?(ok?'':`<div class="cline">${LOCK_NOTE}</div>`):`
     ${ok?'':`<div class="cline">Правильный ответ:<b>${esc(q.answer)}</b></div>`}
     ${q.explanation?`<button class="etog" onclick="tog(this)">Скрыть разбор</button>
-      <div class="expl open"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div>`:''}`;
+      <div class="expl open"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div>`:''}`}`;
   if(scroll) setTimeout(()=>{if(v.scrollIntoView)v.scrollIntoView({behavior:'smooth',block:'nearest'})},120);
 }
 function renderP2(q){
@@ -669,10 +673,10 @@ function showP2(q){
   $('#check').outerHTML=`<button class="btn" onclick="next()">${nextLabel()}</button>`;
   const v2=$('#verdict');
   v2.className='verdict show';
-  v2.innerHTML=`${review?reviewGrade(q):`<div class="cline">Развёрнутые ответы не проверяются автоматически — сверь с критериями или покажи преподавателю.</div>`}
-    ${q.answer?`<div class="uans-lab">Образец ответа</div><div class="uans">${esc(q.answer)}</div>`:''}
+  v2.innerHTML=`${review?reviewGrade(q):`<div class="cline">Развёрнутые ответы не проверяются автоматически — ${answersOpen()?'сверь с критериями или покажи преподавателю':'их проверит учитель после отправки работы'}.</div>`}
+    ${!answersOpen()?'':`${q.answer?`<div class="uans-lab">Образец ответа</div><div class="uans">${esc(q.answer)}</div>`:''}
     ${q.explanation?`<button class="etog" onclick="tog(this)">Показать критерии</button>
-      <div class="expl"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div>`:''}`;
+      <div class="expl"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div>`:''}`}`;
 }
 function tog(b){const e=b.nextElementSibling;e.classList.toggle('open');
   b.textContent=e.classList.contains('open')?'Скрыть разбор':'Показать разбор'}
@@ -751,6 +755,7 @@ function finishEarly(){
   const total=countP1(bank), correct=results.filter(r=>!r.p2&&r.ok).length, wrong=results.filter(r=>!r.p2&&!r.ok).length;
   lastWrong=results.filter(r=>!r.p2&&!r.ok).map(r=>r.q);
   app.className='panel fade';
+  const open=answersOpen();
   const items=bank.map((q,i)=>isP2(q)?p2Item(q):`
     <div class="allitem">
       <div class="qhead">
@@ -758,13 +763,14 @@ function finishEarly(){
         <span class="qtype">${qType(q.text)}</span>
       </div>
       <div class="qtext">${fmtQ(q.text)}</div>
-      <div class="aans">Правильный ответ:<b>${esc(q.answer)}</b></div>
+      ${open?`<div class="aans">Правильный ответ:<b>${esc(q.answer)}</b></div>
       ${q.explanation?`<button class="etog" onclick="tog2(this)">Пояснение</button>
-        <div class="expl"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div>`:''}
+        <div class="expl"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div>`:''}`:''}
     </div>`).join('');
   app.innerHTML=`
     <div class="allhead"><h1>Результат</h1></div>
     <p class="allsub">${esc(curName)}</p>
+    ${open?'':`<div class="resnote" style="margin:-8px 0 16px">Правильные ответы и пояснения откроются после отправки работы учителю.</div>`}
     ${total?resultChart(correct,wrong,total):''}
     <div class="rrow" style="margin-top:18px">
       <button class="btn" onclick="openTest2()">Решать заново</button>
@@ -789,9 +795,9 @@ function p2Item(q){
       <div class="uans-lab">Твой ответ</div>
       <div class="uans${a?'':' none'}">${a?esc(a):'Ответ не написан'}</div>
       ${review?reviewGrade(q):''}
-      ${q.answer?`<div class="uans-lab">Образец ответа</div><div class="uans">${esc(q.answer)}</div>`:''}
+      ${answersOpen()?`${q.answer?`<div class="uans-lab">Образец ответа</div><div class="uans">${esc(q.answer)}</div>`:''}
       ${q.explanation?`<button class="etog" onclick="tog2(this)">Пояснение</button>
-        <div class="expl"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div>`:''}
+        <div class="expl"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div>`:''}`:''}
     </div>`;
 }
 function tog2(b){const e=b.nextElementSibling;e.classList.toggle('open');
