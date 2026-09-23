@@ -198,8 +198,9 @@ body{
 input[type=file]{display:none}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(150%);
   background:var(--ink);color:var(--surface);padding:12px 20px;border-radius:11px;font-size:13.5px;
-  z-index:9;transition:transform .4s cubic-bezier(.22,1,.36,1);max-width:88vw}
-.toast.show{transform:translateX(-50%) translateY(0)}
+  z-index:9;transition:transform .4s cubic-bezier(.22,1,.36,1),opacity .3s ease,visibility .4s;max-width:88vw;
+  opacity:0;visibility:hidden;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;visibility:visible}
 @media(min-width:680px){.panel{padding:42px 44px}.qtext{font-size:16.5px}}
 @media(max-width:380px){.panel{padding:28px 22px}}
 </style>
