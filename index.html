@@ -450,9 +450,9 @@ body{background:
   .cab,.home,.rs,.review,.allitem{max-width:1040px}
   .bars{max-width:none}
 }
-/* кнопка «Выйти» — красный эллипс */
-.logout{color:var(--bad);border:1.5px solid var(--bad);border-radius:50%;padding:7px 16px;background:none;font:700 13px/1 var(--font-sans);cursor:pointer}
-.logout:hover{background:var(--bad-soft)}
+/* кнопка «Выйти» — всегда красная, квадрат со скруглёнными углами */
+.logout{color:var(--surface);background:var(--bad);border:1.5px solid var(--bad);border-radius:10px;padding:7px 14px;font:700 13px/1 var(--font-sans);cursor:pointer}
+.logout:hover{filter:brightness(1.08)}
 /* карточки чётче: тонкая рамка поверх клэй-тени, чтобы был виден верхний край */
 .tcard,.pstat,.rs-tile,.dl,.hwbox,.fitem,.creds,.land-card{border:1px solid var(--line-strong)}
 .tcard:hover,.dl:hover,.land-card:hover,a.fitem:hover{border-color:var(--cobalt)}
