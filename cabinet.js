@@ -4,6 +4,7 @@
 const SB_URL = 'https://rhriliazguafqlaxodwc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJocmlsaWF6Z3VhZnFsYXhvZHdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNDk0OTUsImV4cCI6MjEwNTcyNTQ5NX0.XzxsmVVfXA_VMCRAcTJm9WVNELKrJaOCAZADm2Cgqwo';
 const LOGIN_DOMAIN = 'students.example.com';
+const FN_STUDENTS = 'swift-handler';   // адрес функции «students» в Supabase
 
 const CAB = !!(SB_URL && SB_KEY && window.supabase);
 const sb = CAB ? window.supabase.createClient(SB_URL, SB_KEY) : null;
@@ -280,7 +281,7 @@ async function teacherStudents(){
       </div>`).join('')}</div>`:`<div class="empty">Учеников пока нет</div>`}`;
 }
 async function callStudents(body){
-  const { data, error } = await sb.functions.invoke('students',{ body });
+  const { data, error } = await sb.functions.invoke(FN_STUDENTS,{ body });
   if(error){
     let msg=error.message;
     try{ const j=await error.context.json(); if(j&&j.error) msg=j.error; }catch(e){}
