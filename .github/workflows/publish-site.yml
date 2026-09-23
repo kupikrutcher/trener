@@ -1,0 +1,29 @@
+# Каждое изменение сайта в main публикуется в Yandex Object Storage (mashavibe.ru).
+# Нужны секреты репозитория S3_KEY_ID и S3_SECRET (ключ из backend/.secrets).
+name: Публикация сайта
+
+on:
+  push:
+    branches: [main]
+    paths: [index.html, cabinet.js, design/tokens.css, backend/publish-site.js, backend/s3.js]
+  workflow_dispatch:
+
+concurrency:
+  group: publish-site
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Загрузить в Object Storage
+        run: |
+          if [ -z "$S3_KEY_ID" ]; then echo "Секреты S3_KEY_ID/S3_SECRET ещё не добавлены — пропускаю"; exit 0; fi
+          node backend/publish-site.js
+        env:
+          S3_KEY_ID: ${{ secrets.S3_KEY_ID }}
+          S3_SECRET: ${{ secrets.S3_SECRET }}
