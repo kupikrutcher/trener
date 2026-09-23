@@ -1,8 +1,8 @@
 /* ===== Кабинеты: вход, отправка работ, проверка части 2 (Supabase) ===== */
 /* Адрес проекта и публичный ключ (anon) из Supabase → Project Settings → API.
    Публичный ключ можно держать на сайте: доступ к данным ограничен правилами в базе. */
-const SB_URL = '';
-const SB_KEY = '';
+const SB_URL = 'https://rhriliazguafqlaxodwc.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJocmlsaWF6Z3VhZnFsYXhvZHdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNDk0OTUsImV4cCI6MjEwNTcyNTQ5NX0.XzxsmVVfXA_VMCRAcTJm9WVNELKrJaOCAZADm2Cgqwo';
 const LOGIN_DOMAIN = 'students.example.com';
 
 const CAB = !!(SB_URL && SB_KEY && window.supabase);
