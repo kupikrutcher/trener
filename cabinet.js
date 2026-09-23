@@ -156,22 +156,50 @@ async function changePass(){
 async function landExtra(){
   const box=document.getElementById('landextra'); if(!box||!CAB) return;
   paintAcct();
-  if(!me){ box.innerHTML=`<div class="land-note">Уроки и ДЗ открываются после входа. <button class="linkbtn" onclick="cabLogin()">Войти</button> по логину от учителя.</div>`; return; }
+  if(!me){ box.innerHTML=''; return; }
   if(me.role==='teacher'){
     let count=0; try{ count=(await api('todo_count')).count; }catch(e){}
     box.innerHTML=`<div class="land-card" onclick="cabTeacher('todo')"><div><b>${count||0}</b></div><span>работ ждут проверки →</span></div>`;
     return;
   }
-  let data=[], lessons=[];
-  try{ [data, lessons] = await Promise.all([api('my_subs').then(r=>r.subs), api('lessons_list').then(r=>r.lessons)]); }catch(e){}
+  let lessons=[];
+  try{ lessons=(await api('lessons_list')).lessons; }catch(e){}
   if(!document.getElementById('landextra')) return;
-  const last=lessons[0];
-  const lessonCard = last ? `<div class="land-card" onclick="lessonView('${esc(last.id)}')" style="margin-bottom:10px">
-    <div style="min-width:0"><span>Последний урок</span><div class="tname">${esc(last.title)}</div></div><span class="tgo" style="margin-left:auto">→</span></div>` : '';
-  const pts=progressPoints(data||[]);
-  const avg=pts.length?Math.round(pts.reduce((a,p)=>a+p.pct,0)/pts.length):0;
-  box.innerHTML = lessonCard + (pts.length ? `<div class="land-card" onclick="cabStudent()"><div><b>${avg}%</b></div>
-    <span>средний результат за ${pts.length} ${pts.length%10===1&&pts.length%100!==11?'проверенную работу':'проверенных работ'}. Посмотреть прогресс →</span></div>` : '');
+  box.innerHTML=deadlinesHTML(lessons);
+}
+
+/* ---------- дедлайны: невыполненные уроки (ДЗ не отправлено), у которых срок близко или прошёл ---------- */
+const DAY=864e5;
+function fmtDeadline(iso){ const d=new Date(iso);
+  return d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})+', '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); }
+function daysWord(n){ const a=n%10,b=n%100; return n+' '+(a===1&&b!==11?'день':(a>=2&&a<=4&&(b<10||b>=20)?'дня':'дней')); }
+function deadlineBadge(iso){
+  const ms=+new Date(iso)-Date.now();
+  if(ms<0){ const d=Math.floor(-ms/DAY); return d<1?'просрочено сегодня':'просрочено на '+daysWord(d); }
+  // по календарным дням: «завтра» — это завтрашняя дата, а не «через 24 часа»
+  const day=x=>{ const t=new Date(x); t.setHours(0,0,0,0); return +t; };
+  const d=Math.round((day(iso)-day(Date.now()))/DAY);
+  if(d<1) return ms<3*36e5?'осталось меньше 3 часов':'сегодня';
+  return d===1?'завтра':d===2?'послезавтра':'через '+daysWord(d);
+}
+function lessonDone(l){ return !!(l.test_name && submitted.has(l.test_name)); }
+function deadlinesHTML(lessons){
+  const now=Date.now(), t=l=>+new Date(l.deadline);
+  const open=lessons.filter(l=>l.deadline && l.test_name && !lessonDone(l));
+  const soon=open.filter(l=>t(l)>=now).sort((a,b)=>t(a)-t(b));
+  const over=open.filter(l=>t(l)<now).sort((a,b)=>t(b)-t(a));           // сначала недавно просроченные
+  // порядок срочности: ближайшая неделя → просроченные → остальные будущие
+  const order=[...soon.filter(l=>t(l)-now<=7*DAY), ...over, ...soon.filter(l=>t(l)-now>7*DAY)];
+  const top=order.slice(0,3), rest=over.filter(l=>!top.includes(l));
+  const row=l=>{ const o=t(l)<now, hot=!o&&t(l)-now<2*DAY;
+    return `<div class="dl${o?' over':hot?' hot':''}" onclick="lessonView('${esc(l.id)}')">
+      <div class="dl-t"><b>${esc(l.title)}</b><span>ДЗ до ${fmtDeadline(l.deadline)}</span></div>
+      <span class="dl-b">${deadlineBadge(l.deadline)}</span></div>`; };
+  return `<div class="dl-h">Дедлайны</div>
+    ${top.length?`<div class="dl-list">${top.map(row).join('')}</div>`:`<div class="dl-empty">Горящих дедлайнов нет — всё сдано вовремя.</div>`}
+    ${rest.length?`<button class="btn ghost dl-more" onclick="this.nextElementSibling.hidden=!this.nextElementSibling.hidden;
+        this.textContent=this.nextElementSibling.hidden?'Ещё просроченные дедлайны (${rest.length})':'Скрыть'">Ещё просроченные дедлайны (${rest.length})</button>
+      <div class="dl-list" style="margin-top:8px" hidden>${rest.map(row).join('')}</div>`:''}`;
 }
 
 /* ---------- отправка работы (на экране результата) ---------- */
@@ -352,11 +380,36 @@ async function cabSubmission(id){
         <div class="expl"><div class="expl-inner">${p1rows}</div></div>`:''}
       ${s.p2.length?`<div class="review"><h3>Часть 2</h3></div>${total}${p2items}`:''}
       ${teacher&&s.p2.length?`
-        <div class="uans-lab">Общий комментарий</div>
-        <textarea class="essay cm" id="gcm" placeholder="Необязательно">${esc(s.comment||'')}</textarea>
+        <div class="gfoot">
+          <div><div class="uans-lab">Общий комментарий</div>
+            <textarea class="essay cm" id="gcm" placeholder="Необязательно">${esc(s.comment||'')}</textarea></div>
+          <div><div class="uans-lab">Файлы к проверке</div>
+            <div class="flist" id="gfiles"></div>
+            <button class="fdrop" id="gdrop" onclick="pickGradeFiles()">+ Прикрепить файл<br><span style="font-weight:400;font-size:12px">или перетащите сюда</span></button></div>
+        </div>
         <button class="btn" id="gsave" style="margin-top:16px" onclick="saveGrade()">${s.checked_at?'Сохранить изменения':'Сохранить проверку'}</button>`
-      : (!teacher&&s.comment?`<div class="uans-lab">Общий комментарий учителя</div><div class="uans tc">${esc(s.comment)}</div>`:'')}
+      : (!teacher&&s.checked_at?`${s.comment?`<div class="uans-lab">Общий комментарий учителя</div><div class="uans tc">${esc(s.comment)}</div>`:''}
+        ${(s.files||[]).length?`<div class="uans-lab">Файлы от учителя</div><div class="flist" style="margin-top:8px">${fileLinksHTML(s.files)}</div>`:''}`:'')}
     </div>`);
+  if(teacher&&s.p2.length) initGradeFiles(s);
+}
+/* файлы, которые учитель прикрепляет к проверке */
+let gradeFiles=[];
+function paintGradeFiles(){ const box=$('#gfiles'); if(box) box.innerHTML=fileRowsHTML(gradeFiles,'rmGradeFile'); }
+function rmGradeFile(i){ gradeFiles.splice(i,1); paintGradeFiles(); }
+function pickGradeFiles(){
+  const inp=document.createElement('input'); inp.type='file'; inp.multiple=true;
+  inp.onchange=()=>[...inp.files].forEach(f=>uploadFileTo(gradeFiles, f, 'grade', paintGradeFiles));
+  inp.click();
+}
+function initGradeFiles(s){
+  gradeFiles=(s.files||[]).map(f=>({ key:f.key, name:f.name, size:f.size }));
+  paintGradeFiles();
+  const d=$('#gdrop'); if(!d) return;
+  d.addEventListener('dragover',e=>{ e.preventDefault(); d.classList.add('over'); });
+  d.addEventListener('dragleave',()=>d.classList.remove('over'));
+  d.addEventListener('drop',e=>{ e.preventDefault(); d.classList.remove('over');
+    [...e.dataTransfer.files].forEach(f=>uploadFileTo(gradeFiles, f, 'grade', paintGradeFiles)); });
 }
 /* разбор отправленной работы в самом тесте: ответы, правильные ответы, пояснения, оценки */
 function openReview(){
@@ -381,9 +434,11 @@ async function saveGrade(){
     grades[x.i]={ score:score??0, comment };
     sum+=score??0;
   });
+  if(gradeFiles.some(f=>f.status==='загружается…')){ toast('Подождите, файлы ещё загружаются'); return; }
   if(missing && !confirm(`Не выставлены баллы у ${missing} зад. Считать их за 0?`)) return;
   const btn=$('#gsave'); busy(btn,true,'Сохраняем…');
-  try{ await api('grade',{ id:s.id, grades, comment:$('#gcm').value.trim()||null }); }
+  try{ await api('grade',{ id:s.id, grades, comment:$('#gcm').value.trim()||null,
+    files:gradeFiles.filter(f=>f.key).map(f=>({ key:f.key, name:f.name, size:f.size })) }); }
   catch(e){ busy(btn,false,'Сохранить проверку'); toast('Не сохранилось: '+e.message); return; }
   toast('Проверка сохранена: '+sum+' из '+s.p2_max);
   cabTeacher(teacherTab);
@@ -542,8 +597,8 @@ async function lessonsList(){
   box.innerHTML = lessons.length ? `<div class="tlist">${lessons.map(l=>`
     <div class="tcard" onclick="lessonView('${esc(l.id)}')">
       <div class="tinfo"><div class="tname">${esc(l.title)}</div>
-        <div class="tmeta">${fmtDay(l.created_at)}${l.test_name?' · ДЗ: '+esc(l.test_name):''}${l.files_n?' · файлов: '+l.files_n:''}</div></div>
-      ${l.test_name&&submitted.has(l.test_name)?'<span class="st-ok">сдано</span>':''}<span class="tgo">→</span>
+        <div class="tmeta">${fmtDay(l.created_at)}${l.test_name?' · ДЗ: '+esc(l.test_name):''}${l.deadline&&l.test_name?' · до '+fmtDeadline(l.deadline):''}${l.files_n?' · файлов: '+l.files_n:''}</div></div>
+      ${lessonDone(l)?'<span class="st-ok">сдано</span>':(l.deadline&&l.test_name&&+new Date(l.deadline)<Date.now()?'<span class="st-wait" style="color:var(--bad);background:var(--bad-soft)">просрочено</span>':'')}<span class="tgo">→</span>
     </div>`).join('')}</div>` : `<div class="empty">Уроков пока нет.<br>Когда учитель опубликует урок, он появится здесь.</div>`;
 }
 async function lessonView(id){
@@ -561,10 +616,9 @@ async function lessonView(id){
     ${l.embed?videoFrame(l.embed):''}
     ${t?`<div class="hwbox"><div class="lab">Домашнее задание</div><div class="tname">${esc(t.name)}</div>
       <div class="tmeta" style="margin:-6px 0 12px">${metaLine(t.questions)}${done?' · уже сдано':''}</div>
+      ${l.deadline?`<div class="hw-dl${!done&&+new Date(l.deadline)<Date.now()?' over':''}">Сдать до ${fmtDeadline(l.deadline)}${done?'':' · '+deadlineBadge(l.deadline)}</div>`:''}
       <button class="btn" onclick="openTest('${esc(t.id)}')">${done?'Решать ещё раз':'Решать ДЗ'}</button></div>`:''}
-    ${l.files.length?`<div class="lab">Материалы</div><div class="flist">${l.files.map(f=>`
-      <a class="fitem" href="${esc(f.url||'#')}" download="${esc(f.name)}" rel="noopener">
-        <span class="fic">${esc(fileExt(f.name))}</span><span class="fnm">${esc(f.name)}</span><span class="fsz">${fmtSize(f.size||0)} ↓</span></a>`).join('')}</div>`:''}
+    ${l.files.length?`<div class="lab">Материалы</div><div class="flist">${fileLinksHTML(l.files)}</div>`:''}
     ${teacher?`<button class="btn ghost" onclick="lessonEdit('${esc(l.id)}')">Редактировать урок</button>`:''}
   </div>`);
 }
@@ -580,17 +634,17 @@ async function teacherLessons(){
     ${lessons.length?`<div class="tlist">${lessons.map(l=>`
       <div class="tcard" onclick="lessonView('${esc(l.id)}')">
         <div class="tinfo"><div class="tname">${esc(l.title)}</div>
-          <div class="tmeta">${fmtDay(l.created_at)}${l.test_name?' · ДЗ: '+esc(l.test_name):' · без ДЗ'}${l.embed?' · видео':''}${l.files_n?' · файлов: '+l.files_n:''}</div></div>
+          <div class="tmeta">${fmtDay(l.created_at)}${l.test_name?' · ДЗ: '+esc(l.test_name):' · без ДЗ'}${l.deadline?' · до '+fmtDeadline(l.deadline):''}${l.embed?' · видео':''}${l.files_n?' · файлов: '+l.files_n:''}</div></div>
         ${l.published?'<span class="st-ok">опубликован</span>':'<span class="st-draft">черновик</span>'}<span class="tgo">→</span>
       </div>`).join('')}</div>`:`<div class="empty">Уроков пока нет</div>`}`;
 }
 let editL=null;
 async function lessonEdit(id){
-  editL={ id:null, title:'', video:'', test_name:'', files:[], published:false };
+  editL={ id:null, title:'', video:'', test_name:'', deadline:'', files:[], published:false };
   if(id){
     cabShow(`<div class="cab-load">Загружаем урок…</div>`);
     try{ const l=(await api('lesson_get',{ id })).lesson; editL={ id:l.id, title:l.title, video:l.video||'', test_name:l.test_name||'',
-      files:l.files.map(f=>({ key:f.key, name:f.name, size:f.size })), published:l.published }; }
+      deadline:l.deadline||'', files:l.files.map(f=>({ key:f.key, name:f.name, size:f.size })), published:l.published }; }
     catch(e){ toast(e.message); return cabTeacher('lessons'); }
   }
   const opts=groupTests().map(([title,list])=>`<optgroup label="${esc(title)}">${list.map(t=>
@@ -605,6 +659,9 @@ async function lessonEdit(id){
     <div id="vprev" class="vprev"></div>
     <label class="lab" for="lh">Домашнее задание</label>
     <select id="lh" class="tin"><option value="">— без ДЗ —</option>${opts}</select>
+    <label class="lab" for="ld">Дедлайн ДЗ</label>
+    <input id="ld" class="tin" type="datetime-local" value="${toLocalInput(editL.deadline)}">
+    <div class="vnote">Можно оставить пустым. Урок попадёт в «Дедлайны» ученика, пока он не отправит это ДЗ.</div>
     <label class="lab">Файлы</label>
     <div class="flist" id="lfiles"></div>
     <button class="btn ghost" onclick="pickLessonFiles()">Прикрепить файлы</button>
@@ -615,34 +672,44 @@ async function lessonEdit(id){
   </div>`);
   lessonVideoPreview(); paintLessonFiles();
 }
+/* ISO → значение для <input type="datetime-local"> в местном времени */
+function toLocalInput(iso){ if(!iso) return ''; const d=new Date(iso), p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
 function lessonVideoPreview(){
   const v=$('#lv').value.trim(), box=$('#vprev'), src=v&&videoEmbed(v);
   box.innerHTML = !v ? `<div class="vnote">Можно оставить пустым.</div>`
     : src ? videoFrame(src) : `<div class="vnote err">Не понимаю ссылку. Скопируйте адрес видео из браузера или кнопкой «Поделиться».</div>`;
 }
-function paintLessonFiles(){
-  const box=$('#lfiles'); if(!box) return;
-  box.innerHTML=editL.files.map((f,i)=>`<div class="fitem"><span class="fic">${esc(fileExt(f.name))}</span>
-    <span class="fnm">${esc(f.name)}</span>
-    ${f.status?`<span class="fst${f.status==='ошибка'?' err':''}">${esc(f.status)}</span>`:`<span class="fsz">${fmtSize(f.size||0)}</span>`}
-    ${f.status==='загружается…'?'':`<button class="trm" title="Убрать" onclick="editL.files.splice(${i},1);paintLessonFiles()">✕</button>`}</div>`).join('');
-}
+function paintLessonFiles(){ const box=$('#lfiles'); if(box) box.innerHTML=fileRowsHTML(editL.files,'rmLessonFile'); }
+function rmLessonFile(i){ editL.files.splice(i,1); paintLessonFiles(); }
 function pickLessonFiles(){
   const inp=document.createElement('input'); inp.type='file'; inp.multiple=true;
   inp.onchange=()=>{ [...inp.files].forEach(uploadLessonFile); };
   inp.click();
 }
-async function uploadLessonFile(file){
+/* загрузка файла в хранилище по ссылке от сервера; kind: 'lesson' | 'grade' */
+async function uploadFileTo(list, file, kind, repaint){
   const f={ key:null, name:file.name, size:file.size, status:'загружается…' };
-  editL.files.push(f); paintLessonFiles();
+  list.push(f); repaint();
   try{
     if(file.size>100*1024*1024) throw new Error('больше 100 МБ');
-    const { key, url } = await api('file_upload_url',{ name:file.name, size:file.size });
+    const { key, url } = await api('file_upload_url',{ name:file.name, size:file.size, kind });
     const r=await fetch(url,{ method:'PUT', body:file });
     if(!r.ok) throw new Error('хранилище ответило '+r.status);
     f.key=key; f.status=null;
   }catch(e){ f.status='ошибка'; toast('Файл «'+file.name+'» не загрузился: '+e.message); }
-  paintLessonFiles();
+  repaint();
+}
+function uploadLessonFile(file){ return uploadFileTo(editL.files, file, 'lesson', paintLessonFiles); }
+function fileRowsHTML(list, removeFn){
+  return list.map((f,i)=>`<div class="fitem"><span class="fic">${esc(fileExt(f.name))}</span>
+    <span class="fnm">${esc(f.name)}</span>
+    ${f.status?`<span class="fst${f.status==='ошибка'?' err':''}">${esc(f.status)}</span>`:`<span class="fsz">${fmtSize(f.size||0)}</span>`}
+    ${f.status==='загружается…'?'':`<button class="trm" title="Убрать" onclick="${removeFn}(${i})">✕</button>`}</div>`).join('');
+}
+function fileLinksHTML(list){
+  return list.map(f=>`<a class="fitem" href="${esc(f.url||'#')}" download="${esc(f.name)}" rel="noopener">
+    <span class="fic">${esc(fileExt(f.name))}</span><span class="fnm">${esc(f.name)}</span><span class="fsz">${fmtSize(f.size||0)} ↓</span></a>`).join('');
 }
 async function lessonSave(){
   if(editL.files.some(f=>f.status==='загружается…')){ toast('Подождите, файлы ещё загружаются'); return; }
@@ -650,6 +717,7 @@ async function lessonSave(){
   try{
     const r=await api('lesson_save',{ id:editL.id||undefined, title:$('#lt').value.trim(), video:$('#lv').value.trim(),
       test_name:$('#lh').value, published:$('#lp').checked,
+      deadline:$('#ld').value?new Date($('#ld').value).toISOString():'',
       files:editL.files.filter(f=>f.key).map(f=>({ key:f.key, name:f.name, size:f.size })) });
     toast(r.lesson.published?'Урок опубликован':'Урок сохранён как черновик');
     lessonView(r.lesson.id);

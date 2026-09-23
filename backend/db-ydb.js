@@ -63,14 +63,23 @@ const SCHEMA = [
   `CREATE TABLE lessons (id Utf8, title Utf8, video Utf8, test_name Utf8, files Utf8, published Bool,
      created_at Utf8, updated_at Utf8, PRIMARY KEY (id))`,
 ];
-const LESSON_COLS = 'id, title, video, test_name, files, published, created_at, updated_at';
-const lessonRow = (r) => (r ? { ...r, files: parse(r.files) || [], published: !!r.published } : null);
+// новые колонки добавляются к уже созданным таблицам
+const MIGRATIONS = [
+  `ALTER TABLE lessons ADD COLUMN deadline Utf8`,
+  `ALTER TABLE sub_body ADD COLUMN files Utf8`,
+];
+const LESSON_COLS = 'id, title, video, test_name, deadline, files, published, created_at, updated_at';
+const lessonRow = (r) => (r ? { ...r, deadline: r.deadline || '', files: parse(r.files) || [], published: !!r.published } : null);
 
 const db = {
   async createSchema() {
     for (const q of SCHEMA) {
       try { await scheme(q); }
       catch (e) { if (!/already exist|path exist|exists already/i.test(String(e.message))) throw e; }
+    }
+    for (const q of MIGRATIONS) {
+      try { await scheme(q); }
+      catch (e) { if (!/exist|duplicat/i.test(String(e.message))) throw e; }
     }
   },
 
@@ -122,9 +131,9 @@ const db = {
     return rows[0] || null;
   },
   async getSubBody(id) {
-    const [rows] = await query(`DECLARE $id AS Utf8; SELECT p1, p2, grades, comment FROM sub_body WHERE id = $id;`, { $id: V.utf8(id) });
+    const [rows] = await query(`DECLARE $id AS Utf8; SELECT p1, p2, grades, comment, files FROM sub_body WHERE id = $id;`, { $id: V.utf8(id) });
     const r = rows[0]; if (!r) return null;
-    return { p1: parse(r.p1) || [], p2: parse(r.p2) || [], grades: parse(r.grades), comment: r.comment ?? null };
+    return { p1: parse(r.p1) || [], p2: parse(r.p2) || [], grades: parse(r.grades), comment: r.comment ?? null, files: parse(r.files) || [] };
   },
   async listSubsOfStudent(login) {
     const [rows] = await query(`DECLARE $s AS Utf8; SELECT ${META_COLS} FROM subs VIEW by_student WHERE student = $s LIMIT 1000;`,
@@ -144,11 +153,11 @@ const db = {
   },
   async gradeSub(id, m, b) {
     await query(`DECLARE $id AS Utf8; DECLARE $p2_score AS Int32; DECLARE $checked_at AS Utf8;
-      DECLARE $grades AS Utf8; DECLARE $comment AS Optional<Utf8>;
+      DECLARE $grades AS Utf8; DECLARE $comment AS Optional<Utf8>; DECLARE $files AS Utf8;
       UPDATE subs SET p2_score = $p2_score, checked_at = $checked_at WHERE id = $id;
-      UPDATE sub_body SET grades = $grades, comment = $comment WHERE id = $id;`, {
+      UPDATE sub_body SET grades = $grades, comment = $comment, files = $files WHERE id = $id;`, {
       $id: V.utf8(id), $p2_score: V.int32(m.p2_score), $checked_at: V.utf8(m.checked_at),
-      $grades: V.utf8(JSON.stringify(b.grades)), $comment: optStr(b.comment),
+      $grades: V.utf8(JSON.stringify(b.grades)), $comment: optStr(b.comment), $files: V.utf8(JSON.stringify(b.files || [])),
     });
   },
   async listLessons() {
@@ -160,10 +169,11 @@ const db = {
     return lessonRow(rows[0]);
   },
   async putLesson(l) {
-    await query(`DECLARE $id AS Utf8; DECLARE $title AS Utf8; DECLARE $video AS Utf8; DECLARE $test_name AS Utf8;
+    await query(`DECLARE $id AS Utf8; DECLARE $title AS Utf8; DECLARE $video AS Utf8; DECLARE $test_name AS Utf8; DECLARE $deadline AS Utf8;
       DECLARE $files AS Utf8; DECLARE $published AS Bool; DECLARE $created_at AS Utf8; DECLARE $updated_at AS Utf8;
-      UPSERT INTO lessons (${LESSON_COLS}) VALUES ($id, $title, $video, $test_name, $files, $published, $created_at, $updated_at);`, {
+      UPSERT INTO lessons (${LESSON_COLS}) VALUES ($id, $title, $video, $test_name, $deadline, $files, $published, $created_at, $updated_at);`, {
       $id: V.utf8(l.id), $title: V.utf8(l.title), $video: V.utf8(l.video || ''), $test_name: V.utf8(l.test_name || ''),
+      $deadline: V.utf8(l.deadline || ''),
       $files: V.utf8(JSON.stringify(l.files || [])), $published: V.bool(!!l.published),
       $created_at: V.utf8(l.created_at), $updated_at: V.utf8(l.updated_at),
     });

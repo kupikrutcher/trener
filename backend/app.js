@@ -87,8 +87,26 @@ function videoEmbed(url) {
   }
   return null;
 }
+/* список файлов из запроса: только ключи нашего хранилища с нужным префиксом */
+const fileList = (arr, prefix, max = 30) => (Array.isArray(arr) ? arr : []).slice(0, max).map((f) => {
+  const key = String(f.key || '');
+  if (!new RegExp(`^${prefix}\\/[\\w.-]+\\/[^/]+$`).test(key)) fail(400, 'Неверный файл');
+  return { key, name: safeName(f.name), size: int(f.size, 0, 1e9) };
+});
+const withUrls = (files, store) => (files || []).map((f) => ({ ...f, url: store.ok ? store.downloadUrl(f.key, f.name) : null }));
+const dropRemoved = (store, before, after) => {
+  if (!store.ok) return Promise.resolve();
+  const keep = new Set((after || []).map((f) => f.key));
+  return Promise.all((before || []).filter((f) => !keep.has(f.key)).map((f) => store.remove(f.key).catch(() => {})));
+};
+const isoOrEmpty = (v) => {
+  if (!v) return '';
+  const d = new Date(String(v));
+  if (isNaN(d)) fail(400, 'Неверная дата дедлайна');
+  return d.toISOString();
+};
 const safeName = (n) => String(n).replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').slice(0, 120) || 'file';
-const pubLesson = (l) => ({ id: l.id, title: l.title, video: l.video, embed: videoEmbed(l.video), test_name: l.test_name,
+const pubLesson = (l) => ({ id: l.id, title: l.title, video: l.video, embed: videoEmbed(l.video), test_name: l.test_name, deadline: l.deadline || '',
   published: !!l.published, created_at: l.created_at, updated_at: l.updated_at, files_n: (l.files || []).length });
 
 /* ---------- действия ---------- */
@@ -172,7 +190,7 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       const body = await db.getSubBody(id);
       let student_name = null;
       if (teacher) { const s = await db.getUser(meta.student); student_name = s ? s.full_name : null; }
-      return { sub: { ...meta, ...body, student_name } };
+      return { sub: { ...meta, ...body, files: withUrls(body.files, store), student_name } };
     }
 
     case 'grade': {
@@ -189,8 +207,10 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
         sum += score;
       }
       const comment = req.comment ? String(req.comment).slice(0, 5000) : null;
+      const files = fileList(req.files, 'grades', 10);
       const checked_at = new Date().toISOString();
-      await db.gradeSub(id, { p2_score: sum, checked_at }, { grades, comment });
+      await db.gradeSub(id, { p2_score: sum, checked_at }, { grades, comment, files });
+      await dropRemoved(store, body.files, files);
       return { p2_score: sum, checked_at };
     }
 
@@ -251,6 +271,10 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       onlyTeacher();
       const u = await db.getUser(str(req.login, 64, 'login'));
       if (!u || u.role !== 'student') fail(404, 'Ученик не найден');
+      if (store.ok) {
+        const bodies = await Promise.all((await db.listSubsOfStudent(u.login)).map((m) => db.getSubBody(m.id)));
+        await dropRemoved(store, bodies.flatMap((b) => (b && b.files) || []), []);
+      }
       await db.deleteStudent(u.login);
       return { ok: true };
     }
@@ -266,8 +290,7 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
     case 'lesson_get': {
       const l = await db.getLesson(str(req.id, 40, 'id'));
       if (!l || (!teacher && !l.published)) fail(404, 'Урок не найден');
-      const files = (l.files || []).map((f) => ({ ...f, url: store.ok ? store.downloadUrl(f.key, f.name) : null }));
-      return { lesson: { ...pubLesson(l), files } };
+      return { lesson: { ...pubLesson(l), files: withUrls(l.files, store) } };
     }
 
     case 'lesson_save': {
@@ -277,21 +300,15 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       const video = req.video ? str(req.video, 500, 'video').trim() : '';
       if (video && !videoEmbed(video)) fail(400, 'Не понимаю ссылку на видео: нужна ссылка YouTube, Rutube или VK Видео');
       const test_name = req.test_name ? str(req.test_name, 300, 'test_name') : '';
-      const files = (Array.isArray(req.files) ? req.files : []).slice(0, 30).map((f) => {
-        const key = String(f.key || '');
-        if (!/^lessons\/[\w.-]+\/[^/]+$/.test(key)) fail(400, 'Неверный файл');
-        return { key, name: safeName(f.name), size: int(f.size, 0, 1e9) };
-      });
+      const files = fileList(req.files, 'lessons');
+      const deadline = isoOrEmpty(req.deadline);
       const now = new Date().toISOString();
       const old = req.id ? await db.getLesson(str(req.id, 40, 'id')) : null;
       if (req.id && !old) fail(404, 'Урок не найден');
-      const lesson = { id: old ? old.id : newId(), title, video, test_name, files, published: !!req.published,
+      const lesson = { id: old ? old.id : newId(), title, video, test_name, deadline, files, published: !!req.published,
         created_at: old ? old.created_at : now, updated_at: now };
       await db.putLesson(lesson);
-      if (old && store.ok) {
-        const keep = new Set(files.map((f) => f.key));
-        await Promise.all((old.files || []).filter((f) => !keep.has(f.key)).map((f) => store.remove(f.key).catch(() => {})));
-      }
+      if (old) await dropRemoved(store, old.files, files);
       return { lesson: pubLesson(lesson) };
     }
 
@@ -299,7 +316,7 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       onlyTeacher();
       const l = await db.getLesson(str(req.id, 40, 'id'));
       if (!l) fail(404, 'Урок не найден');
-      if (store.ok) await Promise.all((l.files || []).map((f) => store.remove(f.key).catch(() => {})));
+      await dropRemoved(store, l.files, []);
       await db.deleteLesson(l.id);
       return { ok: true };
     }
@@ -309,7 +326,8 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       if (!store.ok) fail(503, 'Хранилище файлов не настроено');
       const size = int(req.size, 0, 2e9);
       if (size > 100 * 1024 * 1024) fail(400, 'Файл больше 100 МБ');
-      const key = `lessons/${newId()}/${safeName(str(req.name, 300, 'name'))}`;
+      const prefix = req.kind === 'grade' ? 'grades' : 'lessons';
+      const key = `${prefix}/${newId()}/${safeName(str(req.name, 300, 'name'))}`;
       return { key, url: store.uploadUrl(key) };
     }
 

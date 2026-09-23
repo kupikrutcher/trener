@@ -153,3 +153,31 @@ test('уроки: убранные и удалённые файлы стираю
   assert.deepEqual(st.removed, ['lessons/k1/f1.pdf', 'lessons/k2/f2.pdf']);
   assert.equal((await callS(db, st, { action: 'lessons_list', token: T })).lessons.length, 0);
 });
+
+test('дедлайн урока сохраняется, кривая дата — ошибка', async () => {
+  const { db, T, S1 } = await world(); const st = fakeStore();
+  const l = (await callS(db, st, { action: 'lesson_save', token: T, title: 'Урок', test_name: 'Выборы',
+    deadline: '2026-10-01T20:59:00.000Z', published: true })).lesson;
+  assert.equal(l.deadline, '2026-10-01T20:59:00.000Z');
+  assert.equal((await callS(db, st, { action: 'lessons_list', token: S1 })).lessons[0].deadline, '2026-10-01T20:59:00.000Z');
+  await rejects(callS(db, st, { action: 'lesson_save', token: T, title: 'x', deadline: 'завтра' }), 400);
+  const noDl = (await callS(db, st, { action: 'lesson_save', token: T, title: 'Без дедлайна' })).lesson;
+  assert.equal(noDl.deadline, '');
+});
+
+test('файлы к проверке: учитель прикрепляет, ученик видит, замена и удаление чистят хранилище', async () => {
+  const { db, T, S1 } = await world(); const st = fakeStore();
+  const { id } = await call(db, { ...work, token: S1 });
+  const up = await callS(db, st, { action: 'file_upload_url', token: T, kind: 'grade', name: 'разбор.pdf', size: 10 });
+  assert.match(up.key, /^grades\//);
+  await rejects(callS(db, st, { action: 'grade', token: T, id, grades: {}, files: [{ key: 'lessons/x/y.pdf', name: 'y' }] }), 400);
+  await callS(db, st, { action: 'grade', token: T, id, grades: {}, files: [{ key: up.key, name: 'разбор.pdf', size: 10 }] });
+  const { sub } = await callS(db, st, { action: 'sub_get', token: S1, id });
+  assert.equal(sub.files.length, 1); assert.equal(sub.files[0].url, 'https://down/' + up.key + '#разбор.pdf');
+  await callS(db, st, { action: 'grade', token: T, id, grades: {}, files: [] });          // файл убрали при перепроверке
+  assert.deepEqual(st.removed, [up.key]);
+  const up2 = await callS(db, st, { action: 'file_upload_url', token: T, kind: 'grade', name: 'b.pdf', size: 1 });
+  await callS(db, st, { action: 'grade', token: T, id, grades: {}, files: [{ key: up2.key, name: 'b.pdf', size: 1 }] });
+  await callS(db, st, { action: 'student_delete', token: T, login: 'ivanov.p' });           // ученик удалён — файл тоже
+  assert.deepEqual(st.removed, [up.key, up2.key]);
+});

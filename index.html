@@ -331,6 +331,32 @@ a.fitem:hover{border-color:var(--accent);background:var(--accent-soft)}
 .vprev{margin-top:10px}
 .vnote{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.5}
 .vnote.err{color:var(--bad)}
+/* ---- дедлайны на главной ---- */
+.dl-h{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin:28px 0 12px;text-align:left}
+.dl-list{display:flex;flex-direction:column;gap:8px}
+.dl-list[hidden]{display:none}
+.dl{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:13px;background:var(--bg);cursor:pointer;text-align:left;
+  transition:border-color .2s,background .2s}
+.dl:hover{border-color:var(--accent);background:var(--accent-soft)}
+.dl .dl-t{flex:1;min-width:0}
+.dl .dl-t b{display:block;font-size:14.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dl .dl-t span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+.dl .dl-b{flex:none;font-size:11.5px;font-weight:600;border-radius:99px;padding:4px 10px;color:var(--accent);background:var(--accent-soft)}
+.dl.over{border-color:var(--bad);background:var(--bad-soft)}
+.dl.over .dl-b{color:#fff;background:var(--bad)}
+.dl.hot .dl-b{color:var(--bad);background:var(--bad-soft)}
+.dl-more{margin-top:10px}
+.dl-empty{font-size:13.5px;color:var(--muted);padding:14px 16px;border:1px dashed var(--line-strong);border-radius:13px;text-align:left}
+.hw-dl{font-size:13px;color:var(--muted);margin:-6px 0 12px}
+.hw-dl.over{color:var(--bad);font-weight:600}
+/* ---- файлы к проверке рядом с общим комментарием ---- */
+.gfoot{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-top:4px}
+.gfoot textarea{min-height:120px}
+.fdrop{width:100%;border:1.5px dashed var(--line-strong);border-radius:13px;background:var(--bg);color:var(--muted);font:600 13.5px/1.4 inherit;
+  font-family:inherit;padding:16px 12px;cursor:pointer;transition:border-color .2s,color .2s,background .2s}
+.fdrop:hover,.fdrop.over{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.gfoot .flist{margin-bottom:8px}.gfoot .flist:empty{display:none}
+@media(max-width:560px){.gfoot{grid-template-columns:1fr}}
 .foot{text-align:center;color:var(--muted);font-size:11px;margin-top:24px;opacity:.6;letter-spacing:.03em}
 input[type=file]{display:none}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(150%);
@@ -506,10 +532,9 @@ function home(){
   app.className='panel fade';
   app.innerHTML=`
     <div class="land">
-      <div class="land-hi" id="landhi">Привет!</div>
-      <h1>Домашка по обществознанию</h1>
-      <p class="land-sub">Первая часть проверяется сразу, с пояснениями к каждому заданию. Развёрнутые ответы из второй части отправляй на проверку — баллы и комментарии появятся в профиле.</p>
-      <button class="btn land-go" onclick="goHW()">Перейти к ДЗ</button>
+      <h1>Годовой курс Маши Вайб</h1>
+      <p class="land-sub">Котенок, рада тебя приветствовать на своей платформе! Готов идти к заветной сотке?</p>
+      <button class="btn land-go" onclick="goHW()">Приступить к подготовке</button>
       <div id="landextra"></div>
     </div>`;
   if(window.landExtra) landExtra();
