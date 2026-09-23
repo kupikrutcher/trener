@@ -43,7 +43,7 @@ zip -q /tmp/trener-api.zip index.js app.js db-ydb.js package.json package-lock.j
 yc serverless function version create --function-name "$FN" \
   --runtime nodejs22 --entrypoint index.handler --memory 256m --execution-timeout 30s \
   --service-account-id "$SA_ID" --source-path /tmp/trener-api.zip \
-  --environment "YDB_ENDPOINT=$YDB_ENDPOINT,YDB_DATABASE=$YDB_DATABASE,YDB_METADATA_CREDENTIALS=1,SECRET=$SECRET,SETUP_CODE=$SETUP_CODE" >/dev/null
+  --environment "YDB_ENDPOINT=$YDB_ENDPOINT,YDB_DATABASE=$YDB_DATABASE,SECRET=$SECRET,SETUP_CODE=$SETUP_CODE" >/dev/null
 yc serverless function allow-unauthenticated-invoke "$FN" >/dev/null
 
 FN_ID=$(yc serverless function get "$FN" --format json | jq -r .id)

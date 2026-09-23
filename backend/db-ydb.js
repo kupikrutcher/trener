@@ -1,7 +1,23 @@
 // Хранилище в Yandex Database (serverless).
 // Таблицы: users, avatars, subs (сводка работы — лёгкая, её читают списками), sub_body (ответы и оценки — по одной).
 'use strict';
-const { Driver, getCredentialsFromEnv, TypedValues: V, Types: T, TypedData } = require('ydb-sdk');
+const { Driver, getCredentialsFromEnv, TokenAuthService, TypedValues: V, Types: T, TypedData } = require('ydb-sdk');
+
+// Внутри Cloud Function токен сервисного аккаунта берём сами: из контекста вызова (index.js кладёт его
+// в globalThis.__ycToken) или из сервиса метаданных. Штатный MetadataAuthService в ydb-sdk тянет
+// тяжёлый @yandex-cloud/nodejs-sdk, которого в функции нет.
+let mdToken = null, mdExp = 0;
+async function functionToken() {
+  if (globalThis.__ycToken) return globalThis.__ycToken;
+  if (mdToken && Date.now() < mdExp) return mdToken;
+  const r = await fetch('http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token',
+    { headers: { 'Metadata-Flavor': 'Google' } });
+  if (!r.ok) throw new Error('Нет токена сервисного аккаунта: ' + r.status);
+  const j = await r.json();
+  mdToken = j.access_token; mdExp = Date.now() + Math.max(60, (j.expires_in || 3600) - 300) * 1000;
+  return mdToken;
+}
+const functionAuth = { getAuthMetadata: async () => new TokenAuthService(await functionToken()).getAuthMetadata() };
 
 let driverPromise = null;
 function driver() {
@@ -10,7 +26,7 @@ function driver() {
       const d = new Driver({
         endpoint: process.env.YDB_ENDPOINT,
         database: process.env.YDB_DATABASE,
-        authService: getCredentialsFromEnv(),
+        authService: process.env.YDB_ACCESS_TOKEN_CREDENTIALS ? getCredentialsFromEnv() : functionAuth,
       });
       if (!(await d.ready(10000))) { driverPromise = null; throw new Error('База недоступна'); }
       return d;

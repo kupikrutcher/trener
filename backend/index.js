@@ -13,7 +13,8 @@ const reply = (statusCode, body) => ({
   statusCode, headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8' }, body: JSON.stringify(body),
 });
 
-const makeHandler = (getDb) => async (event) => {
+const makeHandler = (getDb) => async (event, context) => {
+  if (context && context.token && context.token.access_token) globalThis.__ycToken = context.token.access_token;
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return reply(405, { error: 'Только POST' });
   let req;
