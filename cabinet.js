@@ -1,14 +1,9 @@
-/* ===== Кабинеты: вход, отправка работ, проверка части 2 (Supabase) ===== */
-/* Адрес проекта и публичный ключ (anon) из Supabase → Project Settings → API.
-   Публичный ключ можно держать на сайте: доступ к данным ограничен правилами в базе. */
-const SB_URL = 'https://rhriliazguafqlaxodwc.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJocmlsaWF6Z3VhZnFsYXhvZHdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNDk0OTUsImV4cCI6MjEwNTcyNTQ5NX0.XzxsmVVfXA_VMCRAcTJm9WVNELKrJaOCAZADm2Cgqwo';
-const LOGIN_DOMAIN = 'students.example.com';
-const FN_STUDENTS = 'swift-handler';   // адрес функции «students» в Supabase
+/* ===== Кабинеты: вход, отправка работ, проверка части 2 ===== */
+/* Сервер — функция в Yandex Cloud (папка backend/). Адрес функции: */
+const API_URL = window.TRENER_API || '';
 
-const CAB = !!(SB_URL && SB_KEY && window.supabase);
-const sb = CAB ? window.supabase.createClient(SB_URL, SB_KEY) : null;
-let me = null;              // {id, login, full_name, role}
+const CAB = !!API_URL;
+let me = null;              // {login, full_name, role, avatar}
 let sentFor = null;         // results текущего прохождения, которое уже отправлено
 let afterLogin = null;
 
@@ -21,16 +16,26 @@ function cabShow(html){
   $('#bars').style.display='none'; $('#foot').textContent='';
   app.className='panel fade'; app.innerHTML=html; window.scrollTo({top:0});
 }
+/* запрос к серверу: text/plain, чтобы браузер не делал предварительный CORS-запрос; токен — в теле */
+function getToken(){ try{ return localStorage.getItem('tr_token')||''; }catch(e){ return ''; } }
+function setToken(t){ try{ t?localStorage.setItem('tr_token',t):localStorage.removeItem('tr_token'); }catch(e){} }
+async function api(action, data){
+  let r;
+  try{
+    r=await fetch(API_URL,{ method:'POST', headers:{'Content-Type':'text/plain;charset=UTF-8'},
+      body:JSON.stringify({ action, token:getToken(), ...(data||{}) }) });
+  }catch(e){ throw new Error('Нет связи с сервером. Проверь интернет.'); }
+  let j={}; try{ j=await r.json(); }catch(e){}
+  if(r.status===401 && action!=='login'){ setToken(''); me=null; paintAcct(); }
+  if(!r.ok) throw new Error(j.error||('Ошибка сервера ('+r.status+')'));
+  return j;
+}
 function busy(btn,on,text){ if(!btn)return; btn.disabled=on; if(text) btn.textContent=text; btn.style.opacity=on?.6:1; }
 
 /* ---------- сессия ---------- */
 async function loadMe(){
   me=null;
-  const { data:{ session } } = await sb.auth.getSession();
-  if(session){
-    const { data } = await sb.from('profiles').select('*').eq('id',session.user.id).single();
-    me=data||null;
-  }
+  if(getToken()){ try{ me=(await api('me')).me; }catch(e){} }
   paintAcct();
 }
 /* серая фигурка по плечи — если своей картинки нет */
@@ -68,8 +73,7 @@ function setAvatarFile(f){
   img.src=url;
 }
 async function saveAvatar(data){
-  const { error } = await sb.rpc('set_avatar',{ img:data });
-  if(error){ toast('Не сохранилось: '+error.message); return; }
+  try{ await api('set_avatar',{ img:data }); }catch(e){ toast('Не сохранилось: '+e.message); return; }
   me.avatar=data; paintAcct();
   const big=document.getElementById('avabig'); if(big) big.innerHTML=avaInner(me);
   const rm=document.getElementById('avarm'); if(rm) rm.style.display=data?'':'none';
@@ -100,16 +104,41 @@ async function doLogin(){
   const login=$('#lg').value.trim().toLowerCase(), pass=$('#pw').value, btn=$('#lbtn');
   if(!login||!pass){ $('#lerr').textContent='Введи логин и пароль'; return; }
   busy(btn,true,'Входим…');
-  const email = login.includes('@') ? login : login+'@'+LOGIN_DOMAIN;
-  const { error } = await sb.auth.signInWithPassword({ email, password:pass });
-  if(error){ busy(btn,false,'Войти'); $('#lerr').textContent = /invalid/i.test(error.message)?'Неверный логин или пароль':'Не удалось войти: '+error.message; return; }
-  await loadMe();
-  if(!me){ await sb.auth.signOut(); busy(btn,false,'Войти'); $('#lerr').textContent='Аккаунт не найден. Обратись к учителю.'; return; }
+  try{ const r=await api('login',{ login, password:pass }); setToken(r.token); me=r.me; }
+  catch(e){ busy(btn,false,'Войти'); $('#lerr').textContent=e.message; return; }
+  paintAcct();
   toast('Привет, '+firstName(me.full_name)+'!');
   const f=afterLogin; afterLogin=null;
   f ? f() : openCabinet();
 }
-async function doLogout(){ await sb.auth.signOut(); me=null; paintAcct(); home(); }
+function doLogout(){ setToken(''); me=null; paintAcct(); home(); }
+
+/* первый вход учителя: адрес сайта с #setup и код из настроек функции */
+function cabSetup(){
+  cabShow(`
+    <div class="cab">
+      <h2 class="cab-h">Аккаунт учителя</h2>
+      <p class="cab-sub">Создаётся один раз. Код настройки выдаёт тот, кто разворачивал сервер.</p>
+      <label class="lab" for="sc">Код настройки</label><input id="sc" class="tin" autocomplete="off">
+      <label class="lab" for="sn" style="margin-top:14px">Имя (увидят ученики)</label><input id="sn" class="tin" value="Маша">
+      <label class="lab" for="sl" style="margin-top:14px">Логин</label><input id="sl" class="tin" autocapitalize="off" spellcheck="false" placeholder="латиницей, например masha">
+      <label class="lab" for="sp" style="margin-top:14px">Пароль (не короче 8 символов)</label><input id="sp" class="tin" type="password" autocomplete="new-password">
+      <div class="cab-err" id="lerr"></div>
+      <button class="btn" id="lbtn" onclick="doSetup()">Создать</button>
+    </div>`);
+}
+async function doSetup(){
+  const btn=$('#lbtn'); busy(btn,true,'Создаём…');
+  try{
+    const r=await api('setup',{ code:$('#sc').value.trim(), full_name:$('#sn').value.trim(), login:$('#sl').value.trim().toLowerCase(), password:$('#sp').value });
+    setToken(r.token); me=r.me; paintAcct(); history.replaceState(null,'',location.pathname); toast('Готово! Вы вошли как учитель'); cabTeacher('students');
+  }catch(e){ busy(btn,false,'Создать'); $('#lerr').textContent=e.message; }
+}
+async function changePass(){
+  const old=prompt('Текущий пароль'); if(!old) return;
+  const np=prompt('Новый пароль (не короче 8 символов)'); if(!np) return;
+  try{ await api('change_password',{ old, password:np }); toast('Пароль изменён'); }catch(e){ toast(e.message); }
+}
 
 /* ---------- главная: карточка профиля ---------- */
 async function landExtra(){
@@ -117,11 +146,11 @@ async function landExtra(){
   paintAcct();
   if(!me){ box.innerHTML=`<div class="land-note">Чтобы отправлять ДЗ на проверку, <button class="linkbtn" onclick="cabLogin()">войди</button> по логину от учителя.</div>`; return; }
   if(me.role==='teacher'){
-    const { count } = await sb.from('submissions').select('id',{count:'exact',head:true}).is('checked_at',null).gt('p2_max',0);
+    let count=0; try{ count=(await api('todo_count')).count; }catch(e){}
     box.innerHTML=`<div class="land-card" onclick="cabTeacher('todo')"><div><b>${count||0}</b></div><span>работ ждут проверки →</span></div>`;
     return;
   }
-  const { data } = await sb.from('submissions').select('created_at,p1_score,p1_total,p2,p2_max,p2_score,checked_at').order('created_at',{ascending:true}).limit(1000);
+  let data=[]; try{ data=(await api('my_subs')).subs; }catch(e){}
   if(!document.getElementById('landextra')) return;
   const pts=progressPoints(data||[]);
   if(!pts.length){ box.innerHTML=''; return; }
@@ -153,13 +182,8 @@ async function sendWork(){
     if(isP2(q)) p2.push({ i, n:q.n||'', pts:parseInt(q.pts,10)||0, text:(r&&r.user)||getAns(q)||'' });
     else p1.push({ i, n:q.n||String(i+1), user:(r&&r.user)||'', ok:!!(r&&r.ok) });
   });
-  const row={
-    student_id: me.id, test_name: curBase,
-    p1, p1_total: p1.length, p1_score: p1.filter(x=>x.ok).length,
-    p2, p2_max: p2.reduce((s,x)=>s+x.pts,0),
-  };
-  const { error } = await sb.from('submissions').insert(row);
-  if(error){ busy(btn,false,'Отправить работу учителю'); toast('Не отправилось: '+error.message); return; }
+  try{ await api('submit',{ test_name:curBase, p1, p2 }); }
+  catch(e){ busy(btn,false,'Отправить работу учителю'); toast('Не отправилось: '+e.message); return; }
   sentFor=results; renderSendBox(); toast('Работа отправлена');
 }
 
@@ -167,11 +191,11 @@ async function sendWork(){
 function statusLine(s){
   const p1 = s.p1_total ? `Часть 1: ${s.p1_score}/${s.p1_total}` : '';
   let p2 = '';
-  if(s.p2 && s.p2.length) p2 = s.checked_at ? `Часть 2: ${s.p2_score}/${s.p2_max}` : 'Часть 2: на проверке';
+  if(s.p2_n) p2 = s.checked_at ? `Часть 2: ${s.p2_score}/${s.p2_max}` : 'Часть 2: на проверке';
   return [p1,p2].filter(Boolean).join(' · ');
 }
 function subBadge(s){
-  if(!(s.p2&&s.p2.length)) return '';
+  if(!s.p2_n) return '';
   return s.checked_at ? '<span class="st-ok">проверено</span>' : '<span class="st-wait">ждёт проверки</span>';
 }
 async function cabStudent(){
@@ -189,14 +213,13 @@ async function cabStudent(){
       </div>
     </div>
     <div id="clist" class="cab-load">Загружаем работы…</div></div>`);
-  const { data, error } = await sb.from('submissions')
-    .select('id,test_name,created_at,p1_score,p1_total,p2,p2_max,p2_score,checked_at')
-    .order('created_at',{ascending:false}).limit(1000);
+  let data;
+  try{ data=(await api('my_subs')).subs.sort((a,b)=>b.created_at.localeCompare(a.created_at)); }
+  catch(e){ const b=$('#clist'); if(b) b.textContent='Не удалось загрузить: '+e.message; return; }
   const box=$('#clist'); if(!box) return;
-  if(error){ box.textContent='Не удалось загрузить: '+error.message; return; }
   box.className='';
   box.innerHTML = `<h3 class="cab-h3">Прогресс</h3><div id="prog"></div>` + (data.length ? `<h3 class="cab-h3">Мои работы</h3><div class="tlist">${data.map(s=>`
-      <div class="tcard" onclick="cabSubmission(${s.id})">
+      <div class="tcard" onclick="cabSubmission('${s.id}')">
         <div class="tinfo"><div class="tname">${esc(s.test_name)}</div>
           <div class="tmeta">${fmtDate(s.created_at)} · ${statusLine(s)}</div></div>
         ${subBadge(s)}<span class="tgo">→</span>
@@ -209,8 +232,8 @@ async function cabStudent(){
 /* ---------- прогресс: % баллов за каждую итоговую работу + линия тренда ---------- */
 /* работа попадает в прогресс, когда её итог известен: проверена учителем или в ней нет части 2 */
 function progressPoints(subs){
-  return subs.filter(s=>!(s.p2&&s.p2.length)||s.checked_at)
-    .map(s=>{ const max=(s.p1_total||0)+((s.p2&&s.p2.length)?(s.p2_max||0):0), got=(s.p1_score||0)+(s.p2_score||0);
+  return subs.filter(s=>!s.p2_n||s.checked_at)
+    .map(s=>{ const max=(s.p1_total||0)+(s.p2_n?(s.p2_max||0):0), got=(s.p1_score||0)+(s.p2_score||0);
       return max?{ s, got, max, pct:Math.round(got/max*100) }:null; })
     .filter(Boolean)
     .sort((a,b)=>new Date(a.s.created_at)-new Date(b.s.created_at));
@@ -221,7 +244,7 @@ function trendLine(ys){ const n=ys.length; if(n<2) return null;
   const k=num/den; return { k, at:x=>my+k*(x-mx) }; }
 function drawProgress(el, subs){
   if(!el) return;
-  const pts=progressPoints(subs||[]), wait=(subs||[]).filter(s=>s.p2&&s.p2.length&&!s.checked_at).length;
+  const pts=progressPoints(subs||[]), wait=(subs||[]).filter(s=>s.p2_n&&!s.checked_at).length;
   const waitNote = wait ? `<div class="pnote">${wait===1?'Ещё 1 работа ждёт проверки — появится на графике после неё.':'Ещё '+wait+' работ(ы) ждут проверки — появятся на графике после неё.'}</div>` : '';
   if(!pts.length){ el.innerHTML=`<div class="empty" style="margin-bottom:0">График появится, когда будет проверена первая работа.</div>${waitNote}`; return; }
   const ys=pts.map(p=>p.pct), avg=Math.round(ys.reduce((a,b)=>a+b,0)/ys.length), tr=trendLine(ys);
@@ -272,13 +295,10 @@ function drawProgress(el, subs){
 let curSub=null;
 async function cabSubmission(id){
   cabShow(`<div class="cab-load">Загружаем работу…</div>`);
-  const { data:s, error } = await sb.from('submissions').select('*').eq('id',id).single();
-  if(error||!s){ cabShow(`<div class="empty">Работа не найдена</div><button class="btn ghost" onclick="openCabinet()">Назад</button>`); return; }
-  let who='';
-  if(me.role==='teacher'){
-    const { data:p } = await sb.from('profiles').select('full_name,login').eq('id',s.student_id).single();
-    who = p ? `${esc(p.full_name)} · ` : '';
-  }
+  let s;
+  try{ s=(await api('sub_get',{ id })).sub; }
+  catch(e){ cabShow(`<div class="empty">${esc(e.message)}</div><button class="btn ghost" onclick="openCabinet()">Назад</button>`); return; }
+  const who = me.role==='teacher' && s.student_name ? `${esc(s.student_name)} · ` : '';
   curSub=s;
   const t=findTest(s.test_name), qs=t?t.questions:[];
   const teacher=me.role==='teacher', g=s.grades||{};
@@ -347,10 +367,8 @@ async function saveGrade(){
   });
   if(missing && !confirm(`Не выставлены баллы у ${missing} зад. Считать их за 0?`)) return;
   const btn=$('#gsave'); busy(btn,true,'Сохраняем…');
-  const { error } = await sb.from('submissions').update({
-    grades, p2_score:sum, comment:$('#gcm').value.trim()||null, checked_at:new Date().toISOString(),
-  }).eq('id',s.id);
-  if(error){ busy(btn,false,'Сохранить проверку'); toast('Не сохранилось: '+error.message); return; }
+  try{ await api('grade',{ id:s.id, grades, comment:$('#gcm').value.trim()||null }); }
+  catch(e){ busy(btn,false,'Сохранить проверку'); toast('Не сохранилось: '+e.message); return; }
   toast('Проверка сохранена: '+sum+' из '+s.p2_max);
   cabTeacher(teacherTab);
 }
@@ -358,8 +376,7 @@ async function saveGrade(){
 /* ---------- кабинет учителя ---------- */
 let teacherTab='todo', studentsCache=[], filterStudent=null;
 async function loadStudents(){
-  const { data } = await sb.from('profiles').select('id,login,full_name,role,created_at').eq('role','student').order('full_name');
-  studentsCache=data||[]; return studentsCache;
+  studentsCache=(await api('students_list')).students; return studentsCache;
 }
 function tabsHTML(){
   const T=[['todo','На проверке'],['all','Все работы'],['students','Ученики']];
@@ -369,26 +386,24 @@ async function cabTeacher(tab){
   teacherTab=tab||'todo';
   if(teacherTab!=='all') filterStudent=null;
   cabShow(`<div class="cab"><div class="cab-top"><h2 class="cab-h">Проверка</h2>
-    <button class="linkbtn" onclick="doLogout()">Выйти</button></div>
+    <div class="sact"><button class="linkbtn back" onclick="changePass()">Сменить пароль</button><button class="linkbtn" onclick="doLogout()">Выйти</button></div></div>
     ${tabsHTML()}<div id="tbody" class="cab-load">Загружаем…</div>
     <button class="btn ghost" style="margin-top:22px" onclick="hwList()">К ДЗ</button></div>`);
   if(teacherTab==='students') return teacherStudents();
-  const [studs] = await Promise.all([loadStudents()]);
-  const names=Object.fromEntries(studs.map(p=>[p.id,p.full_name]));
-  let q=sb.from('submissions').select('id,student_id,test_name,created_at,p1_score,p1_total,p2,p2_max,p2_score,checked_at')
-    .order('created_at',{ascending:teacherTab==='todo'}).limit(500);
-  if(teacherTab==='todo') q=q.is('checked_at',null).gt('p2_max',0);
-  if(filterStudent) q=q.eq('student_id',filterStudent);
-  const { data, error } = await q;
+  let studs, data;
+  try{
+    [studs, data] = await Promise.all([loadStudents(),
+      api('subs_list',{ todo:teacherTab==='todo', student:filterStudent||undefined }).then(r=>r.subs)]);
+  }catch(e){ const b=$('#tbody'); if(b){ b.className=''; b.textContent='Не удалось загрузить: '+e.message; } return; }
+  const names=Object.fromEntries(studs.map(p=>[p.login,p.full_name]));
   const box=$('#tbody'); if(!box) return;
   box.className='';
-  if(error){ box.textContent='Не удалось загрузить: '+error.message; return; }
   const head = filterStudent ? `<div class="fbar">Ученик: <b>${esc(names[filterStudent]||'')}</b>
       <button class="linkbtn" onclick="filterStudent=null;cabTeacher('all')">показать всех</button></div>
       <div id="prog" style="margin-bottom:18px"></div>` : '';
   box.innerHTML = head + (data.length ? `<div class="tlist">${data.map(s=>`
-      <div class="tcard" onclick="cabSubmission(${s.id})">
-        <div class="tinfo"><div class="tname">${esc(names[s.student_id]||'Удалённый ученик')}</div>
+      <div class="tcard" onclick="cabSubmission('${s.id}')">
+        <div class="tinfo"><div class="tname">${esc(names[s.student]||'Удалённый ученик')}</div>
           <div class="tmeta">${esc(s.test_name)}</div>
           <div class="tmeta">${fmtDate(s.created_at)} · ${statusLine(s)}</div></div>
         ${subBadge(s)}<span class="tgo">→</span>
@@ -397,9 +412,9 @@ async function cabTeacher(tab){
   if(filterStudent) drawProgress($('#prog'), data);
 }
 async function teacherStudents(){
-  const studs=await loadStudents();
-  const { data:subs } = await sb.from('submissions').select('student_id').limit(10000);
-  const cnt={}; (subs||[]).forEach(s=>cnt[s.student_id]=(cnt[s.student_id]||0)+1);
+  let studs;
+  try{ studs=await loadStudents(); }
+  catch(e){ const b=$('#tbody'); if(b){ b.className=''; b.textContent='Не удалось загрузить: '+e.message; } return; }
   const box=$('#tbody'); if(!box) return;
   box.className='';
   box.innerHTML=`
@@ -412,22 +427,13 @@ async function teacherStudents(){
     <h3 class="cab-h3">Ученики · ${studs.length}</h3>
     ${studs.length?`<div class="stable">${studs.map(p=>`
       <div class="srow">
-        <div class="sname"><b>${esc(p.full_name)}</b><span>${esc(p.login)} · работ: ${cnt[p.id]||0}</span></div>
+        <div class="sname"><b>${esc(p.full_name)}</b><span>${esc(p.login)} · работ: ${p.subs||0}</span></div>
         <div class="sact">
-          <button class="linkbtn" onclick="filterStudent='${p.id}';teacherTab='all';cabTeacher('all')">Работы</button>
-          <button class="linkbtn" onclick="resetPass('${p.id}')">Новый пароль</button>
-          <button class="linkbtn danger" onclick="delStudent('${p.id}')">Удалить</button>
+          <button class="linkbtn" onclick="filterStudent='${esc(p.login)}';teacherTab='all';cabTeacher('all')">Работы</button>
+          <button class="linkbtn" onclick="resetPass('${esc(p.login)}')">Новый пароль</button>
+          <button class="linkbtn danger" onclick="delStudent('${esc(p.login)}')">Удалить</button>
         </div>
       </div>`).join('')}</div>`:`<div class="empty">Учеников пока нет</div>`}`;
-}
-async function callStudents(body){
-  const { data, error } = await sb.functions.invoke(FN_STUDENTS,{ body });
-  if(error){
-    let msg=error.message;
-    try{ const j=await error.context.json(); if(j&&j.error) msg=j.error; }catch(e){}
-    throw new Error(msg);
-  }
-  return data;
 }
 let lastCreds=[];
 async function addStudents(){
@@ -435,7 +441,7 @@ async function addStudents(){
   if(!names.length){ toast('Впиши хотя бы одного ученика'); return; }
   const btn=$('#addbtn'); busy(btn,true,'Создаём… ('+names.length+')');
   try{
-    const r=await callStudents({ action:'create', names });
+    const r=await api('students_create',{ names });
     lastCreds=r.created;
     await teacherStudents();
     $('#creds').innerHTML=credsHTML(r.created, r.failed);
@@ -458,26 +464,26 @@ function downloadCreds(){
   a.download='логины учеников.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 async function copyCreds(){ try{ await navigator.clipboard.writeText(credsText('\t')); toast('Скопировано'); }catch(e){ toast('Не удалось скопировать'); } }
-async function resetPass(id){
-  const p=studentsCache.find(x=>x.id===id); if(!p) return;
+async function resetPass(login){
+  const p=studentsCache.find(x=>x.login===login); if(!p) return;
   if(!confirm('Выдать новый пароль ученику '+p.full_name+'? Старый перестанет работать.')) return;
   try{
-    const r=await callStudents({ action:'reset', id });
+    const r=await api('student_reset',{ login });
     lastCreds=[{ full_name:p.full_name, login:p.login, password:r.password }];
     $('#creds').innerHTML=credsHTML(lastCreds,[]);
     $('#creds').scrollIntoView({behavior:'smooth',block:'center'});
   }catch(e){ toast('Ошибка: '+e.message); }
 }
-async function delStudent(id){
-  const p=studentsCache.find(x=>x.id===id); if(!p) return;
+async function delStudent(login){
+  const p=studentsCache.find(x=>x.login===login); if(!p) return;
   if(!confirm('Удалить ученика '+p.full_name+' вместе со всеми его работами? Это нельзя отменить.')) return;
-  try{ await callStudents({ action:'delete', id }); toast('Удалён'); teacherStudents(); }
+  try{ await api('student_delete',{ login }); toast('Удалён'); teacherStudents(); }
   catch(e){ toast('Ошибка: '+e.message); }
 }
 
 /* ---------- старт ---------- */
 if(CAB){
+  if(location.hash==='#setup') cabSetup();
   loadMe().then(()=>{ if(document.getElementById('landextra')) landExtra(); });
-  sb.auth.onAuthStateChange((ev)=>{ if(ev==='SIGNED_OUT'){ me=null; paintAcct(); } });
 }
 paintAcct();

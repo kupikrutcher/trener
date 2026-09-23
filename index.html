@@ -576,7 +576,7 @@ function reviewGrade(q){
 }
 
 function finLink(){return review
-  ?`<button class="linkfin" onclick="cabSubmission(${review.sub.id})">← Вернуться к проверенной работе</button>`
+  ?`<button class="linkfin" onclick="cabSubmission('${review.sub.id}')">← Вернуться к проверенной работе</button>`
   :`<button class="linkfin" onclick="finishEarly()">Завершить тест</button>`}
 function render(){
   if(idx>=bank.length) return finish();
@@ -851,7 +851,6 @@ function parseParts(rows,h){
 loadTests();
 home();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="cabinet.js"></script>
 </body>
 </html>

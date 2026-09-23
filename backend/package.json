@@ -1,0 +1,14 @@
+{
+  "name": "trener-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Сервер тренажёра «Маша Вайб»: Yandex Cloud Function + YDB",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test app.test.js",
+    "dev": "node dev-server.js"
+  },
+  "dependencies": {
+    "ydb-sdk": "^5.11.1"
+  }
+}
