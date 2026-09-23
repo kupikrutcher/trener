@@ -593,11 +593,13 @@ function videoEmbed(url){
   if(h==='rutube.ru' && (m=u.pathname.match(/^\/(?:video|live\/video|play\/embed|shorts)\/(?:private\/)?([0-9a-f]{20,})/i))){
     const p=u.searchParams.get('p'); return 'https://rutube.ru/play/embed/'+m[1]+(p?'?p='+encodeURIComponent(p):'');
   }
+  if(h==='kinescope.io' && (m=u.pathname.match(/^\/(?:embed\/|watch\/)?([A-Za-z0-9]{8,40})\/?$/)))
+    return 'https://kinescope.io/embed/'+m[1];
   if((h==='vk.com'||h==='vkvideo.ru'||h==='vk.ru') && (m=(u.pathname+u.search).match(/video(-?\d+)_(\d+)/)))
     return `https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2`;
   return null;
 }
-const videoFrame = src => `<div class="vwrap"><iframe src="${esc(src)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
+const videoFrame = src => `<div class="vwrap"><iframe src="${esc(src)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock; gyroscope; accelerometer; clipboard-write" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
 
 let curLesson=null;
 async function lessonsList(){
@@ -670,8 +672,8 @@ async function lessonEdit(id){
     <h2 class="cab-h" style="margin-top:10px">${editL.id?'Урок':'Новый урок'}</h2>
     <label class="lab" for="lt">Название</label>
     <input id="lt" class="tin" maxlength="200" value="${esc(editL.title)}" placeholder="Например: Выборы и избирательные системы">
-    <label class="lab" for="lv">Видео или трансляция — ссылка YouTube, Rutube или VK Видео</label>
-    <input id="lv" class="tin" value="${esc(editL.video)}" placeholder="https://rutube.ru/video/…" oninput="lessonVideoPreview()">
+    <label class="lab" for="lv">Видео или трансляция — ссылка Kinescope, Rutube, VK Видео или YouTube</label>
+    <input id="lv" class="tin" value="${esc(editL.video)}" placeholder="https://kinescope.io/…" oninput="lessonVideoPreview()">
     <div id="vprev" class="vprev"></div>
     <label class="lab" for="lh">Домашнее задание</label>
     <select id="lh" class="tin"><option value="">— без ДЗ —</option>${opts}</select>

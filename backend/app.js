@@ -63,7 +63,7 @@ const int = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(Number(v) || 0))
 const pub = (u) => ({ login: u.login, full_name: u.full_name, role: u.role });
 const newId = () => Date.now().toString(36).padStart(9, '0') + crypto.randomBytes(4).toString('hex');
 
-/* ссылки на видео: YouTube, Rutube, VK Видео → адрес для встраивания */
+/* ссылки на видео: YouTube, Rutube, VK Видео, Kinescope → адрес для встраивания */
 function videoEmbed(url) {
   if (!url) return null;
   let u; try { u = new URL(url.trim()); } catch { return null; }
@@ -81,6 +81,9 @@ function videoEmbed(url) {
       return 'https://rutube.ru/play/embed/' + m[1] + (p ? '?p=' + encodeURIComponent(p) : '');
     }
   }
+  // Kinescope: kinescope.io/<id>, kinescope.io/embed/<id>, kinescope.io/watch/<id>
+  if (h === 'kinescope.io' && (m = u.pathname.match(/^\/(?:embed\/|watch\/)?([A-Za-z0-9]{8,40})\/?$/)))
+    return 'https://kinescope.io/embed/' + m[1];
   if (h === 'vk.com' || h === 'vkvideo.ru' || h === 'vk.ru') {
     if ((m = (u.pathname + u.search).match(/video(-?\d+)_(\d+)/))) return `https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2`;
     if (u.pathname === '/video_ext.php') return u.toString();
@@ -298,7 +301,7 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       const title = str(req.title, 200, 'title').trim();
       if (!title) fail(400, 'Нужно название урока');
       const video = req.video ? str(req.video, 500, 'video').trim() : '';
-      if (video && !videoEmbed(video)) fail(400, 'Не понимаю ссылку на видео: нужна ссылка YouTube, Rutube или VK Видео');
+      if (video && !videoEmbed(video)) fail(400, 'Не понимаю ссылку на видео: нужна ссылка YouTube, Rutube, VK Видео или Kinescope');
       const test_name = req.test_name ? str(req.test_name, 300, 'test_name') : '';
       const files = fileList(req.files, 'lessons');
       const deadline = isoOrEmpty(req.deadline);

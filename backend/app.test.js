@@ -108,7 +108,7 @@ function fakeStore() {
 }
 const callS = (db, store, req) => handle(req, db, env, store);
 
-test('видео: YouTube, Rutube, VK', () => {
+test('видео: YouTube, Rutube, VK, Kinescope', () => {
   assert.equal(videoEmbed('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10'), 'https://www.youtube.com/embed/dQw4w9WgXcQ');
   assert.equal(videoEmbed('https://youtu.be/dQw4w9WgXcQ'), 'https://www.youtube.com/embed/dQw4w9WgXcQ');
   assert.equal(videoEmbed('https://youtube.com/live/abcDEF12345'), 'https://www.youtube.com/embed/abcDEF12345');
@@ -116,6 +116,10 @@ test('видео: YouTube, Rutube, VK', () => {
   assert.equal(videoEmbed('https://rutube.ru/video/private/0123456789abcdef0123456789abcdef/?p=KEY'), 'https://rutube.ru/play/embed/0123456789abcdef0123456789abcdef?p=KEY');
   assert.equal(videoEmbed('https://rutube.ru/live/video/0123456789abcdef0123456789abcdef/'), 'https://rutube.ru/play/embed/0123456789abcdef0123456789abcdef');
   assert.equal(videoEmbed('https://vkvideo.ru/video-12345_456239017'), 'https://vk.com/video_ext.php?oid=-12345&id=456239017&hd=2');
+  assert.equal(videoEmbed('https://kinescope.io/0cDWxSk1RNdwJVt4Pe8FWC'), 'https://kinescope.io/embed/0cDWxSk1RNdwJVt4Pe8FWC');
+  assert.equal(videoEmbed('https://kinescope.io/embed/0cDWxSk1RNdwJVt4Pe8FWC'), 'https://kinescope.io/embed/0cDWxSk1RNdwJVt4Pe8FWC');
+  assert.equal(videoEmbed('https://kinescope.io/0cDWxSk1RNdwJVt4Pe8FWC?t=30'), 'https://kinescope.io/embed/0cDWxSk1RNdwJVt4Pe8FWC');
+  assert.equal(videoEmbed('https://kinescope.io/dashboard/x/y'), null);
   assert.equal(videoEmbed('https://example.com/x'), null);
   assert.equal(videoEmbed('javascript:alert(1)'), null);
 });
