@@ -375,8 +375,7 @@ function home(){
     </details>`).join('');
   app.innerHTML=`
     <div class="home">
-      ${tests.length?sects:`<div class="empty">Пока нет тестов.<br>Добавь CSV-файл, чтобы начать.</div>`}
-      <button class="btn ghost" onclick="document.getElementById('file').click()">+ Добавить тесты (CSV)</button>
+      ${tests.length?sects:`<div class="empty">Пока нет тестов.</div>`}
     </div>`;
 }
 
