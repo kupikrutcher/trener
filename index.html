@@ -208,6 +208,58 @@ body{
 .uans{margin-top:12px;font-size:14px;line-height:1.65;color:var(--ink);white-space:pre-wrap;border-left:3px solid var(--accent);padding:4px 0 4px 14px}
 .uans.none{color:var(--muted);font-style:italic;border-left-color:var(--line-strong)}
 .uans-lab{margin-top:14px;font-size:12px;color:var(--muted);letter-spacing:.02em}
+/* ---- кабинеты ---- */
+.acct{border:1px solid var(--line-strong);background:none;color:var(--ink);font:600 12.5px/1 inherit;font-family:inherit;
+  padding:7px 12px;border-radius:99px;cursor:pointer;margin-left:auto;margin-right:14px;transition:border-color .2s,color .2s}
+.acct:hover{border-color:var(--accent);color:var(--accent)}
+.cab-h{font-weight:600;font-size:22px;letter-spacing:-.01em;margin:0}
+.cab-sub{color:var(--muted);font-size:13.5px;margin:6px 0 22px}
+.cab-h3{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin:26px 0 12px}
+.cab-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.cab-load{color:var(--muted);font-size:14px;padding:20px 0;text-align:center}
+.cab-err{color:var(--bad);font-size:13px;min-height:18px;margin:10px 0 4px}
+.tin{width:100%;font-size:16px;font-family:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line-strong);
+  border-radius:12px;padding:13px 14px;outline:none;transition:border-color .2s,box-shadow .2s}
+.tin:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.linkbtn{background:none;border:none;padding:0;color:var(--accent);font:600 13px/1.4 inherit;font-family:inherit;cursor:pointer}
+.linkbtn.danger{color:var(--bad)}
+.linkbtn.back{color:var(--muted)}
+.st-ok,.st-wait{flex:none;font-size:11px;border-radius:99px;padding:3px 9px;letter-spacing:.02em}
+.st-ok{color:var(--ok);background:var(--ok-soft)}
+.st-wait{color:var(--accent);background:var(--accent-soft)}
+.tabs{display:flex;gap:6px;margin:18px 0 18px;border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.cab .lab{display:block;font-size:12.5px;color:var(--muted);margin-bottom:8px;letter-spacing:.02em}
+.tab{background:none;border:none;border-bottom:2px solid transparent;padding:10px 12px;margin-bottom:-1px;color:var(--muted);
+  font:600 14px/1 inherit;font-family:inherit;cursor:pointer;white-space:nowrap}
+.tab.on{color:var(--ink);border-bottom-color:var(--accent)}
+.fbar{display:flex;gap:10px;align-items:baseline;font-size:13.5px;color:var(--muted);margin-bottom:12px}
+.fbar b{color:var(--ink)}
+.sumline{font-size:15px;margin:6px 0 10px}.sumline b{font-size:18px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.chips .qn{cursor:default;margin:0!important;display:inline-grid;place-items:center}
+.qfold{margin-top:4px}.qfold summary{cursor:pointer;color:var(--accent);font-size:13px;font-weight:600;margin-bottom:10px}
+.grade{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0 10px}
+.pts{display:flex;gap:6px;flex-wrap:wrap}.pts .qn{margin:0!important}
+.pmax{font-size:13px;color:var(--muted)}
+.essay.cm{min-height:70px;font-size:14.5px}
+.gres{margin-top:14px;font-size:14.5px}.gres b{font-size:17px;color:var(--ok)}
+.gres.wait{color:var(--accent);font-weight:600;font-size:13.5px}
+.uans.tc{border-left-color:var(--ok)}
+.sent{text-align:center;color:var(--ok);font-weight:600;font-size:14.5px;padding:14px;border:1px solid var(--ok);border-radius:13px;background:var(--ok-soft)}
+#sendbox{margin-top:16px}#sendbox:empty{display:none}
+.addst{padding-bottom:6px}
+.creds{margin-top:16px;border:1px solid var(--line-strong);border-radius:14px;padding:16px;background:var(--bg)}
+.creds-h{font-size:13.5px;font-weight:600;margin-bottom:10px}
+.crow{display:grid;grid-template-columns:1fr auto auto;gap:12px;font-size:13.5px;padding:7px 0;border-top:1px solid var(--line);align-items:center}
+.crow code{font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
+.stable{display:flex;flex-direction:column}
+.srow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.sname{display:flex;flex-direction:column;gap:3px;font-size:14.5px;min-width:0}
+.sname span{font-size:12.5px;color:var(--muted)}
+.sact{display:flex;gap:14px}
+@media(max-width:420px){.crow{grid-template-columns:1fr;gap:4px}}
+@media(max-width:480px){.mark span{display:none}.acct{margin-right:10px}.themes{gap:7px}}
 .foot{text-align:center;color:var(--muted);font-size:11px;margin-top:24px;opacity:.6;letter-spacing:.03em}
 input[type=file]{display:none}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(150%);
@@ -223,6 +275,7 @@ input[type=file]{display:none}
 <div class="wrap">
   <div class="topbar">
     <div class="mark" onclick="home()"><b>Тренажёр</b><span>обществознание</span></div>
+    <button class="acct" id="acct" style="display:none"></button>
     <div class="themes" id="themes">
       <button class="sw t-paper"  data-t="paper"  aria-label="Бумага"></button>
       <button class="sw t-night"  data-t="night"  aria-label="Ночь"></button>
@@ -603,8 +656,10 @@ function finish(){
       <button class="btn" onclick="openTest2()">Решать заново</button>
       <button class="btn ghost" onclick="home()">К тестам</button>
     </div>
+    <div id="sendbox"></div>
     <button class="linkfin" onclick="finishEarly()">Показать все задания с ответами</button>`;
   if(total) animChart(correct,wrong,total);
+  if(window.renderSendBox) renderSendBox();
 }
 /* restart current base test from scratch */
 function openTest2(){ bank = tests.find(t=>t.name===curBase)?tests.find(t=>t.name===curBase).questions:bank; curName=curBase; begin(); }
@@ -634,9 +689,11 @@ function finishEarly(){
       <button class="btn" onclick="openTest2()">Решать заново</button>
       <button class="btn ghost" onclick="home()">К тестам</button>
     </div>
+    <div id="sendbox"></div>
     <div class="review"><h3>Все задания с ответами</h3></div>
     ${items}`;
   if(total) animChart(correct,wrong,total);
+  if(window.renderSendBox) renderSendBox();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function p2Item(q){
@@ -712,5 +769,7 @@ function parseParts(rows,h){
 loadTests();
 home();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="cabinet.js"></script>
 </body>
 </html>
