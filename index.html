@@ -420,7 +420,7 @@ body{background:
 <body>
 <div class="wrap">
   <div class="topbar">
-    <div class="mark" onclick="home()"><b>ЕГЭ с Машей Вайб</b></div>
+    <div class="mark" onclick="goLessons()"><b>ЕГЭ с Машей Вайб</b></div>
     <button class="acct" id="acct" style="display:none"></button>
     <div class="themes" id="themes">
       <button class="sw t-paper"  data-t="paper"  aria-label="Бумага"></button>
@@ -593,6 +593,8 @@ function home(){
 }
 /* куда ведёт «ДЗ»: ученику — уроки (тесты открываются из урока), учителю — все тесты (cabinet.js решает) */
 function goHW(){ return window.cabGoHW ? cabGoHW() : hwList(); }
+/* название в шапке ведёт к урокам курса; главная с фото — только при входе на сайт */
+function goLessons(){ return window.cabGoLessons ? cabGoLessons() : hwList(); }
 /* «Перейти в курс» на главной: ученику — уроки, учителю — курс с вкладкой «Проверка» */
 function goCourse(){ return window.cabGoCourse ? cabGoCourse() : hwList(); }
 /* список ДЗ по разделам — только для учителя (и когда сервер не подключён) */
@@ -605,8 +607,7 @@ function hwList(){
   app.className='panel fade';
   app.innerHTML=`
     <div class="home">
-      <button class="linkbtn back" onclick="home()">← На главную</button>
-      <h2 class="cab-h" style="margin:10px 0 18px">Домашние задания</h2>
+      <h2 class="cab-h" style="margin:0 0 18px">Домашние задания</h2>
       ${testsListHTML()}
     </div>`;
 }

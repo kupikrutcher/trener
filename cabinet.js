@@ -107,12 +107,11 @@ function cabLogin(then){
       <input id="pw" class="tin" type="password" autocomplete="current-password">
       <div class="cab-err" id="lerr"></div>
       <button class="btn" id="lbtn" onclick="doLogin()">Войти</button>
-      <button class="linkfin" onclick="${afterLogin?'afterLoginBack()':'home()'}">Назад</button>
+      <button class="linkfin" onclick="afterLogin=null;home()">Назад</button>
     </div>`);
   const lg=$('#lg'), pw=$('#pw'); lg.focus();
   [lg,pw].forEach(i=>i.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); doLogin(); } }));
 }
-function afterLoginBack(){ const f=afterLogin; afterLogin=null; f?f():home(); }
 async function doLogin(){
   const login=$('#lg').value.trim().toLowerCase(), pass=$('#pw').value, btn=$('#lbtn');
   if(!login||!pass){ $('#lerr').textContent='Введи логин и пароль'; return; }
@@ -470,8 +469,7 @@ function checkShow(mode){ checkMode=mode; if(mode==='todo') filterStudent=null; 
 async function cabTeacher(tab){
   if(tab==='todo'||tab==='all'){ checkMode=tab; tab='check'; }
   teacherTab=['check','lessons','tests'].includes(tab)?tab:'check';
-  cabShow(`<div class="cab"><div class="cab-top"><h2 class="cab-h">Курс</h2>
-    <button class="linkbtn back" onclick="home()">← На главную</button></div>
+  cabShow(`<div class="cab"><h2 class="cab-h">Курс</h2>
     ${tabsHTML()}<div id="tbody" class="cab-load">Загружаем…</div></div>`);
   if(teacherTab==='lessons') return teacherLessons();
   if(teacherTab==='tests'){ const b=$('#tbody'); b.className=''; b.innerHTML=testsListHTML(); return; }
@@ -593,6 +591,12 @@ function cabGoCourse(){
   if(!me) return cabLogin(()=>cabGoCourse());
   return me.role==='teacher' ? cabTeacher('check') : lessonsList();
 }
+/* название в шапке: к урокам курса; гостю — входная страница */
+function cabGoLessons(){
+  if(!CAB) return hwList();
+  if(!me) return home();
+  return me.role==='teacher' ? cabTeacher('lessons') : lessonsList();
+}
 /* список ДЗ у учителя с сервером живёт во вкладке «Готовые ДЗ» */
 function cabTeacherTests(){ if(CAB&&me&&me.role==='teacher'){ cabTeacher('tests'); return true; } return false; }
 function fmtDay(s){ return new Date(s).toLocaleDateString('ru-RU',{day:'numeric',month:'long'}); }
@@ -622,8 +626,7 @@ const videoFrame = src => `<div class="vwrap"><iframe src="${esc(src)}" allow="a
 let curLesson=null;
 async function lessonsList(){
   cabShow(`<div class="cab">
-    <button class="linkbtn back" onclick="home()">← На главную</button>
-    <h2 class="cab-h" style="margin:10px 0 18px">Уроки</h2>
+    <h2 class="cab-h" style="margin:0 0 18px">Уроки</h2>
     <div id="llist" class="cab-load">Загружаем уроки…</div></div>`);
   let lessons;
   try{ lessons=(await api('lessons_list')).lessons; }
