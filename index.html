@@ -66,6 +66,20 @@ body{
 .track>i{display:block;height:100%;width:0;background:var(--accent);transition:width .55s cubic-bezier(.22,1,.36,1)}
 .meta{display:flex;justify-content:space-between;margin-top:12px;font-size:12.5px;color:var(--muted);letter-spacing:.02em}
 .meta b{color:var(--ink);font-weight:600}
+.qnav{display:flex;gap:6px;overflow-x:auto;margin-top:16px;padding:3px 2px 8px;scrollbar-width:thin;scroll-behavior:smooth;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%);
+  mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%)}
+.qnav::-webkit-scrollbar{height:4px}.qnav::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:99px}
+.qn{flex:none;min-width:34px;height:34px;padding:0 6px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);
+  color:var(--muted);font:600 13px/1 inherit;font-family:inherit;cursor:pointer;transition:background .2s,border-color .2s,color .2s,box-shadow .2s}
+.qn:first-child{margin-left:10px}.qn:last-child{margin-right:10px}
+.qn:hover{border-color:var(--accent);color:var(--accent)}
+.qn.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.qn.bad{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.qn.done{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.qn.cur{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent);color:var(--ink)}
+.qn.ok.cur,.qn.bad.cur,.qn.done.cur{color:inherit}
+.qsep{flex:none;align-self:center;font-size:11px;color:var(--muted);letter-spacing:.04em;padding:0 4px 0 8px;white-space:nowrap}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:34px 30px;flex:none}
 .fade{animation:fade .5s cubic-bezier(.22,1,.36,1)}
 @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -220,6 +234,7 @@ input[type=file]{display:none}
   <div class="bars" id="bars" style="display:none">
     <div class="track"><i id="pbar"></i></div>
     <div class="meta"><span><b id="cur">1</b> / <b id="tot">50</b></span><span>верно <b id="scr">0</b></span></div>
+    <div class="qnav" id="qnav"></div>
   </div>
 
   <div id="app" class="panel"></div>
@@ -235,6 +250,9 @@ let tests=[];
 let bank=[], curId="", curName="", curBase="", idx=0, score=0, answered=false, results=[], lastWrong=[];
 const $=s=>document.querySelector(s);
 const app=$('#app');
+
+$('#qnav').addEventListener('wheel',e=>{const n=e.currentTarget;
+  if(Math.abs(e.deltaY)>Math.abs(e.deltaX)&&n.scrollWidth>n.clientWidth){n.scrollLeft+=e.deltaY;e.preventDefault()}},{passive:false});
 
 /* ---- theme ---- */
 const THEMES=['paper','night','sepia','forest'];
@@ -403,8 +421,30 @@ function bars(){
   $('#tot').textContent=bank.length;
   $('#cur').textContent=Math.min(idx+1,bank.length);
   $('#scr').textContent=score;
-  $('#pbar').style.width=(idx/bank.length*100)+'%';
+  $('#pbar').style.width=(results.filter(Boolean).length/bank.length*100)+'%';
+  qnav();
 }
+/* список заданий сверху: отвеченные подсвечены, по клику — переход */
+function qnav(){
+  const nav=$('#qnav'); let sep=false;
+  nav.innerHTML=bank.map((q,i)=>{
+    const r=results[i], c=['qn'];
+    if(r) c.push(r.p2?'done':(r.ok?'ok':'bad'));
+    if(i===idx) c.push('cur');
+    let pre='';
+    if(isP2(q)&&!sep&&i>0){sep=true;pre='<span class="qsep">Часть 2</span>';}
+    const lab=isP2(q)&&q.n?q.n:(i+1);
+    return pre+`<button class="${c.join(' ')}" onclick="go(${i})" title="${isP2(q)?'Задание '+esc(q.n||'')+' · часть 2':'Задание '+(i+1)}">${esc(String(lab))}</button>`;
+  }).join('');
+  const cur=nav.children.length&&nav.querySelector('.cur');
+  if(cur){const l=cur.offsetLeft-nav.offsetLeft-nav.clientWidth/2+cur.offsetWidth/2;nav.scrollTo({left:Math.max(0,l),behavior:nav.dataset.ready?'smooth':'auto'});nav.dataset.ready=1}
+}
+function go(i){if(i<0||i>=bank.length)return;idx=i;render();window.scrollTo({top:0,behavior:'smooth'})}
+function nextOpen(){
+  for(let k=1;k<=bank.length;k++){const i=(idx+k)%bank.length;if(!results[i])return i}
+  return -1;
+}
+function nextLabel(){return nextOpen()>=0?'Дальше':'Результат'}
 
 function render(){
   if(idx>=bank.length) return finish();
@@ -427,8 +467,10 @@ function render(){
       <button class="linkfin" onclick="finishEarly()">Завершить тест</button>
     </div>
     <div class="verdict" id="verdict"></div>`;
-  const inp=$('#inp'); inp.focus();
+  const inp=$('#inp');
   inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();answered?next():check()}});
+  if(results[idx]){answered=true;inp.value=results[idx].user;showP1(results[idx],false)}
+  else inp.focus();
 }
 
 function check(){
@@ -438,10 +480,14 @@ function check(){
   answered=true;
   const ok=user===norm(q.answer);
   if(ok) score++;
-  results.push({q,n:q.n,user,answer:norm(q.answer),ok});
+  results[idx]={q,n:q.n,user,answer:norm(q.answer),ok};
+  bars();
+  showP1(results[idx],true);
+}
+function showP1(r,scroll){
+  const q=r.q, ok=r.ok, inp=$('#inp');
   inp.classList.add(ok?'good':'wrong'); inp.readOnly=true;
-  $('#scr').textContent=score;
-  $('#check').outerHTML=`<button class="btn" onclick="next()">${idx+1<bank.length?'Дальше':'Результат'}</button>`;
+  $('#check').outerHTML=`<button class="btn" onclick="next()">${nextLabel()}</button>`;
   const v=$('#verdict');
   v.className='verdict show '+(ok?'ok':'bad');
   v.innerHTML=`
@@ -449,7 +495,7 @@ function check(){
     ${ok?'':`<div class="cline">Правильный ответ:<b>${esc(q.answer)}</b></div>`}
     ${q.explanation?`<button class="etog" onclick="tog(this)">Скрыть разбор</button>
       <div class="expl open"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div>`:''}`;
-  setTimeout(()=>{if(v.scrollIntoView)v.scrollIntoView({behavior:'smooth',block:'nearest'})},120);
+  if(scroll) setTimeout(()=>{if(v.scrollIntoView)v.scrollIntoView({behavior:'smooth',block:'nearest'})},120);
 }
 function renderP2(q){
   app.innerHTML=`
@@ -470,7 +516,8 @@ function renderP2(q){
   let t=null;
   ta.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(()=>{setAns(q,ta.value.trim());$('#saved').textContent='Черновик сохранён'},500)});
   ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();answered?next():saveP2()}});
-  ta.focus();
+  if(results[idx]){answered=true;ta.value=results[idx].user;showP2(q)}
+  else ta.focus();
 }
 function saveP2(){
   if(answered) return;
@@ -478,10 +525,14 @@ function saveP2(){
   if(!v){ta.classList.add('wrong');setTimeout(()=>ta.classList.remove('wrong'),360);toast('Напиши ответ');return}
   answered=true;
   setAns(q,v);
-  results.push({q,n:q.n,user:v,p2:true});
-  ta.readOnly=true;
+  results[idx]={q,n:q.n,user:v,p2:true};
+  bars();
+  showP2(q);
+}
+function showP2(q){
+  $('#essay').readOnly=true;
   $('#saved').textContent='Ответ сохранён';
-  $('#check').outerHTML=`<button class="btn" onclick="next()">${idx+1<bank.length?'Дальше':'Результат'}</button>`;
+  $('#check').outerHTML=`<button class="btn" onclick="next()">${nextLabel()}</button>`;
   const v2=$('#verdict');
   v2.className='verdict show';
   v2.innerHTML=`<div class="cline">Развёрнутые ответы не проверяются автоматически — сверь с критериями или покажи преподавателю.</div>
@@ -491,7 +542,7 @@ function saveP2(){
 }
 function tog(b){const e=b.nextElementSibling;e.classList.toggle('open');
   b.textContent=e.classList.contains('open')?'Скрыть разбор':'Показать разбор'}
-function next(){idx++;render()}
+function next(){const i=nextOpen();if(i<0){idx=bank.length;return finish()}go(i)}
 
 /* ---- result chart (correct vs wrong + работа над ошибками) ---- */
 function resultChart(correct,wrong,total){
@@ -537,7 +588,7 @@ function grade(p){
 
 /* full completion */
 function finish(){
-  $('#pbar').style.width='100%'; $('#cur').textContent=bank.length;
+  idx=bank.length; bars(); $('#cur').textContent=bank.length;
   const total=countP1(bank), correct=score, wrong=results.filter(r=>!r.p2&&!r.ok).length;
   lastWrong=results.filter(r=>!r.p2&&!r.ok).map(r=>r.q);
   const p2n=bank.length-total, p2done=results.filter(r=>r.p2).length;
