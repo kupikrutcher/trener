@@ -1,0 +1,76 @@
+/* Маша Вайб — design tokens.
+   Источник правды: design/tokens.json. Этот файл — то же самое в CSS.
+   Внизу — алиасы на старые имена (--bg, --accent, --muted…), чтобы этап 1
+   был заменой одного блока :root без правки остального CSS. */
+
+@import url("https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap");
+
+:root,
+[data-theme="paper"] {
+  /* поверхности */
+  --paper: #f4f5f1;         /* фон страницы */
+  --surface: #ffffff;       /* панели, карточки */
+  --surface-sunk: #eceee8;  /* пустые клетки, поля, треки */
+  --line: #daddd5;          /* декоративные разделители */
+  --line-strong: #8e9488;   /* рамки полей и клеток, ≥3:1 */
+  /* текст */
+  --ink: #141827;
+  --ink-muted: #596070;
+  /* действие */
+  --cobalt: #2f45e0;
+  --on-cobalt: #ffffff;
+  --cobalt-soft: #e6e9fd;
+  /* фирменный маркер: только заливка */
+  --marker: #ffd93d;
+  --on-marker: #141827;
+  /* состояния: всегда вместе со словом или ✓/✕ */
+  --ok: #16703f;
+  --ok-soft: #ddf1e5;
+  --bad: #b3361a;
+  --bad-soft: #fbe3db;
+  --focus-ring: var(--cobalt);
+  --shadow-lift: 0 1px 0 rgba(20,24,39,.05), 0 12px 32px -16px rgba(20,24,39,.22);
+
+  /* шрифты */
+  --font-display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --font-sans: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* отступы */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-6: 24px; --space-8: 32px; --space-12: 48px;
+
+  /* радиусы */
+  --radius-cell: 6px;   /* клетки ответа, чипы, статусы */
+  --radius-md: 12px;    /* кнопки, поля, карточки */
+  --radius-lg: 20px;    /* панель вопроса */
+  --radius-pill: 999px; /* только маркер-плашки и аватар */
+}
+
+[data-theme="night"] {
+  --paper: #0e1120;
+  --surface: #171b2e;
+  --surface-sunk: #111427;
+  --line: #262b42;
+  --line-strong: #6a7190;
+  --ink: #eef0f7;
+  --ink-muted: #9ca2b8;
+  --cobalt: #93a3ff;
+  --on-cobalt: #0e1120;
+  --cobalt-soft: #1e2448;
+  --ok: #5fd39a;
+  --ok-soft: #173226;
+  --bad: #ff8f70;
+  --bad-soft: #3a1d16;
+  --shadow-lift: 0 1px 0 rgba(0,0,0,.4), 0 12px 32px -16px rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+
+/* ---- Алиасы на старые имена из index.html (этап 1). Удалить на этапе 2+ ---- */
+:root, [data-theme] {
+  --bg: var(--paper);
+  --muted: var(--ink-muted);
+  --accent: var(--cobalt);
+  --accent-soft: var(--cobalt-soft);
+  --r: var(--radius-lg);
+}

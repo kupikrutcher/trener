@@ -1,0 +1,77 @@
+/* Маша Вайб — component styles. Load after tokens.css and the Google Fonts link
+   (Unbounded 600;700, Onest 400;500;600, JetBrains Mono 500;600). */
+body { margin: 0; font-family: var(--font-sans); background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
+.mv-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; padding: var(--space-4); }
+.mv-col { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); }
+:where(.mv-btn, .mv-chip, .mv-tab, .mv-cell):focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+/* Button */
+.mv-btn { font: 600 15px/1 var(--font-sans); display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  height: 52px; padding: 0 var(--space-6); border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer;
+  background: var(--cobalt); color: var(--on-cobalt); transition: transform .12s ease, filter .2s ease; }
+.mv-btn:hover { filter: brightness(1.07); }
+.mv-btn:active { transform: translateY(1px); }
+.mv-btn--ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.mv-btn--ghost:hover { filter: none; background: var(--cobalt-soft); border-color: var(--cobalt); }
+.mv-btn--quiet { background: none; color: var(--cobalt); height: auto; padding: 0; }
+.mv-btn[disabled] { opacity: .45; cursor: default; filter: none; }
+
+/* AnswerCells — клетки бланка */
+.mv-cells { display: flex; gap: var(--space-2); }
+.mv-cell { width: 44px; height: 56px; display: grid; place-items: center; border-radius: var(--radius-cell);
+  font: 600 24px/32px var(--font-mono); color: var(--ink); background: var(--surface-sunk); border: 1.5px solid var(--line-strong); }
+.mv-cell.is-filled { background: var(--surface); }
+.mv-cell.is-active { border-color: var(--cobalt); box-shadow: 0 0 0 3px var(--cobalt-soft); }
+.mv-cells.is-ok .mv-cell { border-color: var(--ok); background: var(--ok-soft); color: var(--ok); }
+.mv-cells.is-bad .mv-cell { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
+
+/* QuestionChip */
+.mv-chip { min-width: 34px; height: 34px; padding: 0 6px; border-radius: var(--radius-cell); border: 1px solid var(--line-strong);
+  background: var(--surface); color: var(--ink-muted); font: 600 13px/1 var(--font-sans); font-variant-numeric: tabular-nums; cursor: pointer; }
+.mv-chip.is-done { background: var(--cobalt-soft); border-color: var(--cobalt); color: var(--cobalt); }
+.mv-chip.is-ok { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.mv-chip.is-bad { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.mv-chip.is-current { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--cobalt); color: var(--ink); }
+
+/* Verdict */
+.mv-verdict { display: grid; gap: var(--space-2); padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid; }
+.mv-verdict.is-ok { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.mv-verdict.is-bad { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.mv-verdict__head { display: flex; align-items: center; gap: var(--space-2); font-weight: 600; font-size: 15px; }
+.mv-verdict__line { color: var(--ink); font-size: 14px; }
+.mv-verdict__line b { font: 600 17px/1 var(--font-mono); letter-spacing: .08em; margin-left: var(--space-1); }
+
+/* StatTile */
+.mv-stat { padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface); border: 1px solid var(--line); min-width: 140px; }
+.mv-stat b { display: block; font: 700 28px/32px var(--font-display); letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.mv-stat span { display: block; font-size: 12.5px; color: var(--ink-muted); margin-top: var(--space-1); }
+.mv-stat .mv-delta { color: var(--ok); font-weight: 600; }
+.mv-stat .mv-delta.is-down { color: var(--bad); }
+
+/* TopicMeter — освоение раздела кодификатора */
+.mv-meter { display: grid; grid-template-columns: 1fr auto; gap: 6px var(--space-3); align-items: baseline; }
+.mv-meter__name { font-size: 14px; font-weight: 500; }
+.mv-meter__val { font: 600 13px/1 var(--font-mono); color: var(--ink-muted); }
+.mv-meter__track { grid-column: 1 / -1; height: 8px; border-radius: var(--radius-cell); background: var(--surface-sunk); overflow: hidden; }
+.mv-meter__track i { display: block; height: 100%; background: var(--cobalt); border-radius: inherit; }
+.mv-meter.is-weak .mv-meter__track i { background: var(--bad); }
+.mv-meter.is-weak .mv-meter__val { color: var(--bad); }
+
+/* Streak — маркер-плашка */
+.mv-streak { display: inline-flex; align-items: center; gap: var(--space-2); height: 32px; padding: 0 14px; border-radius: var(--radius-pill);
+  background: var(--marker); color: var(--on-marker); font: 600 13px/1 var(--font-sans); }
+.mv-streak b { font: 700 15px/1 var(--font-display); }
+.mv-hl { background: linear-gradient(transparent 55%, var(--marker) 55%, var(--marker) 92%, transparent 92%); color: var(--ink); }
+
+/* StatusBadge */
+.mv-status { display: inline-block; font-size: 11.5px; font-weight: 600; line-height: 22px; padding: 0 9px; border-radius: var(--radius-cell); }
+.mv-status--wait { background: var(--cobalt-soft); color: var(--cobalt); }
+.mv-status--ok { background: var(--ok-soft); color: var(--ok); }
+.mv-status--draft { background: var(--surface-sunk); color: var(--ink-muted); }
+.mv-status--risk { background: var(--bad-soft); color: var(--bad); }
+
+/* Tabs */
+.mv-tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--line); overflow-x: auto; }
+.mv-tab { background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 10px 12px; font: 600 14px/1 var(--font-sans); color: var(--ink-muted); cursor: pointer; white-space: nowrap; }
+.mv-tab.is-on { color: var(--ink); border-bottom-color: var(--cobalt); }
+.mv-tab .mv-count { font: 600 11px/18px var(--font-mono); background: var(--cobalt); color: var(--on-cobalt); border-radius: var(--radius-cell); padding: 0 5px; margin-left: 6px; }

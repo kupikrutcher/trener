@@ -50,8 +50,8 @@ async function loadMe(){
   paintAcct();
 }
 /* серая фигурка по плечи — если своей картинки нет */
-const AVA_DEFAULT=`<svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" fill="#d5d5da"/>
-  <circle cx="20" cy="15.5" r="7.2" fill="#9d9da6"/><path d="M5 40c0-8.6 6.7-14.5 15-14.5S35 31.4 35 40z" fill="#9d9da6"/></svg>`;
+const AVA_DEFAULT=`<svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" style="fill:var(--surface-sunk)"/>
+  <circle cx="20" cy="15.5" r="7.2" style="fill:var(--line-strong)"/><path d="M5 40c0-8.6 6.7-14.5 15-14.5S35 31.4 35 40z" style="fill:var(--line-strong)"/></svg>`;
 function avaInner(u){ return u&&u.avatar ? `<img src="${u.avatar.replace(/"/g,'')}" alt="">` : AVA_DEFAULT; }
 function paintAcct(){
   const b=cabEl(); if(!b) return;
@@ -208,13 +208,15 @@ function renderSendBox(){
   const t=findTest(curBase);
   if(!CAB || review || !t || bank!==t.questions || (me&&me.role==='teacher')){ box.innerHTML=''; return; }
   if(sentFor===results){ box.innerHTML=`<div class="sent">✓ Работа отправлена учителю</div>`; return; }
+  // одна главная кнопка на экран: если есть «Исправить N ошибок», отправка — второстепенная
+  const kind=document.getElementById('fixbtn')?'btn ghost':'btn';
   if(!me){
     box.innerHTML=`<button class="btn ghost" onclick="cabLogin(()=>finishEarly())">Войти, чтобы отправить работу учителю</button>`;
     return;
   }
   const left=bank.filter((q,i)=>!results[i]).length;
   box.innerHTML=`
-    <button class="btn" id="sendbtn" onclick="sendWork()">Отправить работу учителю</button>
+    <button class="${kind}" id="sendbtn" onclick="sendWork()">Отправить работу учителю</button>
     ${left?`<div class="resnote">Без ответа: ${left} из ${bank.length}. Их тоже можно отправить пустыми.</div>`:''}`;
 }
 async function sendWork(){
@@ -229,6 +231,20 @@ async function sendWork(){
   catch(e){ busy(btn,false,'Отправить работу учителю'); toast('Не отправилось: '+e.message); return; }
   sentFor=results; submitted.add(curBase); toast('Работа отправлена — ответы и пояснения открыты');
   finishEarly();
+}
+
+/* изменение к прошлой попытке этого же ДЗ (по первой части) — на экране результата */
+async function resultDelta(){
+  const el=document.getElementById('rsdelta'); if(!el||!CAB||!me||me.role==='teacher') return;
+  const t=findTest(curBase); if(!t||bank!==t.questions||review) return;
+  const total=countP1(bank); if(!total) return;
+  let subs=[]; try{ subs=(await api('my_subs')).subs; }catch(e){ return; }
+  subs=subs.filter(s=>s.test_name===curBase&&s.p1_total).sort((a,b)=>b.created_at.localeCompare(a.created_at));
+  if(sentFor===results) subs=subs.slice(1);            // последняя — это только что отправленная
+  const prev=subs[0]; if(!prev||!document.getElementById('rsdelta')) return;
+  const now=Math.round(score/total*100), was=Math.round(prev.p1_score/prev.p1_total*100), d=now-was;
+  el.innerHTML = d===0 ? 'Как в прошлый раз' :
+    `<b class="${d>0?'up':'down'}">${d>0?'+':'−'}${Math.abs(d)}%</b> к прошлой попытке`;
 }
 
 /* ---------- кабинет ученика ---------- */

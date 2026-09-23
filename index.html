@@ -3,44 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#ffffff">
-<title>Маша Вайб</title>
+<meta name="theme-color" content="#f4f5f1">
+<title>ЕГЭ с Машей Вайб</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="design/tokens.css">
 <style>
-/* ===== Quiet Precision ===== */
-:root{
-  --bg:#faf9f6; --surface:#ffffff; --ink:#1b1b1f; --muted:#8a8a94;
-  --line:#e9e7e1; --line-strong:#dcdad2;
-  --accent:#4f46e5; --accent-soft:rgba(79,70,229,.08);
-  --ok:#3f9d5a; --ok-soft:rgba(63,157,90,.10);
-  --bad:#c4593f; --bad-soft:rgba(196,89,63,.10);
-  --r:18px;
-}
-[data-theme="night"]{
-  --bg:#0e0e12; --surface:#16161c; --ink:#ececf1; --muted:#7d7d8a;
-  --line:#23232c; --line-strong:#2e2e3a;
-  --accent:#9aa2ff; --accent-soft:rgba(154,162,255,.12);
-  --ok:#6cc88a; --ok-soft:rgba(108,200,138,.14);
-  --bad:#e08a72; --bad-soft:rgba(224,138,114,.14);
-  color-scheme:dark;
-}
-[data-theme="sepia"]{
-  --bg:#f3ead7; --surface:#fbf5e9; --ink:#3f3322; --muted:#9c8a6e;
-  --line:#e4d7bd; --line-strong:#d8c8a8;
-  --accent:#b06a16; --accent-soft:rgba(176,106,22,.10);
-  --ok:#5b8a3a; --ok-soft:rgba(91,138,58,.12);
-  --bad:#b4502f; --bad-soft:rgba(180,80,47,.10);
-}
-[data-theme="forest"]{
-  --bg:#eef2ee; --surface:#fbfdfb; --ink:#16241c; --muted:#6b7d72;
-  --line:#d9e2da; --line-strong:#c6d3c8;
-  --accent:#1f7a47; --accent-soft:rgba(31,122,71,.09);
-  --ok:#1f7a47; --ok-soft:rgba(31,122,71,.12);
-  --bad:#b4502f; --bad-soft:rgba(180,80,47,.10);
-}
+/* цвета, шрифты, отступы и радиусы — design/tokens.css */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-family:var(--font-sans);
   background:var(--bg); color:var(--ink);
   min-height:100vh;min-height:100dvh;
   -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
@@ -53,14 +26,13 @@ body{
 }
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 0 26px}
 .mark{display:flex;align-items:baseline;gap:10px;cursor:pointer}
-.mark b{font-weight:700;font-size:16px;letter-spacing:.01em}
+.mark b{font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:-.01em}
 .mark span{font-size:12px;color:var(--muted);font-weight:400}
 .themes{display:flex;gap:9px}
 .sw{width:18px;height:18px;border-radius:50%;cursor:pointer;border:1.5px solid var(--line-strong);padding:0;transition:transform .15s ease}
 .sw:active{transform:scale(.9)}
 .sw[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.sw.t-paper{background:#faf9f6} .sw.t-night{background:#16161c}
-.sw.t-sepia{background:#e9d8b4} .sw.t-forest{background:#cfe0d3}
+.sw.t-paper{background:#f4f5f1} .sw.t-night{background:#171b2e}
 .bars{margin-bottom:30px}
 .track{height:3px;border-radius:99px;background:var(--line);overflow:hidden}
 .track>i{display:block;height:100%;width:0;background:var(--accent);transition:width .55s cubic-bezier(.22,1,.36,1)}
@@ -70,7 +42,7 @@ body{
   -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%);
   mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%)}
 .qnav::-webkit-scrollbar{height:4px}.qnav::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:99px}
-.qn{flex:none;min-width:34px;height:34px;padding:0 6px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);
+.qn{flex:none;min-width:34px;height:34px;padding:0 6px;border-radius:var(--radius-cell);border:1px solid var(--line-strong);background:var(--surface);
   color:var(--muted);font:600 13px/1 inherit;font-family:inherit;cursor:pointer;transition:background .2s,border-color .2s,color .2s,box-shadow .2s}
 .qn:first-child{margin-left:12px}.qn:last-child{margin-right:12px}
 .qn:hover{border-color:var(--accent);color:var(--accent)}
@@ -84,11 +56,11 @@ body{
 .fade{animation:fade .5s cubic-bezier(.22,1,.36,1)}
 @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 /* ---- home / library ---- */
-.home h1{font-weight:600;font-size:clamp(26px,6vw,32px);letter-spacing:-.02em;margin:2px 0 8px}
+.home h1{font-family:var(--font-display);font-weight:600;font-size:clamp(26px,6vw,32px);letter-spacing:-.02em;margin:2px 0 8px}
 .home .sub{color:var(--muted);font-size:14.5px;line-height:1.6;margin:0 0 26px}
 .tlist{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
 .tcard{display:flex;align-items:center;gap:14px;padding:18px 18px;border:1px solid var(--line);
-  border-radius:14px;cursor:pointer;background:var(--bg);transition:border-color .2s,background .2s,transform .12s}
+  border-radius:var(--radius-md);cursor:pointer;background:var(--bg);transition:border-color .2s,background .2s,transform .12s}
 .tcard:hover{border-color:var(--accent);background:var(--accent-soft)}
 .tcard:active{transform:translateY(1px)}
 .tinfo{flex:1;min-width:0}
@@ -98,22 +70,22 @@ body{
 .sect>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:16px 2px;cursor:pointer;user-select:none}
 .sect>summary::-webkit-details-marker{display:none}
 .sect>summary .st{font-weight:600;font-size:16px;letter-spacing:-.005em}
-.sect>summary .sc{font-size:12px;color:var(--muted);border:1px solid var(--line-strong);border-radius:99px;padding:1px 8px}
+.sect>summary .sc{font-size:12px;color:var(--muted);border:1px solid var(--line-strong);border-radius:var(--radius-cell);font-variant-numeric:tabular-nums;padding:1px 8px}
 .sect>summary .sa{margin-left:auto;color:var(--muted);font-size:13px;transition:transform .25s ease}
 .sect[open]>summary .sa{transform:rotate(90deg)}
 .sect>summary:hover .st{color:var(--accent)}
 .sect .tlist{margin-bottom:18px}
 .tmeta{font-size:12.5px;color:var(--muted);margin-top:3px;letter-spacing:.02em}
-.tbadge{font-size:10.5px;color:var(--muted);border:1px solid var(--line-strong);border-radius:99px;padding:2px 8px;margin-left:8px;letter-spacing:.03em;vertical-align:middle}
+.tbadge{font-size:10.5px;color:var(--muted);border:1px solid var(--line-strong);border-radius:var(--radius-cell);padding:2px 8px;margin-left:8px;letter-spacing:.03em;vertical-align:middle}
 .trm{flex:none;width:28px;height:28px;border-radius:8px;border:none;background:none;color:var(--muted);font-size:15px;cursor:pointer;transition:color .2s,background .2s;line-height:1}
 .trm:hover{color:var(--bad);background:var(--bad-soft)}
 .tgo{flex:none;color:var(--muted);font-size:18px}
 .tcard:hover .tgo{color:var(--accent)}
-.empty{text-align:center;color:var(--muted);font-size:13.5px;line-height:1.7;padding:28px 12px;border:1px dashed var(--line-strong);border-radius:14px;margin-bottom:22px}
+.empty{text-align:center;color:var(--muted);font-size:13.5px;line-height:1.7;padding:28px 12px;border:1px dashed var(--line-strong);border-radius:var(--radius-md);margin-bottom:22px}
 /* ---- buttons ---- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
   border:none;cursor:pointer;font-size:15px;font-weight:600;letter-spacing:.01em;
-  padding:16px 20px;border-radius:13px;color:#fff;background:var(--accent);
+  padding:16px 20px;border-radius:var(--radius-md);color:var(--on-cobalt);background:var(--accent);min-height:52px;
   transition:transform .12s ease,opacity .2s ease,filter .2s ease;font-family:inherit}
 .btn:active{transform:translateY(1px)}
 .btn:hover{filter:brightness(1.06)}
@@ -125,28 +97,43 @@ body{
 /* ---- question ---- */
 .qhead{display:flex;align-items:center;gap:12px;margin-bottom:22px}
 .qnum{font-weight:600;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
-.qtype{font-size:11px;color:var(--muted);border:1px solid var(--line-strong);padding:3px 10px;border-radius:99px;letter-spacing:.02em}
-.qtext{font-size:16px;line-height:1.65;color:var(--ink)}
+.qtype{font-size:11px;color:var(--muted);border:1px solid var(--line-strong);padding:3px 10px;border-radius:var(--radius-cell);letter-spacing:.02em}
+.qtext{font-size:16px;line-height:26px;max-width:64ch;color:var(--ink)}
 .qtext .lead{display:block}
 .qtext .opt{display:block;margin-top:11px;padding-left:24px;text-indent:-24px}
 .qtext .hdr{display:block;margin-top:20px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .qtext .ins{display:block;margin-top:16px;font-size:13.5px;color:var(--muted);font-style:italic}
 .az{margin-top:30px}
 .az .lab{display:block;font-size:12.5px;color:var(--muted);margin-bottom:11px;letter-spacing:.02em}
-.field{width:100%;font-size:21px;font-weight:600;letter-spacing:.1em;text-align:center;font-family:inherit;
-  color:var(--ink);background:var(--bg);border:1px solid var(--line-strong);border-radius:13px;padding:16px 12px;outline:none;
-  transition:border-color .2s,box-shadow .2s,background .3s}
-.field::placeholder{letter-spacing:.01em;font-weight:400;font-size:13.5px;color:var(--muted);opacity:.55}
-.field:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.field.good{border-color:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
-.field.wrong{border-color:var(--bad);box-shadow:0 0 0 3px var(--bad-soft);animation:shake .35s}
+.cells-wrap{position:relative;display:inline-block;max-width:100%}
+.cells{display:flex;gap:var(--space-2)}
+.cell{width:44px;height:56px;display:grid;place-items:center;border-radius:var(--radius-cell);font:600 24px/1 var(--font-mono);
+  color:var(--ink);background:var(--surface-sunk);border:1.5px solid var(--line-strong);transition:border-color .15s,box-shadow .15s,background .15s}
+.cell.fill{background:var(--surface)}
+.cell.act{border-color:var(--cobalt);box-shadow:0 0 0 3px var(--cobalt-soft)}
+.cells.ok .cell{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.cells.bad .cell{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.cells.shake{animation:shake .35s}
+/* настоящее поле ответа: прозрачное, лежит поверх клеток — работают вставка, Backspace, стрелки, цифровая клавиатура */
+.cells-inp{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;margin:0;background:transparent;
+  color:transparent;caret-color:transparent;font-size:16px;cursor:text}
+@media(max-width:420px){.cell{width:40px;height:52px;font-size:22px}.cells.n6 .cell{width:36px}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .az .btn{margin-top:16px}
-.verdict{margin-top:22px;display:none}
+.verdict{margin-top:18px;display:none}
 .verdict.show{display:block;animation:fade .4s ease}
+.vbox{display:grid;gap:var(--space-2);padding:14px 16px;border-radius:var(--radius-md);border:1px solid}
+.vbox.ok{background:var(--ok-soft);border-color:var(--ok)}
+.vbox.bad{background:var(--bad-soft);border-color:var(--bad)}
+.vbox .vhead{display:flex;align-items:center;gap:var(--space-2);font-weight:600;font-size:15px}
+.vbox.ok .vhead{color:var(--ok)} .vbox.bad .vhead{color:var(--bad)}
+.vbox .vline{color:var(--ink);font-size:14px}
+.vbox .vline b{font:600 17px/1 var(--font-mono);letter-spacing:.08em;margin-left:var(--space-1)}
+.vbox .vline.muted{color:var(--muted)}
+.rz{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
 .vrow{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
 .verdict.ok .vrow{color:var(--ok)} .verdict.bad .vrow{color:var(--bad)}
-.vdot{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:13px;flex:none}
+.vdot{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:var(--on-cobalt);font-size:13px;flex:none}
 .verdict.ok .vdot{background:var(--ok)} .verdict.bad .vdot{background:var(--bad)}
 .cline{margin-top:12px;font-size:14px;color:var(--muted)}
 .cline b{color:var(--ink);font-size:17px;letter-spacing:.06em;margin-left:4px}
@@ -158,34 +145,13 @@ body{
 .epoint:first-child{margin-top:16px}
 /* ---- review-all ---- */
 .allhead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
-.allhead h1{font-weight:600;font-size:22px;letter-spacing:-.01em;margin:0}
+.allhead h1{font-family:var(--font-display);font-weight:600;font-size:22px;letter-spacing:-.01em;margin:0}
 .allsub{color:var(--muted);font-size:13.5px;margin:0 0 22px}
 .allitem{padding:22px 0;border-top:1px solid var(--line)}
 .aans{margin-top:12px;font-size:14px;color:var(--muted)}
-.aans b{color:var(--ok);font-size:16px;letter-spacing:.06em;margin-left:4px}
-/* ---- result chart ---- */
-.ring{width:150px;height:150px;margin:6px auto 4px;position:relative}
-.ring svg{transform:rotate(-90deg)}
-.ring .bgc{stroke:var(--line)}
-.ring .seg{transition:stroke-dasharray 1.05s cubic-bezier(.22,1,.36,1)}
-.ring .seg-ok{stroke:var(--ok)} .ring .seg-bad{stroke:var(--bad)}
-.ring .lab{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
-.ring .lab b{font-size:36px;font-weight:600;letter-spacing:-.02em}
-.ring .lab b i{font-size:19px;color:var(--muted);font-style:normal}
-.ring .lab span{font-size:12px;color:var(--muted);margin-top:2px}
-.resbreak{display:flex;gap:12px;margin:16px 0 4px}
-.resbox{flex:1;border:1px solid var(--line);border-radius:14px;padding:16px 14px;text-align:center;background:var(--bg)}
-.resbox b{display:block;font-size:25px;font-weight:600;letter-spacing:-.01em;line-height:1}
-.resbox span{display:block;font-size:12px;color:var(--muted);margin-top:6px;letter-spacing:.02em}
-.okbox b,.donebox b{color:var(--ok)}
-.errbox{border-color:var(--bad);background:var(--bad-soft);cursor:pointer;transition:transform .12s,filter .2s,box-shadow .2s;
-  box-shadow:0 0 0 3px var(--bad-soft)}
-.errbox b{color:var(--bad)}
-.errbox span{color:var(--bad);font-weight:600}
-.errbox:hover{filter:brightness(1.05)}
-.errbox:active{transform:translateY(1px)}
+.aans b{color:var(--ok);font:600 16px/1 var(--font-mono);letter-spacing:.08em;margin-left:4px}
+/* ---- результат ---- */
 .resnote{text-align:center;font-size:12.5px;color:var(--muted);margin-top:10px}
-.gtitle{text-align:center;font-size:18px;font-weight:600;margin:18px 0 4px}
 .gsub{text-align:center;color:var(--muted);font-size:13.5px;line-height:1.6;margin:0 auto 22px;max-width:38ch}
 .rrow{display:flex;gap:12px}
 .rrow .btn{flex:1}
@@ -198,7 +164,7 @@ body{
 .p2text{font-size:16px;line-height:1.65;color:var(--ink)}
 .p2text p{margin:0 0 12px}.p2text p:last-child{margin-bottom:0}
 .essay{width:100%;min-height:200px;resize:vertical;font-family:inherit;font-size:15.5px;line-height:1.6;color:var(--ink);
-  background:var(--bg);border:1px solid var(--line-strong);border-radius:13px;padding:14px 16px;outline:none;
+  background:var(--bg);border:1px solid var(--line-strong);border-radius:var(--radius-md);padding:14px 16px;outline:none;
   transition:border-color .2s,box-shadow .2s,background .3s}
 .essay::placeholder{color:var(--muted);opacity:.6}
 .essay:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
@@ -210,21 +176,21 @@ body{
 .uans-lab{margin-top:14px;font-size:12px;color:var(--muted);letter-spacing:.02em}
 /* ---- кабинеты ---- */
 .acct{border:1px solid var(--line-strong);background:none;color:var(--ink);font:600 12.5px/1 inherit;font-family:inherit;
-  padding:7px 12px;border-radius:99px;cursor:pointer;margin-left:auto;margin-right:14px;transition:border-color .2s,color .2s}
+  padding:7px 12px;border-radius:var(--radius-md);cursor:pointer;margin-left:auto;margin-right:14px;transition:border-color .2s,color .2s}
 .acct:hover{border-color:var(--accent);color:var(--accent)}
-.cab-h{font-weight:600;font-size:22px;letter-spacing:-.01em;margin:0}
+.cab-h{font-family:var(--font-display);font-weight:600;font-size:22px;letter-spacing:-.01em;margin:0}
 .cab-sub{color:var(--muted);font-size:13.5px;margin:6px 0 22px}
 .cab-h3{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin:26px 0 12px}
 .cab-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .cab-load{color:var(--muted);font-size:14px;padding:20px 0;text-align:center}
 .cab-err{color:var(--bad);font-size:13px;min-height:18px;margin:10px 0 4px}
 .tin{width:100%;font-size:16px;font-family:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line-strong);
-  border-radius:12px;padding:13px 14px;outline:none;transition:border-color .2s,box-shadow .2s}
+  border-radius:var(--radius-md);padding:13px 14px;outline:none;transition:border-color .2s,box-shadow .2s}
 .tin:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .linkbtn{background:none;border:none;padding:0;color:var(--accent);font:600 13px/1.4 inherit;font-family:inherit;cursor:pointer}
 .linkbtn.danger{color:var(--bad)}
 .linkbtn.back{color:var(--muted)}
-.st-ok,.st-wait{flex:none;font-size:11px;border-radius:99px;padding:3px 9px;letter-spacing:.02em}
+.st-ok,.st-wait{flex:none;font-size:11.5px;font-weight:600;border-radius:var(--radius-cell);padding:3px 9px;letter-spacing:.02em}
 .st-ok{color:var(--ok);background:var(--ok-soft)}
 .st-wait{color:var(--accent);background:var(--accent-soft)}
 .tabs{display:flex;gap:6px;margin:18px 0 18px;border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
@@ -235,7 +201,7 @@ body{
 .tab.on{color:var(--ink);border-bottom-color:var(--accent)}
 .fbar{display:flex;gap:10px;align-items:baseline;font-size:13.5px;color:var(--muted);margin-bottom:12px}
 .fbar b{color:var(--ink)}
-.sumline{font-size:15px;margin:6px 0 10px}.sumline b{font-size:18px}
+.sumline{font-size:15px;margin:6px 0 10px}.sumline b{font-family:var(--font-display);font-size:18px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
 .chips .qn{cursor:default;margin:0!important;display:inline-grid;place-items:center}
 .qfold{margin-top:4px}.qfold summary{cursor:pointer;color:var(--accent);font-size:13px;font-weight:600;margin-bottom:10px}
@@ -246,13 +212,13 @@ body{
 .gres{margin-top:14px;font-size:14.5px}.gres b{font-size:17px;color:var(--ok)}
 .gres.wait{color:var(--accent);font-weight:600;font-size:13.5px}
 .uans.tc{border-left-color:var(--ok)}
-.sent{text-align:center;color:var(--ok);font-weight:600;font-size:14.5px;padding:14px;border:1px solid var(--ok);border-radius:13px;background:var(--ok-soft)}
+.sent{text-align:center;color:var(--ok);font-weight:600;font-size:14.5px;padding:14px;border:1px solid var(--ok);border-radius:var(--radius-md);background:var(--ok-soft)}
 #sendbox{margin-top:16px}#sendbox:empty{display:none}
 .addst{padding-bottom:6px}
-.creds{margin-top:16px;border:1px solid var(--line-strong);border-radius:14px;padding:16px;background:var(--bg)}
+.creds{margin-top:16px;border:1px solid var(--line-strong);border-radius:var(--radius-md);padding:16px;background:var(--bg)}
 .creds-h{font-size:13.5px;font-weight:600;margin-bottom:10px}
 .crow{display:grid;grid-template-columns:1fr auto auto;gap:12px;font-size:13.5px;padding:7px 0;border-top:1px solid var(--line);align-items:center}
-.crow code{font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
+.crow code{font-family:var(--font-mono);font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
 .stable{display:flex;flex-direction:column}
 .srow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);flex-wrap:wrap}
 .sname{display:flex;flex-direction:column;gap:3px;font-size:14.5px;min-width:0}
@@ -263,14 +229,14 @@ body{
 /* ---- главная ---- */
 .land{text-align:center;padding:10px 0 4px}
 .land-hi{font-size:14px;color:var(--accent);font-weight:600;letter-spacing:.02em}
-.land h1{font-weight:700;font-size:clamp(26px,6.4vw,34px);letter-spacing:-.02em;line-height:1.15;margin:10px 0 12px}
+.land h1{font-family:var(--font-display);font-weight:700;font-size:clamp(26px,6.4vw,34px);letter-spacing:-.02em;line-height:1.15;margin:10px 0 12px}
 .land-sub{color:var(--muted);font-size:15px;line-height:1.6;margin:0 auto 26px;max-width:40ch}
 .land-go{font-size:16px;padding:18px 20px}
 #landextra:empty{display:none}
 #landextra{margin-top:18px;text-align:left}
-.land-card{display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--bg);cursor:pointer;transition:border-color .2s,background .2s}
+.land-card{display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--bg);cursor:pointer;transition:border-color .2s,background .2s}
 .land-card:hover{border-color:var(--accent);background:var(--accent-soft)}
-.land-card b{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.land-card b{font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:-.01em}
 .land-card span{font-size:13px;color:var(--muted);line-height:1.45}
 .land-note{font-size:13px;color:var(--muted);text-align:center;line-height:1.6}
 /* ---- аватар ---- */
@@ -287,8 +253,8 @@ body{
 .prof-act{display:flex;gap:6px 14px;margin-top:6px;flex-wrap:wrap}.prof-act .linkbtn{white-space:nowrap}
 /* ---- прогресс ---- */
 .pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 14px}
-.pstat{border:1px solid var(--line);border-radius:12px;padding:12px 12px;background:var(--bg)}
-.pstat b{display:block;font-size:21px;font-weight:700;letter-spacing:-.01em;line-height:1.1}
+.pstat{border:1px solid var(--line);border-radius:var(--radius-md);padding:12px 12px;background:var(--bg)}
+.pstat b{font-family:var(--font-display);display:block;font-size:21px;font-weight:700;letter-spacing:-.01em;line-height:1.1}
 .pstat span{display:block;font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35}
 .plegend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:6px}
 .plegend i{display:inline-block;vertical-align:middle;margin-right:6px}
@@ -309,13 +275,13 @@ body{
 .pnote{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5}
 @media(max-width:420px){.pstat b{font-size:18px}}
 /* ---- уроки ---- */
-.vwrap{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin:4px 0 20px}
+.vwrap{position:relative;width:100%;aspect-ratio:16/9;border-radius:var(--radius-md);overflow:hidden;background:#000;margin:4px 0 20px}
 .vwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.hwbox{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:var(--bg);margin-bottom:18px}
+.hwbox{border:1px solid var(--line);border-radius:var(--radius-md);padding:16px 18px;background:var(--bg);margin-bottom:18px}
 .hwbox .lab{margin-bottom:4px}
 .hwbox .tname{margin-bottom:12px}
 .flist{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
-.fitem{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);
+.fitem{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--bg);
   color:var(--ink);text-decoration:none;font-size:14px;transition:border-color .2s,background .2s}
 a.fitem:hover{border-color:var(--accent);background:var(--accent-soft)}
 .fitem .fic{flex:none;width:34px;height:34px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:10.5px;font-weight:700;letter-spacing:.02em}
@@ -323,7 +289,7 @@ a.fitem:hover{border-color:var(--accent);background:var(--accent-soft)}
 .fitem .fsz{flex:none;font-size:12px;color:var(--muted)}
 .fitem .fst{flex:none;font-size:12px;color:var(--muted)}
 .fitem .fst.err{color:var(--bad)}
-.st-draft{flex:none;font-size:11px;border-radius:99px;padding:3px 9px;color:var(--muted);background:var(--line)}
+.st-draft{flex:none;font-size:11.5px;font-weight:600;border-radius:var(--radius-cell);padding:3px 9px;color:var(--muted);background:var(--line)}
 .lform .lab{margin-top:16px}
 .lform select.tin{appearance:auto}
 .chk{display:flex;align-items:center;gap:10px;margin:20px 0 4px;font-size:14.5px;cursor:pointer}
@@ -335,49 +301,68 @@ a.fitem:hover{border-color:var(--accent);background:var(--accent-soft)}
 .dl-h{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin:28px 0 12px;text-align:left}
 .dl-list{display:flex;flex-direction:column;gap:8px}
 .dl-list[hidden]{display:none}
-.dl{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:13px;background:var(--bg);cursor:pointer;text-align:left;
+.dl{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--bg);cursor:pointer;text-align:left;
   transition:border-color .2s,background .2s}
 .dl:hover{border-color:var(--accent);background:var(--accent-soft)}
 .dl .dl-t{flex:1;min-width:0}
 .dl .dl-t b{display:block;font-size:14.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dl .dl-t span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
-.dl .dl-b{flex:none;font-size:11.5px;font-weight:600;border-radius:99px;padding:4px 10px;color:var(--accent);background:var(--accent-soft)}
+.dl .dl-b{flex:none;font-size:11.5px;font-weight:600;border-radius:var(--radius-cell);padding:4px 10px;color:var(--accent);background:var(--accent-soft)}
 .dl.over{border-color:var(--bad);background:var(--bad-soft)}
-.dl.over .dl-b{color:#fff;background:var(--bad)}
+.dl.over .dl-b{color:var(--on-cobalt);background:var(--bad)}
 .dl.hot .dl-b{color:var(--bad);background:var(--bad-soft)}
 .dl-more{margin-top:10px}
-.dl-empty{font-size:13.5px;color:var(--muted);padding:14px 16px;border:1px dashed var(--line-strong);border-radius:13px;text-align:left}
+.dl-empty{font-size:13.5px;color:var(--muted);padding:14px 16px;border:1px dashed var(--line-strong);border-radius:var(--radius-md);text-align:left}
 .hw-dl{font-size:13px;color:var(--muted);margin:-6px 0 12px}
 .hw-dl.over{color:var(--bad);font-weight:600}
 /* ---- файлы к проверке рядом с общим комментарием ---- */
 .gfoot{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-top:4px}
 .gfoot textarea{min-height:120px}
-.fdrop{width:100%;border:1.5px dashed var(--line-strong);border-radius:13px;background:var(--bg);color:var(--muted);font:600 13.5px/1.4 inherit;
+.fdrop{width:100%;border:1.5px dashed var(--line-strong);border-radius:var(--radius-md);background:var(--bg);color:var(--muted);font:600 13.5px/1.4 inherit;
   font-family:inherit;padding:16px 12px;cursor:pointer;transition:border-color .2s,color .2s,background .2s}
 .fdrop:hover,.fdrop.over{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
 .gfoot .flist{margin-bottom:8px}.gfoot .flist:empty{display:none}
 @media(max-width:560px){.gfoot{grid-template-columns:1fr}}
+/* ---- экран результата ---- */
+.rs{margin-bottom:20px}
+.rs-kicker{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.rs-name{font-size:14px;color:var(--muted);margin-top:4px}
+.rs-big{display:flex;align-items:baseline;gap:10px;margin:18px 0 4px}
+.rs-big b{font:700 56px/1 var(--font-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.rs-big span{font:600 20px/1 var(--font-display);color:var(--muted)}
+.rs-delta{font-size:14px;min-height:20px;color:var(--muted)}
+.rs-delta b{font-weight:600}.rs-delta .up{color:var(--ok)}.rs-delta .down{color:var(--bad)}
+.rs-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);margin:18px 0 6px}
+.rs-tile{padding:var(--space-4);border-radius:var(--radius-md);background:var(--surface);border:1px solid var(--line)}
+.rs-tile b{display:block;font:700 26px/30px var(--font-display);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.rs-tile span{display:block;font-size:12.5px;color:var(--muted);margin-top:4px}
+.rs-h{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin:22px 0 10px}
+.rs-where{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.rs-w{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.rs-w b{color:var(--bad);font-weight:600;white-space:nowrap}
+.rs-links{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 20px;margin-top:18px}
+#fixbtn+#sendbox{margin-top:10px}
+@media(max-width:420px){.rs-tiles{grid-template-columns:repeat(2,1fr)}.rs-tiles .rs-tile:last-child{grid-column:1/-1}.rs-big b{font-size:48px}}
 .foot{text-align:center;color:var(--muted);font-size:11px;margin-top:24px;opacity:.6;letter-spacing:.03em}
 input[type=file]{display:none}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(150%);
-  background:var(--ink);color:var(--surface);padding:12px 20px;border-radius:11px;font-size:13.5px;
+  background:var(--ink);color:var(--surface);padding:12px 20px;border-radius:var(--radius-md);box-shadow:var(--shadow-lift);font-size:13.5px;
   z-index:9;transition:transform .4s cubic-bezier(.22,1,.36,1),opacity .3s ease,visibility .4s;max-width:88vw;
   opacity:0;visibility:hidden;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1;visibility:visible}
 @media(min-width:680px){.panel{padding:42px 44px}.qtext{font-size:16.5px}}
 @media(max-width:380px){.panel{padding:28px 22px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="topbar">
-    <div class="mark" onclick="home()"><b>Маша Вайб</b></div>
+    <div class="mark" onclick="home()"><b>ЕГЭ с Машей Вайб</b></div>
     <button class="acct" id="acct" style="display:none"></button>
     <div class="themes" id="themes">
       <button class="sw t-paper"  data-t="paper"  aria-label="Бумага"></button>
       <button class="sw t-night"  data-t="night"  aria-label="Ночь"></button>
-      <button class="sw t-sepia"  data-t="sepia"  aria-label="Сепия"></button>
-      <button class="sw t-forest" data-t="forest" aria-label="Лес"></button>
     </div>
   </div>
 
@@ -406,7 +391,7 @@ $('#qnav').addEventListener('wheel',e=>{const n=e.currentTarget;
   if(Math.abs(e.deltaY)>Math.abs(e.deltaX)&&n.scrollWidth>n.clientWidth){n.scrollLeft+=e.deltaY;e.preventDefault()}},{passive:false});
 
 /* ---- theme ---- */
-const THEMES=['paper','night','sepia','forest'];
+const THEMES=['paper','night'];   // сохранённые «sepia»/«forest» превращаются в «paper»
 function setTheme(t){
   if(THEMES.indexOf(t)<0) t='paper';
   document.documentElement.setAttribute('data-theme',t);
@@ -607,7 +592,8 @@ function qnav(){
     let pre='';
     if(isP2(q)&&!sep&&i>0){sep=true;pre='<span class="qsep">Часть 2</span>';}
     const lab=isP2(q)&&q.n?q.n:(i+1);
-    return pre+`<button class="${c.join(' ')}" onclick="go(${i})" title="${isP2(q)?'Задание '+esc(q.n||'')+' · часть 2':'Задание '+(i+1)}">${esc(String(lab))}</button>`;
+    const st=r?(r.p2?'ответ сохранён':(r.ok?'верно':'ошибка')):(i===idx?'текущий':'');
+    return pre+`<button class="${c.join(' ')}" onclick="go(${i})" aria-label="Вопрос ${esc(String(lab))}${st?', '+st:''}">${esc(String(lab))}</button>`;
   }).join('');
   const cur=nav.children.length&&nav.querySelector('.cur');
   if(cur){const l=cur.offsetLeft-nav.offsetLeft-nav.clientWidth/2+cur.offsetWidth/2;nav.scrollTo({left:Math.max(0,l),behavior:nav.dataset.ready?'smooth':'auto'});nav.dataset.ready=1}
@@ -647,42 +633,93 @@ function render(){
     </div>
     <div class="qtext">${fmtQ(q.text)}</div>
     <div class="az">
-      <label class="lab" for="inp">Твой ответ — только цифры</label>
-      <input id="inp" class="field" inputmode="numeric" autocomplete="off" placeholder="Ты точно знаешь правильный ответ">
+      <label class="lab" for="inp">Ответ</label>
+      <div class="cells-wrap">
+        <div class="cells n${cellCount(q)}" id="cells" aria-hidden="true">${'<span class="cell"></span>'.repeat(cellCount(q))}</div>
+        <input id="inp" class="cells-inp" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off"
+          autocapitalize="off" spellcheck="false" maxlength="${cellCount(q)}" aria-label="Ответ: до ${cellCount(q)} цифр, без пробелов">
+      </div>
+      <div class="verdict" id="verdict"></div>
       <button class="btn" id="check" onclick="check()">Проверить</button>
       ${finLink()}
-    </div>
-    <div class="verdict" id="verdict"></div>`;
+    </div>`;
   const inp=$('#inp');
   inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();answered?next():check()}});
+  bindCells(inp);
   if(results[idx]){answered=true;inp.value=results[idx].user;showP1(results[idx],false)}
   else if(review){answered=true;inp.placeholder='Нет ответа';showP1({q,user:'',ok:false},false)}
   else inp.focus();
 }
 
+/* ---- клетки ответа ---- */
+/* соответствие: клеток ровно по числу букв; остальное — 5 (6, если ответ длиннее), чтобы число клеток не подсказывало ответ */
+function isMatching(q){ return qType(q.text)==='Соответствие'; }
+function cellCount(q){ const a=norm(q.answer).length; return isMatching(q)?Math.max(1,a):Math.min(6,Math.max(5,a)); }
+function paintCells(){
+  const inp=$('#inp'), box=$('#cells'); if(!inp||!box) return;
+  const v=inp.value, cells=[...box.children], live=document.activeElement===inp&&!inp.readOnly;
+  const at=Math.min(v.length>=cells.length?cells.length-1:(inp.selectionStart??v.length), cells.length-1);
+  cells.forEach((c,i)=>{ c.textContent=v[i]||''; c.classList.toggle('fill',!!v[i]); c.classList.toggle('act',live&&i===at); });
+}
+function bindCells(inp){
+  inp.addEventListener('input',()=>{
+    const clean=inp.value.replace(/\D/g,'').slice(0,+inp.maxLength||6);
+    if(clean!==inp.value){ inp.value=clean; inp.setSelectionRange(clean.length,clean.length); }
+    paintCells();
+  });
+  ['focus','blur','keyup','click','select'].forEach(ev=>inp.addEventListener(ev,paintCells));
+  paintCells();
+}
+function shakeCells(){ const c=$('#cells'); if(!c) return; c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); }
+/* «запишите цифры» — порядок не важен (как на ЕГЭ); соответствие — важен */
+function isRight(q,user){
+  const a=norm(q.answer);
+  return isMatching(q) ? user===a : [...user].sort().join('')===[...a].sort().join('');
+}
+const NUM_F=['','Одна','Две','Три','Четыре','Пять'], NUM_G=['','одной','двух','трёх','четырёх','пяти'];
+/* «Почти»: совпало больше половины цифр ответа */
+function almost(q,user){
+  const a=norm(q.answer); if(!user) return null;
+  if(isMatching(q)){
+    let m=0; for(let i=0;i<a.length;i++) if(user[i]===a[i]) m++;
+    const bad=a.length-m;
+    return m>a.length/2 ? 'Почти. Не совпало позиций: '+bad : null;
+  }
+  const A=new Set(a), U=new Set(user);
+  const common=[...A].filter(d=>U.has(d)).length, extra=[...U].filter(d=>!A.has(d)).length, miss=A.size-common;
+  if(common<=A.size/2) return null;
+  const parts=[];
+  if(extra) parts.push(extra===1?'Одна цифра лишняя':(NUM_F[extra]||extra)+' цифры лишние');
+  if(miss) parts.push((parts.length?(NUM_G[miss]||miss):(miss===1?'Одной':(NUM_G[miss]||miss).replace(/^./,c=>c.toUpperCase())))+' не хватает');
+  return 'Почти'+(parts.length?'. '+parts.join(', '):'');
+}
 function check(){
   if(answered) return;
   const q=bank[idx], inp=$('#inp'), user=norm(inp.value);
-  if(!user){inp.classList.add('wrong');setTimeout(()=>inp.classList.remove('wrong'),360);toast('Введи ответ');return}
+  if(!user){ shakeCells(); toast('Введи ответ'); inp.focus(); return; }
   answered=true;
-  const ok=user===norm(q.answer);
+  const ok=isRight(q,user);
   if(ok) score++;
   results[idx]={q,n:q.n,user,answer:norm(q.answer),ok};
   bars();
   showP1(results[idx],true);
 }
 function showP1(r,scroll){
-  const q=r.q, ok=r.ok, inp=$('#inp');
-  inp.classList.add(ok?'good':'wrong'); inp.readOnly=true;
+  const q=r.q, ok=r.ok, inp=$('#inp'), open=answersOpen();
+  inp.readOnly=true; inp.blur();
+  const cells=$('#cells'); cells.classList.add(ok?'ok':'bad'); if(!ok&&scroll) shakeCells();
+  paintCells();
   $('#check').outerHTML=`<button class="btn" onclick="next()">${nextLabel()}</button>`;
-  const v=$('#verdict');
-  v.className='verdict show '+(ok?'ok':'bad');
+  const v=$('#verdict'), near=!ok&&almost(q,r.user);
+  const head = ok ? 'Верно' : !r.user ? 'Нет ответа' : near ? (open?near:'Почти — совпало больше половины цифр') : 'Ошибка';
+  v.className='verdict show';
   v.innerHTML=`
-    <div class="vrow"><span class="vdot">${ok?'✓':'✕'}</span>${ok?'Верно':(r.user?'Неверно':'Нет ответа')}</div>
-    ${!answersOpen()?(ok?'':`<div class="cline">${LOCK_NOTE}</div>`):`
-    ${ok?'':`<div class="cline">Правильный ответ:<b>${esc(q.answer)}</b></div>`}
-    ${q.explanation?`<button class="etog" onclick="tog(this)">Скрыть разбор</button>
-      <div class="expl open"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div>`:''}`}`;
+    <div class="vbox ${ok?'ok':'bad'}" role="status">
+      <div class="vhead"><span aria-hidden="true">${ok?'✓':'✕'}</span>${esc(head)}</div>
+      ${ok?'':open?`<div class="vline">Правильный ответ:<b>${esc(norm(q.answer))}</b></div>`:`<div class="vline muted">${LOCK_NOTE}</div>`}
+    </div>
+    ${open&&q.explanation?`<div class="rz"><button class="etog" onclick="tog(this)">Скрыть разбор</button>
+      <div class="expl open"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div></div>`:''}`;
   if(scroll) setTimeout(()=>{if(v.scrollIntoView)v.scrollIntoView({behavior:'smooth',block:'nearest'})},120);
 }
 function renderP2(q){
@@ -734,45 +771,50 @@ function tog(b){const e=b.nextElementSibling;e.classList.toggle('open');
 function next(){if(review){return idx+1<bank.length?go(idx+1):finishEarly()}const i=nextOpen();if(i<0){idx=bank.length;return finish()}go(i)}
 
 /* ---- result chart (correct vs wrong + работа над ошибками) ---- */
-function resultChart(correct,wrong,total){
-  const C=2*Math.PI*66;
-  const okLen=total?C*correct/total:0, badLen=total?C*wrong/total:0;
-  const p=total?Math.round(correct/total*100):0;
-  const undone=total-correct-wrong;
+/* ---- экран результата ---- */
+function errWord(n){ const a=n%10,b=n%100; return a===1&&b!==11?'ошибку':(a>=2&&a<=4&&(b<10||b>=20)?'ошибки':'ошибок'); }
+/* «Где ошибки»: группировка по теме вопроса (q.topic — разметка разделов, этап 5a); без тем блок скрыт */
+function whereErrors(wrongQs){
+  const g={};
+  wrongQs.forEach(q=>{ if(q.topic) g[q.topic]=(g[q.topic]||0)+1; });
+  const rows=Object.entries(g).sort((a,b)=>b[1]-a[1]);
+  if(!rows.length) return '';
+  return `<div class="rs-h">Где ошибки</div><div class="rs-where">${rows.map(([t,n])=>
+    `<div class="rs-w"><span>${esc(t)}</span><b>${n} ош.</b></div>`).join('')}</div>`;
+}
+function resultSummary(correct,wrong,total){
+  const p=total?Math.round(correct/total*100):0, undone=total-correct-wrong;
   return `
-    <div class="ring">
-      <svg width="150" height="150" viewBox="0 0 150 150">
-        <circle class="bgc" cx="75" cy="75" r="66" fill="none" stroke-width="10"/>
-        <circle class="seg seg-ok" id="segok" cx="75" cy="75" r="66" fill="none" stroke-width="10"
-          stroke-linecap="butt" stroke-dasharray="0 ${C}"/>
-        <circle class="seg seg-bad" id="segbad" cx="75" cy="75" r="66" fill="none" stroke-width="10"
-          stroke-linecap="butt" stroke-dasharray="0 ${C}" stroke-dashoffset="${-okLen}"/>
-      </svg>
-      <div class="lab"><b>${correct}<i>/${total}</i></b><span>${p}% верно</span></div>
-    </div>
-    <div class="resbreak">
-      <div class="resbox okbox"><b>${correct}</b><span>верно</span></div>
-      ${wrong>0
-        ? `<div class="resbox errbox" onclick="startMistakes()"><b>${wrong}</b><span>работа над ошибками →</span></div>`
-        : `<div class="resbox donebox"><b>✓</b><span>ошибок нет</span></div>`}
-    </div>
-    ${undone>0?`<div class="resnote">Не решено: ${undone} из ${total}</div>`:''}`;
+    <div class="rs">
+      <div class="rs-kicker">Результат ДЗ</div>
+      <div class="rs-name">${esc(curName)}</div>
+      <div class="rs-big"><b>${correct}</b><span>из ${total}</span></div>
+      <div class="rs-delta" id="rsdelta"></div>
+      <div class="rs-tiles">
+        <div class="rs-tile"><b>${correct}</b><span>верно</span></div>
+        <div class="rs-tile"><b>${wrong}</b><span>${wrong===1?'ошибка':'ошибок'}</span></div>
+        <div class="rs-tile"><b>${p}%</b><span>результат</span></div>
+      </div>
+      ${undone>0?`<div class="resnote">Не решено: ${undone} из ${total}</div>`:''}
+      ${whereErrors(lastWrong)}
+    </div>`;
 }
-function animChart(correct,wrong,total){
-  const C=2*Math.PI*66;
-  const okLen=total?C*correct/total:0, badLen=total?C*wrong/total:0;
-  setTimeout(()=>{
-    const so=$('#segok'), sb=$('#segbad');
-    if(so) so.setAttribute('stroke-dasharray', okLen+' '+(C-okLen));
-    if(sb) sb.setAttribute('stroke-dasharray', badLen+' '+(C-badLen));
-  },150);
+/* кнопки под результатом: одна главная — «Исправить N ошибок», если есть ошибки */
+function resultActions(wrong,withAll){
+  const p2n=bank.length-countP1(bank);
+  return `
+    ${wrong>0?`<button class="btn" id="fixbtn" onclick="startMistakes()">Исправить ${wrong} ${errWord(wrong)}</button>`:''}
+    <div id="sendbox"></div>
+    ${p2n?`<div class="resnote">Часть 2 проверит учитель. Баллы появятся в профиле после проверки.</div>`:''}
+    <div class="rs-links">
+      <button class="linkbtn" onclick="openTest2()">Решать заново</button>
+      <button class="linkbtn" onclick="goHW()">К ДЗ</button>
+      ${withAll?`<button class="linkbtn" onclick="finishEarly()">Все задания с ответами</button>`:''}
+    </div>`;
 }
-
-function grade(p){
-  if(p>=90) return ['Отлично','Материал ты знаешь уверенно.'];
-  if(p>=75) return ['Хорошо','Крепкий результат — почти идеал.'];
-  if(p>=50) return ['Неплохо','База есть, слабые темы стоит повторить.'];
-  return ['Нужно повторить','Пройди материал ещё раз и попробуй снова.'];
+function afterResult(){
+  if(window.renderSendBox) renderSendBox();
+  if(window.resultDelta) resultDelta();
 }
 
 /* full completion */
@@ -780,22 +822,12 @@ function finish(){
   idx=bank.length; bars(); $('#cur').textContent=bank.length;
   const total=countP1(bank), correct=score, wrong=results.filter(r=>!r.p2&&!r.ok).length;
   lastWrong=results.filter(r=>!r.p2&&!r.ok).map(r=>r.q);
-  const p2n=bank.length-total, p2done=results.filter(r=>r.p2).length;
-  const p=total?Math.round(correct/total*100):0, gr=total?grade(p):['Готово','Ответы второй части сохранены.'], g=gr[0], gs=gr[1];
   app.className='panel fade';
   app.innerHTML=`
-    ${total?resultChart(correct,wrong,total):''}
-    <div class="gtitle">${g}</div>
-    <div class="gsub">${esc(curName)} · ${gs}</div>
-    ${p2n?`<div class="resnote" style="margin:-10px 0 20px">Часть 2: написано ${p2done} из ${p2n} развёрнутых ответов</div>`:''}
-    <div class="rrow">
-      <button class="btn" onclick="openTest2()">Решать заново</button>
-      <button class="btn ghost" onclick="goHW()">К ДЗ</button>
-    </div>
-    <div id="sendbox"></div>
-    <button class="linkfin" onclick="finishEarly()">Показать все задания с ответами</button>`;
-  if(total) animChart(correct,wrong,total);
-  if(window.renderSendBox) renderSendBox();
+    ${total?resultSummary(correct,wrong,total):`<div class="rs"><div class="rs-kicker">Результат ДЗ</div>
+      <div class="rs-name">${esc(curName)}</div><p class="gsub">Ответы второй части сохранены.</p></div>`}
+    ${resultActions(wrong,true)}`;
+  afterResult();
 }
 /* restart current base test from scratch */
 function openTest2(){ bank = tests.find(t=>t.name===curBase)?tests.find(t=>t.name===curBase).questions:bank; curName=curBase; begin(); }
@@ -819,19 +851,12 @@ function finishEarly(){
         <div class="expl"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div>`:''}`:''}
     </div>`).join('');
   app.innerHTML=`
-    <div class="allhead"><h1>Результат</h1></div>
-    <p class="allsub">${esc(curName)}</p>
-    ${open?'':`<div class="resnote" style="margin:-8px 0 16px">Правильные ответы и пояснения откроются после отправки работы учителю.</div>`}
-    ${total?resultChart(correct,wrong,total):''}
-    <div class="rrow" style="margin-top:18px">
-      <button class="btn" onclick="openTest2()">Решать заново</button>
-      <button class="btn ghost" onclick="goHW()">К ДЗ</button>
-    </div>
-    <div id="sendbox"></div>
+    ${total?resultSummary(correct,wrong,total):`<div class="rs"><div class="rs-kicker">Результат ДЗ</div><div class="rs-name">${esc(curName)}</div></div>`}
+    ${resultActions(wrong,false)}
     <div class="review"><h3>Все задания с ответами</h3></div>
+    ${open?'':`<div class="resnote" style="margin:-4px 0 12px;text-align:left">Правильные ответы и пояснения откроются после отправки работы учителю.</div>`}
     ${items}`;
-  if(total) animChart(correct,wrong,total);
-  if(window.renderSendBox) renderSendBox();
+  afterResult();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function p2Item(q){
