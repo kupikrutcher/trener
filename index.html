@@ -194,6 +194,10 @@ body{
 .tab{background:none;border:none;border-bottom:2px solid transparent;padding:10px 12px;margin-bottom:-1px;color:var(--muted);
   font:600 14px/1 inherit;font-family:inherit;cursor:pointer;white-space:nowrap}
 .tab.on{color:var(--ink);border-bottom-color:var(--accent)}
+/* переключатель внутри вкладки: «Ждут проверки» / «Все работы» */
+.seg{display:inline-flex;gap:4px;padding:4px;margin-bottom:16px;background:var(--surface-sunk);border-radius:var(--radius-pill);box-shadow:var(--shadow-press)}
+.seg button{border:0;background:none;padding:8px 14px;border-radius:var(--radius-pill);font:600 13.5px/1 var(--font-sans);color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--cobalt);box-shadow:var(--shadow-soft)}
 .fbar{display:flex;gap:10px;align-items:baseline;font-size:13.5px;color:var(--muted);margin-bottom:12px}
 .fbar b{color:var(--ink)}
 .sumline{font-size:15px;margin:6px 0 10px}.sumline b{font-family:var(--font-display);font-size:18px}
@@ -221,6 +225,8 @@ body{
 .sact{display:flex;gap:14px}
 @media(max-width:420px){.crow{grid-template-columns:1fr;gap:4px}}
 @media(max-width:480px){.acct,.ava{margin-right:10px}.themes{gap:7px}}
+.acct,.mark b{white-space:nowrap}
+@media(max-width:420px){.mark b{font-size:13.5px}.acct{padding:7px 10px;font-size:12px;margin-right:8px}.themes{gap:6px}}
 /* ---- главная ---- */
 .land{text-align:center;padding:10px 0 4px}
 .land-hi{font-size:14px;color:var(--accent);font-weight:600;letter-spacing:.02em}
@@ -580,20 +586,31 @@ function home(){
         <img src="img/masha.webp" width="800" height="800" alt="Маша Вайб" decoding="async" fetchpriority="high">
         <figcaption class="land-tag">ЕГЭ · обществознание</figcaption>
       </figure>
-      <button class="btn land-go" onclick="goHW()">Приступить к подготовке</button>
+      <button class="btn land-go" onclick="goCourse()">Перейти в курс</button>
       <div id="landextra"></div>
     </div>`;
   if(window.landExtra) landExtra();
 }
 /* куда ведёт «ДЗ»: ученику — уроки (тесты открываются из урока), учителю — все тесты (cabinet.js решает) */
 function goHW(){ return window.cabGoHW ? cabGoHW() : hwList(); }
+/* «Перейти в курс» на главной: ученику — уроки, учителю — курс с вкладкой «Проверка» */
+function goCourse(){ return window.cabGoCourse ? cabGoCourse() : hwList(); }
 /* список ДЗ по разделам — только для учителя (и когда сервер не подключён) */
 function hwList(){
   if(window.cabCanSeeTests && !cabCanSeeTests()) return goHW();
+  if(window.cabTeacherTests && cabTeacherTests()) return;   // учитель с сервером — вкладка «Готовые ДЗ» в курсе
   review=null;
   $('#bars').style.display='none';
   $('#foot').textContent='';
   app.className='panel fade';
+  app.innerHTML=`
+    <div class="home">
+      <button class="linkbtn back" onclick="home()">← На главную</button>
+      <h2 class="cab-h" style="margin:10px 0 18px">Домашние задания</h2>
+      ${testsListHTML()}
+    </div>`;
+}
+function testsListHTML(){
   const card=t=>`
     <div class="tcard" onclick="openTest('${t.id}')">
       <div class="tinfo">
@@ -609,12 +626,7 @@ function hwList(){
       <summary><span class="st">${esc(title)}</span><span class="sc">${list.length}</span><span class="sa">›</span></summary>
       <div class="tlist">${list.map(card).join('')}</div>
     </details>`).join('');
-  app.innerHTML=`
-    <div class="home">
-      <button class="linkbtn back" onclick="home()">← На главную</button>
-      <h2 class="cab-h" style="margin:10px 0 18px">Домашние задания</h2>
-      ${tests.length?sects:`<div class="empty">Пока нет заданий.</div>`}
-    </div>`;
+  return tests.length?sects:`<div class="empty">Пока нет заданий.</div>`;
 }
 
 function metaLine(qs){const p2=qs.length-countP1(qs);

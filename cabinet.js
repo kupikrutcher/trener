@@ -62,7 +62,7 @@ function paintAcct(){
   if(me && me.role!=='teacher'){
     b.className='ava'; b.innerHTML=avaInner(me); b.title='Мой профиль'; b.setAttribute('aria-label','Мой профиль');
   }else{
-    b.className='acct'; b.textContent = me ? 'Проверка' : 'Войти'; b.removeAttribute('title'); b.removeAttribute('aria-label');
+    b.className='acct'; b.textContent = me ? 'Личный кабинет' : 'Войти'; b.removeAttribute('title'); b.removeAttribute('aria-label');
   }
   b.onclick = ()=> me ? openCabinet() : cabLogin();
   const hi=document.getElementById('landhi'); if(hi) hi.textContent = me ? 'Привет, '+firstName(me.full_name)+'!' : 'Привет!';
@@ -92,7 +92,7 @@ async function saveAvatar(data){
   const rm=document.getElementById('avarm'); if(rm) rm.style.display=data?'':'none';
   toast(data?'Фото обновлено':'Фото убрано');
 }
-function openCabinet(){ if(!me) return cabLogin(); me.role==='teacher' ? cabTeacher('todo') : cabStudent(); }
+function openCabinet(){ if(!me) return cabLogin(); me.role==='teacher' ? teacherProfile() : cabStudent(); }
 
 /* ---------- вход ---------- */
 function cabLogin(then){
@@ -145,7 +145,7 @@ async function doSetup(){
   const btn=$('#lbtn'); busy(btn,true,'Создаём…');
   try{
     const r=await api('setup',{ code:$('#sc').value.trim(), full_name:$('#sn').value.trim(), login:$('#sl').value.trim().toLowerCase(), password:$('#sp').value });
-    setToken(r.token); me=r.me; paintAcct(); history.replaceState(null,'',location.pathname); toast('Готово! Вы вошли как учитель'); cabTeacher('students');
+    setToken(r.token); me=r.me; paintAcct(); history.replaceState(null,'',location.pathname); toast('Готово! Вы вошли как учитель'); teacherProfile();
   }catch(e){ busy(btn,false,'Создать'); $('#lerr').textContent=e.message; }
 }
 async function changePass(){
@@ -381,7 +381,7 @@ async function cabSubmission(id){
   const total = s.checked_at&&s.p2.length ? `<div class="sumline">Часть 2: <b>${s.p2_score}</b> из ${s.p2_max}</div>` : '';
   cabShow(`
     <div class="cab">
-      <button class="linkbtn back" onclick="openCabinet()">← Назад</button>
+      <button class="linkbtn back" onclick="${teacher?"cabTeacher('check')":'openCabinet()'}">← Назад</button>
       <h2 class="cab-h" style="margin-top:10px">${esc(s.test_name)}</h2>
       <p class="cab-sub">${who}${fmtDate(s.created_at)}</p>
       ${t?`<button class="btn ghost" style="margin-bottom:22px" onclick="openReview()">Открыть ДЗ с пояснениями</button>`:''}
@@ -456,34 +456,40 @@ async function saveGrade(){
 }
 
 /* ---------- кабинет учителя ---------- */
-let teacherTab='todo', studentsCache=[], filterStudent=null;
+/* курс учителя: вкладки «Проверка» (первая), «Уроки», «Готовые ДЗ»; в «Проверке» — ждут проверки / все работы */
+let teacherTab='check', checkMode='todo', studentsCache=[], filterStudent=null;
 async function loadStudents(){
   studentsCache=(await api('students_list')).students; return studentsCache;
 }
 function tabsHTML(){
-  const T=[['todo','На проверке'],['all','Все работы'],['lessons','Уроки'],['students','Ученики']];
+  const T=[['check','Проверка'],['lessons','Уроки'],['tests','Готовые ДЗ']];
   return `<div class="tabs">${T.map(([k,l])=>`<button class="tab${teacherTab===k?' on':''}" onclick="cabTeacher('${k}')">${l}</button>`).join('')}</div>`;
 }
+/* старые имена вкладок: todo/all — это «Проверка» с нужным фильтром */
+function checkShow(mode){ checkMode=mode; if(mode==='todo') filterStudent=null; cabTeacher('check'); }
 async function cabTeacher(tab){
-  teacherTab=tab||'todo';
-  if(teacherTab!=='all') filterStudent=null;
-  cabShow(`<div class="cab"><div class="cab-top"><h2 class="cab-h">Проверка</h2>
-    <div class="sact"><button class="linkbtn back" onclick="changePass()">Сменить пароль</button><button class="linkbtn" onclick="doLogout()">Выйти</button></div></div>
-    ${tabsHTML()}<div id="tbody" class="cab-load">Загружаем…</div>
-    <button class="btn ghost" style="margin-top:22px" onclick="hwList()">К ДЗ</button></div>`);
-  if(teacherTab==='students') return teacherStudents();
+  if(tab==='todo'||tab==='all'){ checkMode=tab; tab='check'; }
+  teacherTab=['check','lessons','tests'].includes(tab)?tab:'check';
+  cabShow(`<div class="cab"><div class="cab-top"><h2 class="cab-h">Курс</h2>
+    <button class="linkbtn back" onclick="home()">← На главную</button></div>
+    ${tabsHTML()}<div id="tbody" class="cab-load">Загружаем…</div></div>`);
   if(teacherTab==='lessons') return teacherLessons();
+  if(teacherTab==='tests'){ const b=$('#tbody'); b.className=''; b.innerHTML=testsListHTML(); return; }
+  const todo=checkMode==='todo'&&!filterStudent;
   let studs, data;
   try{
     [studs, data] = await Promise.all([loadStudents(),
-      api('subs_list',{ todo:teacherTab==='todo', student:filterStudent||undefined }).then(r=>r.subs)]);
+      api('subs_list',{ todo, student:filterStudent||undefined }).then(r=>r.subs)]);
   }catch(e){ const b=$('#tbody'); if(b){ b.className=''; b.textContent='Не удалось загрузить: '+e.message; } return; }
   const names=Object.fromEntries(studs.map(p=>[p.login,p.full_name]));
   const box=$('#tbody'); if(!box) return;
   box.className='';
   const head = filterStudent ? `<div class="fbar">Ученик: <b>${esc(names[filterStudent]||'')}</b>
-      <button class="linkbtn" onclick="filterStudent=null;cabTeacher('all')">показать всех</button></div>
-      <div id="prog" style="margin-bottom:18px"></div>` : '';
+      <button class="linkbtn" onclick="filterStudent=null;checkShow('all')">показать всех</button></div>
+      <div id="prog" style="margin-bottom:18px"></div>`
+    : `<div class="seg" role="group" aria-label="Какие работы показать">
+        <button aria-pressed="${todo}" onclick="checkShow('todo')">Ждут проверки</button>
+        <button aria-pressed="${!todo}" onclick="checkShow('all')">Все работы</button></div>`;
   box.innerHTML = head + (data.length ? `<div class="tlist">${data.map(s=>`
       <div class="tcard" onclick="cabSubmission('${s.id}')">
         <div class="tinfo"><div class="tname">${esc(names[s.student]||'Удалённый ученик')}</div>
@@ -491,8 +497,17 @@ async function cabTeacher(tab){
           <div class="tmeta">${fmtDate(s.created_at)} · ${statusLine(s)}</div></div>
         ${subBadge(s)}<span class="tgo">→</span>
       </div>`).join('')}</div>`
-    : `<div class="empty">${teacherTab==='todo'?'Непроверенных работ нет 🎉':'Работ пока нет'}</div>`);
+    : `<div class="empty">${todo?'Непроверенных работ нет':'Работ пока нет'}</div>`);
   if(filterStudent) drawProgress($('#prog'), data);
+}
+/* личный кабинет учителя: ученики, пароль, выход */
+function teacherProfile(){
+  cabShow(`<div class="cab"><div class="cab-top"><h2 class="cab-h">Личный кабинет</h2>
+    <div class="sact"><button class="linkbtn back" onclick="changePass()">Сменить пароль</button><button class="linkbtn" onclick="doLogout()">Выйти</button></div></div>
+    <p class="cab-sub">${esc(me.full_name||'')} · учитель</p>
+    <div id="tbody" class="cab-load">Загружаем…</div>
+    <button class="btn ghost" style="margin-top:22px" onclick="cabTeacher('check')">Перейти в курс</button></div>`);
+  return teacherStudents();
 }
 async function teacherStudents(){
   let studs;
@@ -512,7 +527,7 @@ async function teacherStudents(){
       <div class="srow">
         <div class="sname"><b>${esc(p.full_name)}</b><span>${esc(p.login)} · работ: ${p.subs||0}</span></div>
         <div class="sact">
-          <button class="linkbtn" onclick="filterStudent='${esc(p.login)}';teacherTab='all';cabTeacher('all')">Работы</button>
+          <button class="linkbtn" onclick="filterStudent='${esc(p.login)}';checkShow('all')">Работы</button>
           <button class="linkbtn" onclick="resetPass('${esc(p.login)}')">Новый пароль</button>
           <button class="linkbtn danger" onclick="delStudent('${esc(p.login)}')">Удалить</button>
         </div>
@@ -570,8 +585,16 @@ function cabCanSeeTests(){ return !CAB || (me && me.role==='teacher'); }
 function cabGoHW(){
   if(!CAB) return hwList();
   if(!me) return cabLogin(()=>cabGoHW());
-  return me.role==='teacher' ? hwList() : lessonsList();
+  return me.role==='teacher' ? cabTeacher('tests') : lessonsList();
 }
+/* «Перейти в курс»: учителю курс открывается на вкладке «Проверка» */
+function cabGoCourse(){
+  if(!CAB) return hwList();
+  if(!me) return cabLogin(()=>cabGoCourse());
+  return me.role==='teacher' ? cabTeacher('check') : lessonsList();
+}
+/* список ДЗ у учителя с сервером живёт во вкладке «Готовые ДЗ» */
+function cabTeacherTests(){ if(CAB&&me&&me.role==='teacher'){ cabTeacher('tests'); return true; } return false; }
 function fmtDay(s){ return new Date(s).toLocaleDateString('ru-RU',{day:'numeric',month:'long'}); }
 function fmtSize(n){ return n>=1048576?(n/1048576).toFixed(1).replace('.',',')+' МБ':Math.max(1,Math.round(n/1024))+' КБ'; }
 function fileExt(n){ const m=/\.([a-z0-9]{1,5})$/i.exec(n||''); return m?m[1].toUpperCase():'ФАЙЛ'; }
@@ -645,7 +668,7 @@ async function teacherLessons(){
   catch(e){ const b=$('#tbody'); if(b){ b.className=''; b.textContent='Не удалось загрузить: '+e.message; } return; }
   const box=$('#tbody'); if(!box) return;
   box.className='';
-  box.innerHTML=`<button class="btn" style="margin-bottom:18px" onclick="lessonEdit(null)">+ Новый урок</button>
+  box.innerHTML=`<button class="btn" style="margin-bottom:18px" onclick="lessonEdit(null)">Создать урок</button>
     ${lessons.length?`<div class="tlist">${lessons.map(l=>`
       <div class="tcard" onclick="lessonView('${esc(l.id)}')">
         <div class="tinfo"><div class="tname">${esc(l.title)}</div>
