@@ -5,7 +5,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 DB=trener-db
-SITE_ORIGIN=https://kupikrutcher.github.io
+# адреса сайта, с которых разрешена загрузка файлов в хранилище
+SITE_ORIGINS="'https://mashavibe.ru','https://www.mashavibe.ru','https://kupikrutcher.github.io','http://localhost:8770'"
 SA=trener-fn
 FN=trener-api
 FOLDER_ID=$(yc config get folder-id)
@@ -50,7 +51,7 @@ YDB_ENDPOINT=$YDB_ENDPOINT YDB_DATABASE=$YDB_DATABASE YDB_ACCESS_TOKEN_CREDENTIA
 echo "→ разрешаем сайту загружать файлы (CORS)"
 for i in 1 2 3 4 5 6; do
   S3_BUCKET=$BUCKET S3_KEY_ID=$S3_KEY_ID S3_SECRET=$S3_SECRET node -e "
-    require('./s3').storage(process.env).setCors(['$SITE_ORIGIN','http://localhost:8770'])
+    require('./s3').storage(process.env).setCors([$SITE_ORIGINS])
       .then(()=>process.exit(0),e=>{console.error(e.message);process.exit(1)})" && break
   echo "   права ещё применяются, ждём…"; sleep 10
 done
