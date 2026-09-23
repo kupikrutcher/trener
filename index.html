@@ -104,19 +104,11 @@ body{
 .qtext .ins{display:block;margin-top:16px;font-size:13.5px;color:var(--muted);font-style:italic}
 .az{margin-top:30px}
 .az .lab{display:block;font-size:12.5px;color:var(--muted);margin-bottom:11px;letter-spacing:.02em}
-.cells-wrap{position:relative;display:inline-block;max-width:100%}
-.cells{display:flex;gap:var(--space-2)}
-.cell{width:44px;height:56px;display:grid;place-items:center;border-radius:var(--radius-cell);font:600 24px/1 var(--font-mono);
-  color:var(--ink);background:var(--surface-sunk);border:1.5px solid var(--line-strong);transition:border-color .15s,box-shadow .15s,background .15s}
-.cell.fill{background:var(--surface)}
-.cell.act{border-color:var(--cobalt);box-shadow:0 0 0 3px var(--cobalt-soft)}
-.cells.ok .cell{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
-.cells.bad .cell{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
-.cells.shake{animation:shake .35s}
-/* настоящее поле ответа: прозрачное, лежит поверх клеток — работают вставка, Backspace, стрелки, цифровая клавиатура */
-.cells-inp{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;margin:0;background:transparent;
-  color:transparent;caret-color:transparent;font-size:16px;cursor:text}
-@media(max-width:420px){.cell{width:40px;height:52px;font-size:22px}.cells.n6 .cell{width:36px}}
+.ans-inp{display:block;max-width:280px;font:600 22px/1.2 var(--font-mono);letter-spacing:.14em;padding:14px 16px}
+.ans-inp::placeholder{font:500 15px var(--font-sans);letter-spacing:0}
+.ans-inp.ok{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.ans-inp.bad{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.ans-inp.wrong{border-color:var(--bad);animation:shake .35s}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .az .btn{margin-top:16px}
 .verdict{margin-top:18px;display:none}
@@ -149,6 +141,10 @@ body{
 .allitem{padding:22px 0;border-top:1px solid var(--line)}
 .aans{margin-top:12px;font-size:14px;color:var(--muted)}
 .aans b{color:var(--ok);font:600 16px/1 var(--font-mono);letter-spacing:.08em;margin-left:4px}
+.mine{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-top:12px;font-size:14px;color:var(--muted)}
+.mine b{color:var(--ink);font:600 16px/1 var(--font-mono);letter-spacing:.08em}
+.mine span{font-weight:700;font-size:13px}
+.mine.ok span{color:var(--ok)}.mine.bad span{color:var(--bad)}
 /* ---- результат ---- */
 .resnote{text-align:center;font-size:12.5px;color:var(--muted);margin-top:10px}
 .gsub{text-align:center;color:var(--muted);font-size:13.5px;line-height:1.6;margin:0 auto 22px;max-width:38ch}
@@ -392,9 +388,8 @@ body{background:
 .vbox{border-color:transparent;box-shadow:var(--shadow-soft)}
 .sent{border-color:transparent;box-shadow:var(--shadow-soft)}
 /* поля и клетки — «вдавленные» */
-.tin,.essay,.cell{border-color:transparent;background:var(--surface-sunk);box-shadow:var(--shadow-press)}
-.cell.fill{background:var(--surface-sunk)}
-.cell.act,.tin:focus,.essay:focus{border-color:var(--cobalt);box-shadow:var(--shadow-press),0 0 0 3px var(--cobalt-soft)}
+.tin,.essay{border-color:transparent;background:var(--surface-sunk);box-shadow:var(--shadow-press)}
+.tin:focus,.essay:focus{border-color:var(--cobalt);box-shadow:var(--shadow-press),0 0 0 3px var(--cobalt-soft)}
 .fdrop{box-shadow:var(--shadow-press)}
 /* чипы вопросов — кругляши */
 .qn{border-radius:var(--radius-pill);border-color:transparent;box-shadow:var(--shadow-soft)}
@@ -429,7 +424,7 @@ body{background:
 
   <div class="bars" id="bars" style="display:none">
     <div class="track"><i id="pbar"></i></div>
-    <div class="meta"><span><b id="cur">1</b> / <b id="tot">50</b></span><span>верно <b id="scr">0</b></span></div>
+    <div class="meta"><span><b id="cur">1</b> / <b id="tot">50</b></span><span><span id="scrlab">отвечено</span> <b id="scr">0</b></span></div>
     <div class="qnav" id="qnav"></div>
   </div>
 
@@ -624,9 +619,11 @@ function hwList(){
 
 function metaLine(qs){const p2=qs.length-countP1(qs);
   return p2?plural(countP1(qs))+' · часть 2: '+p2:plural(qs.length)}
+/* после отправки ДЗ ученик решает заново только часть 1 (cabinet.js решает, чья это работа) */
+function testBank(t){ return window.p1OnlyFor&&p1OnlyFor(t) ? t.questions.filter(q=>!isP2(q)) : t.questions; }
 function openTest(id){
   const t=tests.find(x=>x.id===id); if(!t)return;
-  bank=t.questions; curId=t.id; curName=t.name; curBase=t.name; begin();
+  bank=testBank(t); curId=t.id; curName=t.name; curBase=t.name; begin();
 }
 function removeTest(id){
   tests=tests.filter(t=>t.id!==id); saveTests(); hwList(); return;
@@ -644,7 +641,8 @@ function bars(){
   $('#bars').style.display='block';
   $('#tot').textContent=bank.length;
   $('#cur').textContent=Math.min(idx+1,bank.length);
-  $('#scr').textContent=score;
+  $('#scrlab').textContent=review?'верно':'отвечено';
+  $('#scr').textContent=review?score:results.filter(Boolean).length;
   $('#pbar').style.width=(results.filter(Boolean).length/bank.length*100)+'%';
   qnav();
 }
@@ -653,12 +651,12 @@ function qnav(){
   const nav=$('#qnav'); let sep=false;
   nav.innerHTML=bank.map((q,i)=>{
     const r=results[i], c=['qn'];
-    if(r) c.push(r.p2?'done':(r.ok?'ok':'bad'));
+    if(r) c.push(r.p2||!review?'done':(r.ok?'ok':'bad'));   // верно/ошибка — только в разборе, при решении просто «отвечено»
     if(i===idx) c.push('cur');
     let pre='';
     if(isP2(q)&&!sep&&i>0){sep=true;pre='<span class="qsep">Часть 2</span>';}
     const lab=isP2(q)&&q.n?q.n:(i+1);
-    const st=r?(r.p2?'ответ сохранён':(r.ok?'верно':'ошибка')):(i===idx?'текущий':'');
+    const st=r?(r.p2||!review?'ответ сохранён':(r.ok?'верно':'ошибка')):(i===idx?'текущий':'');
     return pre+`<button class="${c.join(' ')}" onclick="go(${i})" aria-label="Вопрос ${esc(String(lab))}${st?', '+st:''}">${esc(String(lab))}</button>`;
   }).join('');
   const cur=nav.children.length&&nav.querySelector('.cur');
@@ -672,7 +670,7 @@ function nextOpen(){
 /* правильные ответы и пояснения ученику открываются после отправки ДЗ учителю (см. cabinet.js) */
 function answersOpen(){ return !(window.answersLocked && answersLocked()); }
 const LOCK_NOTE='Правильный ответ и пояснение откроются после отправки работы учителю.';
-function nextLabel(){if(review)return idx+1<bank.length?'Дальше':'Все задания';return nextOpen()>=0?'Дальше':'Результат'}
+function nextLabel(){if(review)return idx+1<bank.length?'Дальше':'Все задания';return bank.some((q,i)=>i!==idx&&!results[i])?'Дальше':'Завершить'}
 /* оценка учителя за задание части 2 в режиме разбора */
 function reviewGrade(q){
   const s=review.sub, i=bank.indexOf(q), g=(s.grades||{})[i], x=(s.p2||[]).find(y=>y.i===i);
@@ -700,43 +698,22 @@ function render(){
     <div class="qtext">${fmtQ(q.text)}</div>
     <div class="az">
       <label class="lab" for="inp">Ответ</label>
-      <div class="cells-wrap">
-        <div class="cells n${cellCount(q)}" id="cells" aria-hidden="true">${'<span class="cell"></span>'.repeat(cellCount(q))}</div>
-        <input id="inp" class="cells-inp" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off"
-          autocapitalize="off" spellcheck="false" maxlength="${cellCount(q)}" aria-label="Ответ: до ${cellCount(q)} цифр, без пробелов">
-      </div>
+      <input id="inp" class="tin ans-inp" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off"
+        autocapitalize="off" spellcheck="false" maxlength="12" placeholder="Только цифры" aria-label="Ответ: только цифры, без пробелов">
       <div class="verdict" id="verdict"></div>
-      <button class="btn" id="check" onclick="check()">Проверить</button>
+      <button class="btn" id="check" onclick="saveP1()">${nextLabel()}</button>
       ${finLink()}
     </div>`;
   const inp=$('#inp');
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();answered?next():check()}});
-  bindCells(inp);
-  if(results[idx]){answered=true;inp.value=results[idx].user;showP1(results[idx],false)}
-  else if(review){answered=true;inp.placeholder='Нет ответа';showP1({q,user:'',ok:false},false)}
-  else inp.focus();
+  inp.addEventListener('input',()=>{ const c=inp.value.replace(/\D/g,''); if(c!==inp.value) inp.value=c; });
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();review?next():saveP1()}});
+  if(review){answered=true;const r=results[idx]||{q,user:'',ok:false};inp.value=r.user;if(!r.user)inp.placeholder='Нет ответа';showP1(r)}
+  else{ if(results[idx]) inp.value=results[idx].user; inp.focus(); }
 }
 
-/* ---- клетки ответа ---- */
-/* соответствие: клеток ровно по числу букв; остальное — 5 (6, если ответ длиннее), чтобы число клеток не подсказывало ответ */
+/* соответствие: ответ — ровно по числу букв задания */
 function isMatching(q){ return qType(q.text)==='Соответствие'; }
-function cellCount(q){ const a=norm(q.answer).length; return isMatching(q)?Math.max(1,a):Math.min(6,Math.max(5,a)); }
-function paintCells(){
-  const inp=$('#inp'), box=$('#cells'); if(!inp||!box) return;
-  const v=inp.value, cells=[...box.children], live=document.activeElement===inp&&!inp.readOnly;
-  const at=Math.min(v.length>=cells.length?cells.length-1:(inp.selectionStart??v.length), cells.length-1);
-  cells.forEach((c,i)=>{ c.textContent=v[i]||''; c.classList.toggle('fill',!!v[i]); c.classList.toggle('act',live&&i===at); });
-}
-function bindCells(inp){
-  inp.addEventListener('input',()=>{
-    const clean=inp.value.replace(/\D/g,'').slice(0,+inp.maxLength||6);
-    if(clean!==inp.value){ inp.value=clean; inp.setSelectionRange(clean.length,clean.length); }
-    paintCells();
-  });
-  ['focus','blur','keyup','click','select'].forEach(ev=>inp.addEventListener(ev,paintCells));
-  paintCells();
-}
-function shakeCells(){ const c=$('#cells'); if(!c) return; c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); }
+function shakeInp(){ const i=$('#inp'); if(!i) return; i.classList.remove('wrong'); void i.offsetWidth; i.classList.add('wrong'); }
 /* «запишите цифры» — порядок не важен (как на ЕГЭ); соответствие — важен */
 function isRight(q,user){
   const a=norm(q.answer);
@@ -759,22 +736,18 @@ function almost(q,user){
   if(miss) parts.push((parts.length?(NUM_G[miss]||miss):(miss===1?'Одной':(NUM_G[miss]||miss).replace(/^./,c=>c.toUpperCase())))+' не хватает');
   return 'Почти'+(parts.length?'. '+parts.join(', '):'');
 }
-function check(){
-  if(answered) return;
+/* ответ части 1 сохраняется молча: верно/ошибка ученик увидит только после завершения ДЗ */
+function saveP1(){
   const q=bank[idx], inp=$('#inp'), user=norm(inp.value);
-  if(!user){ shakeCells(); toast('Введи ответ'); inp.focus(); return; }
-  answered=true;
-  const ok=isRight(q,user);
-  if(ok) score++;
-  results[idx]={q,n:q.n,user,answer:norm(q.answer),ok};
-  bars();
-  showP1(results[idx],true);
+  if(!user){ shakeInp(); toast('Введи ответ'); inp.focus(); return; }
+  results[idx]={q,n:q.n,user,answer:norm(q.answer),ok:isRight(q,user)};
+  score=results.filter(r=>r&&!r.p2&&r.ok).length;
+  next();
 }
-function showP1(r,scroll){
+/* разбор отправленной работы: поле только для чтения + вердикт словом и значком */
+function showP1(r){
   const q=r.q, ok=r.ok, inp=$('#inp'), open=answersOpen();
-  inp.readOnly=true; inp.blur();
-  const cells=$('#cells'); cells.classList.add(ok?'ok':'bad'); if(!ok&&scroll) shakeCells();
-  paintCells();
+  inp.readOnly=true; inp.classList.add(ok?'ok':'bad');
   $('#check').outerHTML=`<button class="btn" onclick="next()">${nextLabel()}</button>`;
   const v=$('#verdict'), near=!ok&&almost(q,r.user);
   const head = ok ? 'Верно' : !r.user ? 'Нет ответа' : near ? (open?near:'Почти — совпало больше половины цифр') : 'Ошибка';
@@ -786,7 +759,6 @@ function showP1(r,scroll){
     </div>
     ${open&&q.explanation?`<div class="rz"><button class="etog" onclick="tog(this)">Скрыть разбор</button>
       <div class="expl open"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div></div>`:''}`;
-  if(scroll) setTimeout(()=>{if(v.scrollIntoView)v.scrollIntoView({behavior:'smooth',block:'nearest'})},120);
 }
 function renderP2(q){
   app.innerHTML=`
@@ -896,7 +868,7 @@ function finish(){
   afterResult();
 }
 /* restart current base test from scratch */
-function openTest2(){ bank = tests.find(t=>t.name===curBase)?tests.find(t=>t.name===curBase).questions:bank; curName=curBase; begin(); }
+function openTest2(){ const t=tests.find(x=>x.name===curBase); if(t) bank=testBank(t); curName=curBase; begin(); }
 
 /* early finish: chart + all questions + answers + explanation toggles */
 function finishEarly(){
@@ -912,6 +884,7 @@ function finishEarly(){
         <span class="qtype">${qType(q.text)}</span>
       </div>
       <div class="qtext">${fmtQ(q.text)}</div>
+      ${mineLine(results[i])}
       ${open?`<div class="aans">Правильный ответ:<b>${esc(q.answer)}</b></div>
       ${q.explanation?`<button class="etog" onclick="tog2(this)">Пояснение</button>
         <div class="expl"><div class="expl-inner">${fmtExpl(q.explanation)}</div></div>`:''}`:''}
@@ -924,6 +897,10 @@ function finishEarly(){
     ${items}`;
   afterResult();
   window.scrollTo({top:0,behavior:'smooth'});
+}
+function mineLine(r){
+  if(!r||!r.user) return `<div class="mine none">Твой ответ: нет ответа</div>`;
+  return `<div class="mine ${r.ok?'ok':'bad'}">Твой ответ:<b>${esc(r.user)}</b><span>${r.ok?'✓ верно':'✕ ошибка'}</span></div>`;
 }
 function p2Item(q){
   const a=review?((results[bank.indexOf(q)]||{}).user||''):getAns(q);

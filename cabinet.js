@@ -12,6 +12,8 @@ let submitted = new Set();  // названия ДЗ, которые учени�
 function answersLocked(){
   return !!(CAB && me && me.role!=='teacher' && !review && !submitted.has(curBase));
 }
+/* ДЗ уже отправлено — ученик может решать заново только часть 1, вторая скрыта */
+function p1OnlyFor(t){ return !!(CAB && me && me.role!=='teacher' && t && submitted.has(t.name)); }
 async function loadSubmitted(){
   submitted=new Set();
   if(me && me.role!=='teacher'){ try{ (await api('my_subs')).subs.forEach(s=>submitted.add(s.test_name)); }catch(e){} }
@@ -197,6 +199,8 @@ function deadlinesHTML(lessons){
 function renderSendBox(){
   const box=document.getElementById('sendbox'); if(!box) return;
   const t=findTest(curBase);
+  if(CAB && !review && t && curName===curBase && p1OnlyFor(t) && bank!==t.questions){
+    box.innerHTML=`<div class="resnote">Работа уже сдана. Это повторное решение первой части — учителю оно не отправляется.</div>`; return; }
   if(!CAB || review || !t || bank!==t.questions || (me&&me.role==='teacher')){ box.innerHTML=''; return; }
   if(sentFor===results){ box.innerHTML=`<div class="sent">✓ Работа отправлена учителю</div>`; return; }
   // одна главная кнопка на экран: если есть «Исправить N ошибок», отправка — второстепенная
@@ -227,7 +231,7 @@ async function sendWork(){
 /* изменение к прошлой попытке этого же ДЗ (по первой части) — на экране результата */
 async function resultDelta(){
   const el=document.getElementById('rsdelta'); if(!el||!CAB||!me||me.role==='teacher') return;
-  const t=findTest(curBase); if(!t||bank!==t.questions||review) return;
+  const t=findTest(curBase); if(!t||review||curName!==curBase) return;   // и полное ДЗ, и повтор только части 1
   const total=countP1(bank); if(!total) return;
   let subs=[]; try{ subs=(await api('my_subs')).subs; }catch(e){ return; }
   subs=subs.filter(s=>s.test_name===curBase&&s.p1_total).sort((a,b)=>b.created_at.localeCompare(a.created_at));
@@ -627,7 +631,8 @@ async function lessonView(id){
     ${t?`<div class="hwbox"><div class="lab">Домашнее задание</div><div class="tname">${esc(t.name)}</div>
       <div class="tmeta" style="margin:-6px 0 12px">${metaLine(t.questions)}${done?' · уже сдано':''}</div>
       ${l.deadline?`<div class="hw-dl${!done&&+new Date(l.deadline)<Date.now()?' over':''}">Сдать до ${fmtDeadline(l.deadline)}${done?'':' · '+deadlineBadge(l.deadline)}</div>`:''}
-      <button class="btn" onclick="openTest('${esc(t.id)}')">${done?'Решать ещё раз':'Решать ДЗ'}</button></div>`:''}
+      <button class="btn" onclick="openTest('${esc(t.id)}')">${done?'Решать тест ещё раз':'Решать ДЗ'}</button>
+      ${done&&t.questions.some(isP2)?'<div class="resnote">Вторая часть уже отправлена учителю — заново решается только тест.</div>':''}</div>`:''}
     ${l.files.length?`<div class="lab">Материалы</div><div class="flist">${fileLinksHTML(l.files)}</div>`:''}
     ${teacher?`<button class="btn ghost" onclick="lessonEdit('${esc(l.id)}')">Редактировать урок</button>`:''}
   </div>`);
