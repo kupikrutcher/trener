@@ -28,17 +28,52 @@ async function loadMe(){
   me=null;
   const { data:{ session } } = await sb.auth.getSession();
   if(session){
-    const { data } = await sb.from('profiles').select('id,login,full_name,role').eq('id',session.user.id).single();
+    const { data } = await sb.from('profiles').select('*').eq('id',session.user.id).single();
     me=data||null;
   }
   paintAcct();
 }
+/* серая фигурка по плечи — если своей картинки нет */
+const AVA_DEFAULT=`<svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" fill="#d5d5da"/>
+  <circle cx="20" cy="15.5" r="7.2" fill="#9d9da6"/><path d="M5 40c0-8.6 6.7-14.5 15-14.5S35 31.4 35 40z" fill="#9d9da6"/></svg>`;
+function avaInner(u){ return u&&u.avatar ? `<img src="${u.avatar.replace(/"/g,'')}" alt="">` : AVA_DEFAULT; }
 function paintAcct(){
   const b=cabEl(); if(!b) return;
   if(!CAB){ b.style.display='none'; return; }
   b.style.display='';
-  b.textContent = me ? (me.role==='teacher'?'Проверка':'Кабинет') : 'Войти';
+  if(me && me.role!=='teacher'){
+    b.className='ava'; b.innerHTML=avaInner(me); b.title='Мой профиль'; b.setAttribute('aria-label','Мой профиль');
+  }else{
+    b.className='acct'; b.textContent = me ? 'Проверка' : 'Войти'; b.removeAttribute('title'); b.removeAttribute('aria-label');
+  }
   b.onclick = ()=> me ? openCabinet() : cabLogin();
+  const hi=document.getElementById('landhi'); if(hi) hi.textContent = me ? 'Привет, '+firstName(me.full_name)+'!' : 'Привет!';
+}
+function pickAvatar(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=()=>{ const f=inp.files[0]; if(f) setAvatarFile(f); };
+  inp.click();
+}
+/* уменьшаем до 160×160, обрезая по центру, и сохраняем как JPEG (~10 КБ) */
+function setAvatarFile(f){
+  const url=URL.createObjectURL(f), img=new Image();
+  img.onload=async()=>{
+    URL.revokeObjectURL(url);
+    const S=160, c=document.createElement('canvas'); c.width=c.height=S;
+    const k=Math.min(img.width,img.height), sx=(img.width-k)/2, sy=(img.height-k)/2;
+    c.getContext('2d').drawImage(img,sx,sy,k,k,0,0,S,S);
+    await saveAvatar(c.toDataURL('image/jpeg',0.85));
+  };
+  img.onerror=()=>{ URL.revokeObjectURL(url); toast('Не получилось открыть картинку'); };
+  img.src=url;
+}
+async function saveAvatar(data){
+  const { error } = await sb.rpc('set_avatar',{ img:data });
+  if(error){ toast('Не сохранилось: '+error.message); return; }
+  me.avatar=data; paintAcct();
+  const big=document.getElementById('avabig'); if(big) big.innerHTML=avaInner(me);
+  const rm=document.getElementById('avarm'); if(rm) rm.style.display=data?'':'none';
+  toast(data?'Фото обновлено':'Фото убрано');
 }
 function openCabinet(){ if(!me) return cabLogin(); me.role==='teacher' ? cabTeacher('todo') : cabStudent(); }
 
@@ -76,11 +111,30 @@ async function doLogin(){
 }
 async function doLogout(){ await sb.auth.signOut(); me=null; paintAcct(); home(); }
 
+/* ---------- главная: карточка профиля ---------- */
+async function landExtra(){
+  const box=document.getElementById('landextra'); if(!box||!CAB) return;
+  paintAcct();
+  if(!me){ box.innerHTML=`<div class="land-note">Чтобы отправлять ДЗ на проверку, <button class="linkbtn" onclick="cabLogin()">войди</button> по логину от учителя.</div>`; return; }
+  if(me.role==='teacher'){
+    const { count } = await sb.from('submissions').select('id',{count:'exact',head:true}).is('checked_at',null).gt('p2_max',0);
+    box.innerHTML=`<div class="land-card" onclick="cabTeacher('todo')"><div><b>${count||0}</b></div><span>работ ждут проверки →</span></div>`;
+    return;
+  }
+  const { data } = await sb.from('submissions').select('created_at,p1_score,p1_total,p2,p2_max,p2_score,checked_at').order('created_at',{ascending:true}).limit(1000);
+  if(!document.getElementById('landextra')) return;
+  const pts=progressPoints(data||[]);
+  if(!pts.length){ box.innerHTML=''; return; }
+  const avg=Math.round(pts.reduce((a,p)=>a+p.pct,0)/pts.length);
+  box.innerHTML=`<div class="land-card" onclick="cabStudent()"><div><b>${avg}%</b></div>
+    <span>средний результат за ${pts.length} ${pts.length%10===1&&pts.length%100!==11?'проверенную работу':'проверенных работ'}. Посмотреть прогресс →</span></div>`;
+}
+
 /* ---------- отправка работы (на экране результата) ---------- */
 function renderSendBox(){
   const box=document.getElementById('sendbox'); if(!box) return;
   const t=findTest(curBase);
-  if(!CAB || !t || bank!==t.questions || (me&&me.role==='teacher')){ box.innerHTML=''; return; }
+  if(!CAB || review || !t || bank!==t.questions || (me&&me.role==='teacher')){ box.innerHTML=''; return; }
   if(sentFor===results){ box.innerHTML=`<div class="sent">✓ Работа отправлена учителю</div>`; return; }
   if(!me){
     box.innerHTML=`<button class="btn ghost" onclick="cabLogin(()=>finishEarly())">Войти, чтобы отправить работу учителю</button>`;
@@ -121,23 +175,97 @@ function subBadge(s){
   return s.checked_at ? '<span class="st-ok">проверено</span>' : '<span class="st-wait">ждёт проверки</span>';
 }
 async function cabStudent(){
-  cabShow(`<div class="cab"><div class="cab-top"><h2 class="cab-h">${esc(me.full_name)}</h2>
-    <button class="linkbtn" onclick="doLogout()">Выйти</button></div>
-    <p class="cab-sub">Логин: ${esc(me.login)}</p><div id="clist" class="cab-load">Загружаем работы…</div></div>`);
+  cabShow(`<div class="cab">
+    <div class="prof">
+      <button class="ava-big" id="avabig" onclick="pickAvatar()" title="Сменить фото">${avaInner(me)}</button>
+      <div style="min-width:0">
+        <h2 class="cab-h">${esc(me.full_name)}</h2>
+        <p class="cab-sub">Логин: ${esc(me.login)}</p>
+        <div class="prof-act">
+          <button class="linkbtn" onclick="pickAvatar()">Сменить фото</button>
+          <button class="linkbtn back" id="avarm" onclick="saveAvatar(null)" style="${me.avatar?'':'display:none'}">Убрать</button>
+          <button class="linkbtn back" onclick="doLogout()">Выйти</button>
+        </div>
+      </div>
+    </div>
+    <div id="clist" class="cab-load">Загружаем работы…</div></div>`);
   const { data, error } = await sb.from('submissions')
     .select('id,test_name,created_at,p1_score,p1_total,p2,p2_max,p2_score,checked_at')
-    .order('created_at',{ascending:false}).limit(300);
+    .order('created_at',{ascending:false}).limit(1000);
   const box=$('#clist'); if(!box) return;
   if(error){ box.textContent='Не удалось загрузить: '+error.message; return; }
   box.className='';
-  box.innerHTML = data.length ? `<h3 class="cab-h3">Мои работы</h3><div class="tlist">${data.map(s=>`
+  box.innerHTML = `<h3 class="cab-h3">Прогресс</h3><div id="prog"></div>` + (data.length ? `<h3 class="cab-h3">Мои работы</h3><div class="tlist">${data.map(s=>`
       <div class="tcard" onclick="cabSubmission(${s.id})">
         <div class="tinfo"><div class="tname">${esc(s.test_name)}</div>
           <div class="tmeta">${fmtDate(s.created_at)} · ${statusLine(s)}</div></div>
         ${subBadge(s)}<span class="tgo">→</span>
       </div>`).join('')}</div>`
-    : `<div class="empty">Отправленных работ пока нет.<br>Реши тест и нажми «Отправить работу учителю» на экране результата.</div>`;
-  box.innerHTML += `<button class="btn ghost" onclick="home()">К тестам</button>`;
+    : `<div class="empty">Отправленных работ пока нет.<br>Реши ДЗ и нажми «Отправить работу учителю» на экране результата.</div>`);
+  box.innerHTML += `<button class="btn ghost" onclick="hwList()">К ДЗ</button>`;
+  drawProgress($('#prog'), data);
+}
+
+/* ---------- прогресс: % баллов за каждую итоговую работу + линия тренда ---------- */
+/* работа попадает в прогресс, когда её итог известен: проверена учителем или в ней нет части 2 */
+function progressPoints(subs){
+  return subs.filter(s=>!(s.p2&&s.p2.length)||s.checked_at)
+    .map(s=>{ const max=(s.p1_total||0)+((s.p2&&s.p2.length)?(s.p2_max||0):0), got=(s.p1_score||0)+(s.p2_score||0);
+      return max?{ s, got, max, pct:Math.round(got/max*100) }:null; })
+    .filter(Boolean)
+    .sort((a,b)=>new Date(a.s.created_at)-new Date(b.s.created_at));
+}
+function trendLine(ys){ const n=ys.length; if(n<2) return null;
+  const mx=(n-1)/2, my=ys.reduce((a,b)=>a+b,0)/n;
+  let num=0, den=0; ys.forEach((y,x)=>{ num+=(x-mx)*(y-my); den+=(x-mx)*(x-mx); });
+  const k=num/den; return { k, at:x=>my+k*(x-mx) }; }
+function drawProgress(el, subs){
+  if(!el) return;
+  const pts=progressPoints(subs||[]), wait=(subs||[]).filter(s=>s.p2&&s.p2.length&&!s.checked_at).length;
+  const waitNote = wait ? `<div class="pnote">${wait===1?'Ещё 1 работа ждёт проверки — появится на графике после неё.':'Ещё '+wait+' работ(ы) ждут проверки — появятся на графике после неё.'}</div>` : '';
+  if(!pts.length){ el.innerHTML=`<div class="empty" style="margin-bottom:0">График появится, когда будет проверена первая работа.</div>${waitNote}`; return; }
+  const ys=pts.map(p=>p.pct), avg=Math.round(ys.reduce((a,b)=>a+b,0)/ys.length), tr=trendLine(ys);
+  const dir = tr ? (Math.abs(tr.k)<0.5?'ровно':(tr.k>0?'+':'−')+Math.abs(tr.k).toFixed(1)) : '—';
+  el.innerHTML=`
+    <div class="pstats">
+      <div class="pstat"><b>${avg}%</b><span>средний результат</span></div>
+      <div class="pstat"><b>${ys[ys.length-1]}%</b><span>последняя работа</span></div>
+      <div class="pstat"><b>${dir}</b><span>${tr?'тренд, п.п. за работу':'тренд — после 2 работ'}</span></div>
+    </div>
+    <div class="plegend"><span><i class="lb"></i>% баллов за работу</span>${tr?'<span><i class="lt"></i>тренд</span>':''}</div>
+    <div class="pchart" id="pchart" role="img" aria-label="Результаты по работам: ${ys.join('%, ')}%"></div>
+    ${waitNote}`;
+  const box=el.querySelector('#pchart');
+  const paint=()=>{
+    const W=box.clientWidth, H=210, L=34, R=6, T=10, B=24, iw=W-L-R, ih=H-T-B, n=pts.length;
+    const step=iw/n, bw=Math.max(4,Math.min(28,step-2)), y=v=>T+ih-(v/100)*ih;
+    let g='';
+    [0,50,100].forEach(v=>{ g+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${L-8}" y="${y(v)+4}" text-anchor="end">${v}%</text>`; });
+    const every=Math.max(1,Math.ceil(n/Math.floor(iw/30)));
+    pts.forEach((p,i)=>{
+      const cx=L+step*i+step/2, x=cx-bw/2, top=y(p.pct), h=T+ih-top, r=Math.min(4,bw/2,h);
+      g+= h>0 ? `<path class="bar" data-i="${i}" d="M${x},${T+ih}V${top+r}Q${x},${top} ${x+r},${top}H${x+bw-r}Q${x+bw},${top} ${x+bw},${top+r}V${T+ih}Z"/>`
+              : `<rect class="bar" data-i="${i}" x="${x}" y="${T+ih-1}" width="${bw}" height="1"/>`;
+      if(i%every===0||i===n-1) g+=`<text class="ax" x="${cx}" y="${H-6}" text-anchor="middle">${i+1}</text>`;
+    });
+    if(tr){ const x1=L+step/2, x2=L+step*(n-1)+step/2, c=v=>Math.max(0,Math.min(100,v));
+      g+=`<line class="trend" x1="${x1}" y1="${y(c(tr.at(0)))}" x2="${x2}" y2="${y(c(tr.at(n-1)))}"/>`; }
+    pts.forEach((p,i)=>{ g+=`<rect class="hit" data-i="${i}" x="${L+step*i}" y="${T}" width="${step}" height="${ih}"/>`; });
+    box.innerHTML=`<svg width="${W}" height="${H}">${g}</svg><div class="ptip" id="ptip"></div>`;
+    const tip=box.querySelector('#ptip');
+    box.querySelectorAll('.hit').forEach(h=>{
+      const i=+h.dataset.i, p=pts[i];
+      const show=()=>{ box.classList.add('hov'); box.querySelectorAll('.bar').forEach(b=>b.classList.toggle('on',+b.dataset.i===i));
+        tip.innerHTML=`<b>${p.pct}%</b> · ${p.got} из ${p.max} б.<br>${esc(p.s.test_name)}<br>${fmtDate(p.s.created_at)}`;
+        const cx=L+step*i+step/2; tip.style.left=Math.max(80,Math.min(W-80,cx))+'px'; tip.style.top=y(p.pct)+'px'; tip.classList.add('show'); };
+      const hide=()=>{ box.classList.remove('hov'); tip.classList.remove('show'); };
+      h.addEventListener('mouseenter',show); h.addEventListener('mouseleave',hide);
+      h.addEventListener('click',show);
+    });
+  };
+  paint();
+  let rt; const ro=new ResizeObserver(()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(document.body.contains(box)) paint(); else ro.disconnect(); },80); });
+  ro.observe(box);
 }
 
 /* ---------- одна работа: просмотр (ученик) и проверка (учитель) ---------- */
@@ -181,6 +309,7 @@ async function cabSubmission(id){
       <button class="linkbtn back" onclick="openCabinet()">← Назад</button>
       <h2 class="cab-h" style="margin-top:10px">${esc(s.test_name)}</h2>
       <p class="cab-sub">${who}${fmtDate(s.created_at)}</p>
+      ${t?`<button class="btn ghost" style="margin-bottom:22px" onclick="openReview()">Открыть ДЗ с пояснениями</button>`:''}
       ${s.p1_total?`<div class="sumline">Часть 1: <b>${s.p1_score}</b> из ${s.p1_total}</div>
         <div class="chips">${p1chips}</div>
         <button class="etog" onclick="tog(this)">Показать разбор</button>
@@ -192,6 +321,15 @@ async function cabSubmission(id){
         <button class="btn" id="gsave" style="margin-top:16px" onclick="saveGrade()">${s.checked_at?'Сохранить изменения':'Сохранить проверку'}</button>`
       : (!teacher&&s.comment?`<div class="uans-lab">Общий комментарий учителя</div><div class="uans tc">${esc(s.comment)}</div>`:'')}
     </div>`);
+}
+/* разбор отправленной работы в самом тесте: ответы, правильные ответы, пояснения, оценки */
+function openReview(){
+  const s=curSub, t=findTest(s.test_name); if(!t) return;
+  bank=t.questions; curId=t.id; curBase=t.name; curName=t.name+' · разбор';
+  results=[]; score=0;
+  (s.p1||[]).forEach(x=>{ const q=bank[x.i]; if(q&&x.user){ results[x.i]={q,n:q.n,user:x.user,answer:norm(q.answer),ok:!!x.ok}; if(x.ok) score++; } });
+  (s.p2||[]).forEach(x=>{ const q=bank[x.i]; if(q&&x.text) results[x.i]={q,n:q.n,user:x.text,p2:true}; });
+  review={ sub:s }; idx=0; render(); window.scrollTo({top:0});
 }
 function pickPts(b,k){
   b.parentNode.querySelectorAll('.qn').forEach(x=>x.classList.remove('done','cur'));
@@ -233,7 +371,7 @@ async function cabTeacher(tab){
   cabShow(`<div class="cab"><div class="cab-top"><h2 class="cab-h">Проверка</h2>
     <button class="linkbtn" onclick="doLogout()">Выйти</button></div>
     ${tabsHTML()}<div id="tbody" class="cab-load">Загружаем…</div>
-    <button class="btn ghost" style="margin-top:22px" onclick="home()">К тестам</button></div>`);
+    <button class="btn ghost" style="margin-top:22px" onclick="hwList()">К ДЗ</button></div>`);
   if(teacherTab==='students') return teacherStudents();
   const [studs] = await Promise.all([loadStudents()]);
   const names=Object.fromEntries(studs.map(p=>[p.id,p.full_name]));
@@ -246,7 +384,8 @@ async function cabTeacher(tab){
   box.className='';
   if(error){ box.textContent='Не удалось загрузить: '+error.message; return; }
   const head = filterStudent ? `<div class="fbar">Ученик: <b>${esc(names[filterStudent]||'')}</b>
-      <button class="linkbtn" onclick="filterStudent=null;cabTeacher('all')">показать всех</button></div>` : '';
+      <button class="linkbtn" onclick="filterStudent=null;cabTeacher('all')">показать всех</button></div>
+      <div id="prog" style="margin-bottom:18px"></div>` : '';
   box.innerHTML = head + (data.length ? `<div class="tlist">${data.map(s=>`
       <div class="tcard" onclick="cabSubmission(${s.id})">
         <div class="tinfo"><div class="tname">${esc(names[s.student_id]||'Удалённый ученик')}</div>
@@ -255,6 +394,7 @@ async function cabTeacher(tab){
         ${subBadge(s)}<span class="tgo">→</span>
       </div>`).join('')}</div>`
     : `<div class="empty">${teacherTab==='todo'?'Непроверенных работ нет 🎉':'Работ пока нет'}</div>`);
+  if(filterStudent) drawProgress($('#prog'), data);
 }
 async function teacherStudents(){
   const studs=await loadStudents();
@@ -337,7 +477,7 @@ async function delStudent(id){
 
 /* ---------- старт ---------- */
 if(CAB){
-  loadMe();
+  loadMe().then(()=>{ if(document.getElementById('landextra')) landExtra(); });
   sb.auth.onAuthStateChange((ev)=>{ if(ev==='SIGNED_OUT'){ me=null; paintAcct(); } });
 }
 paintAcct();
