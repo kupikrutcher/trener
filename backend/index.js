@@ -13,7 +13,7 @@ const reply = (statusCode, body) => ({
   statusCode, headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8' }, body: JSON.stringify(body),
 });
 
-const makeHandler = (getDb) => async (event, context) => {
+const makeHandler = (getDb, getStore) => async (event, context) => {
   if (context && context.token && context.token.access_token) globalThis.__ycToken = context.token.access_token;
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return reply(405, { error: 'Только POST' });
@@ -24,7 +24,7 @@ const makeHandler = (getDb) => async (event, context) => {
     req = JSON.parse(raw);
   } catch { return reply(400, { error: 'Неверный запрос' }); }
   try {
-    return reply(200, await handle(req, getDb(), process.env));
+    return reply(200, await handle(req, getDb(), process.env, getStore ? getStore() : undefined));
   } catch (e) {
     if (e instanceof ApiError) return reply(e.status, { error: e.message });
     console.error(e);

@@ -5,6 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 DB=trener-db
+SITE_ORIGIN=https://kupikrutcher.github.io
 SA=trener-fn
 FN=trener-api
 FOLDER_ID=$(yc config get folder-id)
@@ -30,20 +31,39 @@ yc iam service-account get "$SA" >/dev/null 2>&1 || yc iam service-account creat
 SA_ID=$(yc iam service-account get "$SA" --format json | jq -r .id)
 yc resource-manager folder add-access-binding "$FOLDER_ID" --role ydb.editor --subject "serviceAccount:$SA_ID" >/dev/null 2>&1 || true
 
+echo "→ хранилище файлов уроков"
+BUCKET="trener-files-$FOLDER_ID"
+yc storage bucket get "$BUCKET" >/dev/null 2>&1 || yc storage bucket create --name "$BUCKET" >/dev/null
+yc resource-manager folder add-access-binding "$FOLDER_ID" --role storage.editor --subject "serviceAccount:$SA_ID" >/dev/null 2>&1 || true
+if ! grep -q '^S3_KEY_ID=' .secrets; then
+  KEY_JSON=$(yc iam access-key create --service-account-id "$SA_ID" --description "trener files" --format json)
+  echo "S3_KEY_ID=$(echo "$KEY_JSON" | jq -r .access_key.key_id)" >> .secrets
+  echo "S3_SECRET=$(echo "$KEY_JSON" | jq -r .secret)" >> .secrets
+  source .secrets
+fi
+
 echo "→ таблицы"
 npm ci --omit=dev --silent
 YDB_ENDPOINT=$YDB_ENDPOINT YDB_DATABASE=$YDB_DATABASE YDB_ACCESS_TOKEN_CREDENTIALS=$(yc iam create-token) \
   node -e "require('./db-ydb').ydbDb.createSchema().then(()=>process.exit(0),e=>{console.error(e);process.exit(1)})"
 
+echo "→ разрешаем сайту загружать файлы (CORS)"
+for i in 1 2 3 4 5 6; do
+  S3_BUCKET=$BUCKET S3_KEY_ID=$S3_KEY_ID S3_SECRET=$S3_SECRET node -e "
+    require('./s3').storage(process.env).setCors(['$SITE_ORIGIN','http://localhost:8770'])
+      .then(()=>process.exit(0),e=>{console.error(e.message);process.exit(1)})" && break
+  echo "   права ещё применяются, ждём…"; sleep 10
+done
+
 echo "→ функция"
 yc serverless function get "$FN" >/dev/null 2>&1 || yc serverless function create "$FN" >/dev/null
 rm -f /tmp/trener-api.zip
 # зависимости облако ставит само по package.json — в архив только код
-zip -q /tmp/trener-api.zip index.js app.js db-ydb.js package.json package-lock.json
+zip -q /tmp/trener-api.zip index.js app.js db-ydb.js s3.js package.json package-lock.json
 yc serverless function version create --function-name "$FN" \
   --runtime nodejs22 --entrypoint index.handler --memory 256m --execution-timeout 30s \
   --service-account-id "$SA_ID" --source-path /tmp/trener-api.zip \
-  --environment "YDB_ENDPOINT=$YDB_ENDPOINT,YDB_DATABASE=$YDB_DATABASE,SECRET=$SECRET,SETUP_CODE=$SETUP_CODE" >/dev/null
+  --environment "YDB_ENDPOINT=$YDB_ENDPOINT,YDB_DATABASE=$YDB_DATABASE,SECRET=$SECRET,SETUP_CODE=$SETUP_CODE,S3_BUCKET=$BUCKET,S3_KEY_ID=$S3_KEY_ID,S3_SECRET=$S3_SECRET" >/dev/null
 yc serverless function allow-unauthenticated-invoke "$FN" >/dev/null
 
 FN_ID=$(yc serverless function get "$FN" --format json | jq -r .id)

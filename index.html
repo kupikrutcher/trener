@@ -308,6 +308,29 @@ body{
 .ptip b{font-size:13.5px}
 .pnote{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5}
 @media(max-width:420px){.pstat b{font-size:18px}}
+/* ---- уроки ---- */
+.vwrap{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin:4px 0 20px}
+.vwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.hwbox{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:var(--bg);margin-bottom:18px}
+.hwbox .lab{margin-bottom:4px}
+.hwbox .tname{margin-bottom:12px}
+.flist{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.fitem{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);
+  color:var(--ink);text-decoration:none;font-size:14px;transition:border-color .2s,background .2s}
+a.fitem:hover{border-color:var(--accent);background:var(--accent-soft)}
+.fitem .fic{flex:none;width:34px;height:34px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:10.5px;font-weight:700;letter-spacing:.02em}
+.fitem .fnm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fitem .fsz{flex:none;font-size:12px;color:var(--muted)}
+.fitem .fst{flex:none;font-size:12px;color:var(--muted)}
+.fitem .fst.err{color:var(--bad)}
+.st-draft{flex:none;font-size:11px;border-radius:99px;padding:3px 9px;color:var(--muted);background:var(--line)}
+.lform .lab{margin-top:16px}
+.lform select.tin{appearance:auto}
+.chk{display:flex;align-items:center;gap:10px;margin:20px 0 4px;font-size:14.5px;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:var(--accent)}
+.vprev{margin-top:10px}
+.vnote{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.5}
+.vnote.err{color:var(--bad)}
 .foot{text-align:center;color:var(--muted);font-size:11px;margin-top:24px;opacity:.6;letter-spacing:.03em}
 input[type=file]{display:none}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(150%);
@@ -486,13 +509,16 @@ function home(){
       <div class="land-hi" id="landhi">Привет!</div>
       <h1>Домашка по обществознанию</h1>
       <p class="land-sub">Первая часть проверяется сразу, с пояснениями к каждому заданию. Развёрнутые ответы из второй части отправляй на проверку — баллы и комментарии появятся в профиле.</p>
-      <button class="btn land-go" onclick="hwList()">Перейти к ДЗ</button>
+      <button class="btn land-go" onclick="goHW()">Перейти к ДЗ</button>
       <div id="landextra"></div>
     </div>`;
   if(window.landExtra) landExtra();
 }
-/* список ДЗ по разделам */
+/* куда ведёт «ДЗ»: ученику — уроки (тесты открываются из урока), учителю — все тесты (cabinet.js решает) */
+function goHW(){ return window.cabGoHW ? cabGoHW() : hwList(); }
+/* список ДЗ по разделам — только для учителя (и когда сервер не подключён) */
 function hwList(){
+  if(window.cabCanSeeTests && !cabCanSeeTests()) return goHW();
   review=null;
   $('#bars').style.display='none';
   $('#foot').textContent='';
@@ -739,7 +765,7 @@ function finish(){
     ${p2n?`<div class="resnote" style="margin:-10px 0 20px">Часть 2: написано ${p2done} из ${p2n} развёрнутых ответов</div>`:''}
     <div class="rrow">
       <button class="btn" onclick="openTest2()">Решать заново</button>
-      <button class="btn ghost" onclick="hwList()">К ДЗ</button>
+      <button class="btn ghost" onclick="goHW()">К ДЗ</button>
     </div>
     <div id="sendbox"></div>
     <button class="linkfin" onclick="finishEarly()">Показать все задания с ответами</button>`;
@@ -774,7 +800,7 @@ function finishEarly(){
     ${total?resultChart(correct,wrong,total):''}
     <div class="rrow" style="margin-top:18px">
       <button class="btn" onclick="openTest2()">Решать заново</button>
-      <button class="btn ghost" onclick="hwList()">К ДЗ</button>
+      <button class="btn ghost" onclick="goHW()">К ДЗ</button>
     </div>
     <div id="sendbox"></div>
     <div class="review"><h3>Все задания с ответами</h3></div>

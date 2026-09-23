@@ -63,8 +63,36 @@ const int = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(Number(v) || 0))
 const pub = (u) => ({ login: u.login, full_name: u.full_name, role: u.role });
 const newId = () => Date.now().toString(36).padStart(9, '0') + crypto.randomBytes(4).toString('hex');
 
+/* ссылки на видео: YouTube, Rutube, VK Видео → адрес для встраивания */
+function videoEmbed(url) {
+  if (!url) return null;
+  let u; try { u = new URL(url.trim()); } catch { return null; }
+  const h = u.hostname.replace(/^(www\.|m\.)/, '');
+  let m;
+  const yt = (id) => (/^[\w-]{6,20}$/.test(id || '') ? 'https://www.youtube.com/embed/' + id : null);
+  if (h === 'youtu.be') return yt(u.pathname.slice(1).split('/')[0]);
+  if (h === 'youtube.com' || h === 'youtube-nocookie.com') {
+    if (u.searchParams.get('v')) return yt(u.searchParams.get('v'));
+    if ((m = u.pathname.match(/^\/(embed|live|shorts)\/([\w-]+)/))) return yt(m[2]);
+  }
+  if (h === 'rutube.ru') {
+    if ((m = u.pathname.match(/^\/(?:video|live\/video|play\/embed|shorts)\/(?:private\/)?([0-9a-f]{20,})/i))) {
+      const p = u.searchParams.get('p');
+      return 'https://rutube.ru/play/embed/' + m[1] + (p ? '?p=' + encodeURIComponent(p) : '');
+    }
+  }
+  if (h === 'vk.com' || h === 'vkvideo.ru' || h === 'vk.ru') {
+    if ((m = (u.pathname + u.search).match(/video(-?\d+)_(\d+)/))) return `https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2`;
+    if (u.pathname === '/video_ext.php') return u.toString();
+  }
+  return null;
+}
+const safeName = (n) => String(n).replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').slice(0, 120) || 'file';
+const pubLesson = (l) => ({ id: l.id, title: l.title, video: l.video, embed: videoEmbed(l.video), test_name: l.test_name,
+  published: !!l.published, created_at: l.created_at, updated_at: l.updated_at, files_n: (l.files || []).length });
+
 /* ---------- действия ---------- */
-async function handle(req, db, env) {
+async function handle(req, db, env, store = require('./s3').storage(env)) {
   const action = req.action;
   const secret = env.SECRET || fail(500, 'Сервер не настроен');
 
@@ -227,9 +255,67 @@ async function handle(req, db, env) {
       return { ok: true };
     }
 
+    /* ---------- уроки ---------- */
+    case 'lessons_list': {
+      let list = await db.listLessons();
+      if (!teacher) list = list.filter((l) => l.published);
+      list.sort((a, b) => b.created_at.localeCompare(a.created_at));
+      return { lessons: list.map(pubLesson) };
+    }
+
+    case 'lesson_get': {
+      const l = await db.getLesson(str(req.id, 40, 'id'));
+      if (!l || (!teacher && !l.published)) fail(404, 'Урок не найден');
+      const files = (l.files || []).map((f) => ({ ...f, url: store.ok ? store.downloadUrl(f.key, f.name) : null }));
+      return { lesson: { ...pubLesson(l), files } };
+    }
+
+    case 'lesson_save': {
+      onlyTeacher();
+      const title = str(req.title, 200, 'title').trim();
+      if (!title) fail(400, 'Нужно название урока');
+      const video = req.video ? str(req.video, 500, 'video').trim() : '';
+      if (video && !videoEmbed(video)) fail(400, 'Не понимаю ссылку на видео: нужна ссылка YouTube, Rutube или VK Видео');
+      const test_name = req.test_name ? str(req.test_name, 300, 'test_name') : '';
+      const files = (Array.isArray(req.files) ? req.files : []).slice(0, 30).map((f) => {
+        const key = String(f.key || '');
+        if (!/^lessons\/[\w.-]+\/[^/]+$/.test(key)) fail(400, 'Неверный файл');
+        return { key, name: safeName(f.name), size: int(f.size, 0, 1e9) };
+      });
+      const now = new Date().toISOString();
+      const old = req.id ? await db.getLesson(str(req.id, 40, 'id')) : null;
+      if (req.id && !old) fail(404, 'Урок не найден');
+      const lesson = { id: old ? old.id : newId(), title, video, test_name, files, published: !!req.published,
+        created_at: old ? old.created_at : now, updated_at: now };
+      await db.putLesson(lesson);
+      if (old && store.ok) {
+        const keep = new Set(files.map((f) => f.key));
+        await Promise.all((old.files || []).filter((f) => !keep.has(f.key)).map((f) => store.remove(f.key).catch(() => {})));
+      }
+      return { lesson: pubLesson(lesson) };
+    }
+
+    case 'lesson_delete': {
+      onlyTeacher();
+      const l = await db.getLesson(str(req.id, 40, 'id'));
+      if (!l) fail(404, 'Урок не найден');
+      if (store.ok) await Promise.all((l.files || []).map((f) => store.remove(f.key).catch(() => {})));
+      await db.deleteLesson(l.id);
+      return { ok: true };
+    }
+
+    case 'file_upload_url': {
+      onlyTeacher();
+      if (!store.ok) fail(503, 'Хранилище файлов не настроено');
+      const size = int(req.size, 0, 2e9);
+      if (size > 100 * 1024 * 1024) fail(400, 'Файл больше 100 МБ');
+      const key = `lessons/${newId()}/${safeName(str(req.name, 300, 'name'))}`;
+      return { key, url: store.uploadUrl(key) };
+    }
+
     default:
       fail(400, 'Неизвестное действие');
   }
 }
 
-module.exports = { handle, ApiError, hashPassword, checkPassword, signToken, readToken, baseLogin };
+module.exports = { handle, ApiError, hashPassword, checkPassword, signToken, readToken, baseLogin, videoEmbed };

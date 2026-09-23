@@ -156,19 +156,22 @@ async function changePass(){
 async function landExtra(){
   const box=document.getElementById('landextra'); if(!box||!CAB) return;
   paintAcct();
-  if(!me){ box.innerHTML=`<div class="land-note">Чтобы отправлять ДЗ на проверку, <button class="linkbtn" onclick="cabLogin()">войди</button> по логину от учителя.</div>`; return; }
+  if(!me){ box.innerHTML=`<div class="land-note">Уроки и ДЗ открываются после входа. <button class="linkbtn" onclick="cabLogin()">Войти</button> по логину от учителя.</div>`; return; }
   if(me.role==='teacher'){
     let count=0; try{ count=(await api('todo_count')).count; }catch(e){}
     box.innerHTML=`<div class="land-card" onclick="cabTeacher('todo')"><div><b>${count||0}</b></div><span>работ ждут проверки →</span></div>`;
     return;
   }
-  let data=[]; try{ data=(await api('my_subs')).subs; }catch(e){}
+  let data=[], lessons=[];
+  try{ [data, lessons] = await Promise.all([api('my_subs').then(r=>r.subs), api('lessons_list').then(r=>r.lessons)]); }catch(e){}
   if(!document.getElementById('landextra')) return;
+  const last=lessons[0];
+  const lessonCard = last ? `<div class="land-card" onclick="lessonView('${esc(last.id)}')" style="margin-bottom:10px">
+    <div style="min-width:0"><span>Последний урок</span><div class="tname">${esc(last.title)}</div></div><span class="tgo" style="margin-left:auto">→</span></div>` : '';
   const pts=progressPoints(data||[]);
-  if(!pts.length){ box.innerHTML=''; return; }
-  const avg=Math.round(pts.reduce((a,p)=>a+p.pct,0)/pts.length);
-  box.innerHTML=`<div class="land-card" onclick="cabStudent()"><div><b>${avg}%</b></div>
-    <span>средний результат за ${pts.length} ${pts.length%10===1&&pts.length%100!==11?'проверенную работу':'проверенных работ'}. Посмотреть прогресс →</span></div>`;
+  const avg=pts.length?Math.round(pts.reduce((a,p)=>a+p.pct,0)/pts.length):0;
+  box.innerHTML = lessonCard + (pts.length ? `<div class="land-card" onclick="cabStudent()"><div><b>${avg}%</b></div>
+    <span>средний результат за ${pts.length} ${pts.length%10===1&&pts.length%100!==11?'проверенную работу':'проверенных работ'}. Посмотреть прогресс →</span></div>` : '');
 }
 
 /* ---------- отправка работы (на экране результата) ---------- */
@@ -392,7 +395,7 @@ async function loadStudents(){
   studentsCache=(await api('students_list')).students; return studentsCache;
 }
 function tabsHTML(){
-  const T=[['todo','На проверке'],['all','Все работы'],['students','Ученики']];
+  const T=[['todo','На проверке'],['all','Все работы'],['lessons','Уроки'],['students','Ученики']];
   return `<div class="tabs">${T.map(([k,l])=>`<button class="tab${teacherTab===k?' on':''}" onclick="cabTeacher('${k}')">${l}</button>`).join('')}</div>`;
 }
 async function cabTeacher(tab){
@@ -403,6 +406,7 @@ async function cabTeacher(tab){
     ${tabsHTML()}<div id="tbody" class="cab-load">Загружаем…</div>
     <button class="btn ghost" style="margin-top:22px" onclick="hwList()">К ДЗ</button></div>`);
   if(teacherTab==='students') return teacherStudents();
+  if(teacherTab==='lessons') return teacherLessons();
   let studs, data;
   try{
     [studs, data] = await Promise.all([loadStudents(),
@@ -492,6 +496,169 @@ async function delStudent(login){
   if(!confirm('Удалить ученика '+p.full_name+' вместе со всеми его работами? Это нельзя отменить.')) return;
   try{ await api('student_delete',{ login }); toast('Удалён'); teacherStudents(); }
   catch(e){ toast('Ошибка: '+e.message); }
+}
+
+/* ---------- уроки ---------- */
+/* ученикам тесты видны только через уроки; учителю — всё */
+function cabCanSeeTests(){ return !CAB || (me && me.role==='teacher'); }
+function cabGoHW(){
+  if(!CAB) return hwList();
+  if(!me) return cabLogin(()=>cabGoHW());
+  return me.role==='teacher' ? hwList() : lessonsList();
+}
+function fmtDay(s){ return new Date(s).toLocaleDateString('ru-RU',{day:'numeric',month:'long'}); }
+function fmtSize(n){ return n>=1048576?(n/1048576).toFixed(1).replace('.',',')+' МБ':Math.max(1,Math.round(n/1024))+' КБ'; }
+function fileExt(n){ const m=/\.([a-z0-9]{1,5})$/i.exec(n||''); return m?m[1].toUpperCase():'ФАЙЛ'; }
+/* то же, что на сервере (backend/app.js → videoEmbed): для предпросмотра в редакторе */
+function videoEmbed(url){
+  let u; try{ u=new URL((url||'').trim()); }catch(e){ return null; }
+  const h=u.hostname.replace(/^(www\.|m\.)/,''); let m;
+  const yt=id=>/^[\w-]{6,20}$/.test(id||'')?'https://www.youtube.com/embed/'+id:null;
+  if(h==='youtu.be') return yt(u.pathname.slice(1).split('/')[0]);
+  if(h==='youtube.com'||h==='youtube-nocookie.com'){
+    if(u.searchParams.get('v')) return yt(u.searchParams.get('v'));
+    if((m=u.pathname.match(/^\/(embed|live|shorts)\/([\w-]+)/))) return yt(m[2]);
+  }
+  if(h==='rutube.ru' && (m=u.pathname.match(/^\/(?:video|live\/video|play\/embed|shorts)\/(?:private\/)?([0-9a-f]{20,})/i))){
+    const p=u.searchParams.get('p'); return 'https://rutube.ru/play/embed/'+m[1]+(p?'?p='+encodeURIComponent(p):'');
+  }
+  if((h==='vk.com'||h==='vkvideo.ru'||h==='vk.ru') && (m=(u.pathname+u.search).match(/video(-?\d+)_(\d+)/)))
+    return `https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2`;
+  return null;
+}
+const videoFrame = src => `<div class="vwrap"><iframe src="${esc(src)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
+
+let curLesson=null;
+async function lessonsList(){
+  cabShow(`<div class="cab">
+    <button class="linkbtn back" onclick="home()">← На главную</button>
+    <h2 class="cab-h" style="margin:10px 0 18px">Уроки</h2>
+    <div id="llist" class="cab-load">Загружаем уроки…</div></div>`);
+  let lessons;
+  try{ lessons=(await api('lessons_list')).lessons; }
+  catch(e){ const b=$('#llist'); if(b) b.textContent='Не удалось загрузить: '+e.message; return; }
+  const box=$('#llist'); if(!box) return;
+  box.className='';
+  box.innerHTML = lessons.length ? `<div class="tlist">${lessons.map(l=>`
+    <div class="tcard" onclick="lessonView('${esc(l.id)}')">
+      <div class="tinfo"><div class="tname">${esc(l.title)}</div>
+        <div class="tmeta">${fmtDay(l.created_at)}${l.test_name?' · ДЗ: '+esc(l.test_name):''}${l.files_n?' · файлов: '+l.files_n:''}</div></div>
+      ${l.test_name&&submitted.has(l.test_name)?'<span class="st-ok">сдано</span>':''}<span class="tgo">→</span>
+    </div>`).join('')}</div>` : `<div class="empty">Уроков пока нет.<br>Когда учитель опубликует урок, он появится здесь.</div>`;
+}
+async function lessonView(id){
+  cabShow(`<div class="cab-load">Загружаем урок…</div>`);
+  let l;
+  try{ l=(await api('lesson_get',{ id })).lesson; }
+  catch(e){ cabShow(`<div class="empty">${esc(e.message)}</div><button class="btn ghost" onclick="goHW()">К урокам</button>`); return; }
+  curLesson=l;
+  const teacher=me&&me.role==='teacher';
+  const t=l.test_name?findTest(l.test_name):null, done=t&&submitted.has(t.name);
+  cabShow(`<div class="cab">
+    <button class="linkbtn back" onclick="${teacher?"cabTeacher('lessons')":'lessonsList()'}">← ${teacher?'К урокам':'Все уроки'}</button>
+    <h2 class="cab-h" style="margin-top:10px">${esc(l.title)}</h2>
+    <p class="cab-sub">${fmtDay(l.created_at)}${teacher&&!l.published?' · черновик, ученики не видят':''}</p>
+    ${l.embed?videoFrame(l.embed):''}
+    ${t?`<div class="hwbox"><div class="lab">Домашнее задание</div><div class="tname">${esc(t.name)}</div>
+      <div class="tmeta" style="margin:-6px 0 12px">${metaLine(t.questions)}${done?' · уже сдано':''}</div>
+      <button class="btn" onclick="openTest('${esc(t.id)}')">${done?'Решать ещё раз':'Решать ДЗ'}</button></div>`:''}
+    ${l.files.length?`<div class="lab">Материалы</div><div class="flist">${l.files.map(f=>`
+      <a class="fitem" href="${esc(f.url||'#')}" download="${esc(f.name)}" rel="noopener">
+        <span class="fic">${esc(fileExt(f.name))}</span><span class="fnm">${esc(f.name)}</span><span class="fsz">${fmtSize(f.size||0)} ↓</span></a>`).join('')}</div>`:''}
+    ${teacher?`<button class="btn ghost" onclick="lessonEdit('${esc(l.id)}')">Редактировать урок</button>`:''}
+  </div>`);
+}
+
+/* ---- учитель: список и редактор уроков ---- */
+async function teacherLessons(){
+  let lessons;
+  try{ lessons=(await api('lessons_list')).lessons; }
+  catch(e){ const b=$('#tbody'); if(b){ b.className=''; b.textContent='Не удалось загрузить: '+e.message; } return; }
+  const box=$('#tbody'); if(!box) return;
+  box.className='';
+  box.innerHTML=`<button class="btn" style="margin-bottom:18px" onclick="lessonEdit(null)">+ Новый урок</button>
+    ${lessons.length?`<div class="tlist">${lessons.map(l=>`
+      <div class="tcard" onclick="lessonView('${esc(l.id)}')">
+        <div class="tinfo"><div class="tname">${esc(l.title)}</div>
+          <div class="tmeta">${fmtDay(l.created_at)}${l.test_name?' · ДЗ: '+esc(l.test_name):' · без ДЗ'}${l.embed?' · видео':''}${l.files_n?' · файлов: '+l.files_n:''}</div></div>
+        ${l.published?'<span class="st-ok">опубликован</span>':'<span class="st-draft">черновик</span>'}<span class="tgo">→</span>
+      </div>`).join('')}</div>`:`<div class="empty">Уроков пока нет</div>`}`;
+}
+let editL=null;
+async function lessonEdit(id){
+  editL={ id:null, title:'', video:'', test_name:'', files:[], published:false };
+  if(id){
+    cabShow(`<div class="cab-load">Загружаем урок…</div>`);
+    try{ const l=(await api('lesson_get',{ id })).lesson; editL={ id:l.id, title:l.title, video:l.video||'', test_name:l.test_name||'',
+      files:l.files.map(f=>({ key:f.key, name:f.name, size:f.size })), published:l.published }; }
+    catch(e){ toast(e.message); return cabTeacher('lessons'); }
+  }
+  const opts=groupTests().map(([title,list])=>`<optgroup label="${esc(title)}">${list.map(t=>
+    `<option value="${esc(t.name)}"${t.name===editL.test_name?' selected':''}>${esc(t.name)}</option>`).join('')}</optgroup>`).join('');
+  cabShow(`<div class="cab lform">
+    <button class="linkbtn back" onclick="cabTeacher('lessons')">← К урокам</button>
+    <h2 class="cab-h" style="margin-top:10px">${editL.id?'Урок':'Новый урок'}</h2>
+    <label class="lab" for="lt">Название</label>
+    <input id="lt" class="tin" maxlength="200" value="${esc(editL.title)}" placeholder="Например: Выборы и избирательные системы">
+    <label class="lab" for="lv">Видео или трансляция — ссылка YouTube, Rutube или VK Видео</label>
+    <input id="lv" class="tin" value="${esc(editL.video)}" placeholder="https://rutube.ru/video/…" oninput="lessonVideoPreview()">
+    <div id="vprev" class="vprev"></div>
+    <label class="lab" for="lh">Домашнее задание</label>
+    <select id="lh" class="tin"><option value="">— без ДЗ —</option>${opts}</select>
+    <label class="lab">Файлы</label>
+    <div class="flist" id="lfiles"></div>
+    <button class="btn ghost" onclick="pickLessonFiles()">Прикрепить файлы</button>
+    <label class="chk"><input type="checkbox" id="lp"${editL.published?' checked':''}> Опубликовать — ученики увидят урок</label>
+    <div class="cab-err" id="lerr"></div>
+    <button class="btn" id="lsave" onclick="lessonSave()">Сохранить</button>
+    ${editL.id?`<button class="linkfin" style="color:var(--bad)" onclick="lessonDelete()">Удалить урок</button>`:''}
+  </div>`);
+  lessonVideoPreview(); paintLessonFiles();
+}
+function lessonVideoPreview(){
+  const v=$('#lv').value.trim(), box=$('#vprev'), src=v&&videoEmbed(v);
+  box.innerHTML = !v ? `<div class="vnote">Можно оставить пустым.</div>`
+    : src ? videoFrame(src) : `<div class="vnote err">Не понимаю ссылку. Скопируйте адрес видео из браузера или кнопкой «Поделиться».</div>`;
+}
+function paintLessonFiles(){
+  const box=$('#lfiles'); if(!box) return;
+  box.innerHTML=editL.files.map((f,i)=>`<div class="fitem"><span class="fic">${esc(fileExt(f.name))}</span>
+    <span class="fnm">${esc(f.name)}</span>
+    ${f.status?`<span class="fst${f.status==='ошибка'?' err':''}">${esc(f.status)}</span>`:`<span class="fsz">${fmtSize(f.size||0)}</span>`}
+    ${f.status==='загружается…'?'':`<button class="trm" title="Убрать" onclick="editL.files.splice(${i},1);paintLessonFiles()">✕</button>`}</div>`).join('');
+}
+function pickLessonFiles(){
+  const inp=document.createElement('input'); inp.type='file'; inp.multiple=true;
+  inp.onchange=()=>{ [...inp.files].forEach(uploadLessonFile); };
+  inp.click();
+}
+async function uploadLessonFile(file){
+  const f={ key:null, name:file.name, size:file.size, status:'загружается…' };
+  editL.files.push(f); paintLessonFiles();
+  try{
+    if(file.size>100*1024*1024) throw new Error('больше 100 МБ');
+    const { key, url } = await api('file_upload_url',{ name:file.name, size:file.size });
+    const r=await fetch(url,{ method:'PUT', body:file });
+    if(!r.ok) throw new Error('хранилище ответило '+r.status);
+    f.key=key; f.status=null;
+  }catch(e){ f.status='ошибка'; toast('Файл «'+file.name+'» не загрузился: '+e.message); }
+  paintLessonFiles();
+}
+async function lessonSave(){
+  if(editL.files.some(f=>f.status==='загружается…')){ toast('Подождите, файлы ещё загружаются'); return; }
+  const btn=$('#lsave'); busy(btn,true,'Сохраняем…');
+  try{
+    const r=await api('lesson_save',{ id:editL.id||undefined, title:$('#lt').value.trim(), video:$('#lv').value.trim(),
+      test_name:$('#lh').value, published:$('#lp').checked,
+      files:editL.files.filter(f=>f.key).map(f=>({ key:f.key, name:f.name, size:f.size })) });
+    toast(r.lesson.published?'Урок опубликован':'Урок сохранён как черновик');
+    lessonView(r.lesson.id);
+  }catch(e){ busy(btn,false,'Сохранить'); $('#lerr').textContent=e.message; }
+}
+async function lessonDelete(){
+  if(!confirm('Удалить урок «'+editL.title+'» вместе с файлами? Работы учеников останутся.')) return;
+  try{ await api('lesson_delete',{ id:editL.id }); toast('Урок удалён'); cabTeacher('lessons'); }
+  catch(e){ toast(e.message); }
 }
 
 /* ---------- старт ---------- */

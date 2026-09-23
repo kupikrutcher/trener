@@ -98,3 +98,58 @@ test('смена пароля', async () => {
   await call(db, { action: 'change_password', token: T, old: 'teacherpass', password: 'newpassword' });
   await call(db, { action: 'login', login: 'masha', password: 'newpassword' });
 });
+
+/* ---------- уроки ---------- */
+const { videoEmbed } = require('./app');
+function fakeStore() {
+  const removed = [];
+  return { removed, ok: true, uploadUrl: (k) => 'https://up/' + k, downloadUrl: (k, n) => 'https://down/' + k + '#' + n,
+    remove: async (k) => { removed.push(k); } };
+}
+const callS = (db, store, req) => handle(req, db, env, store);
+
+test('видео: YouTube, Rutube, VK', () => {
+  assert.equal(videoEmbed('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10'), 'https://www.youtube.com/embed/dQw4w9WgXcQ');
+  assert.equal(videoEmbed('https://youtu.be/dQw4w9WgXcQ'), 'https://www.youtube.com/embed/dQw4w9WgXcQ');
+  assert.equal(videoEmbed('https://youtube.com/live/abcDEF12345'), 'https://www.youtube.com/embed/abcDEF12345');
+  assert.equal(videoEmbed('https://rutube.ru/video/0123456789abcdef0123456789abcdef/'), 'https://rutube.ru/play/embed/0123456789abcdef0123456789abcdef');
+  assert.equal(videoEmbed('https://rutube.ru/video/private/0123456789abcdef0123456789abcdef/?p=KEY'), 'https://rutube.ru/play/embed/0123456789abcdef0123456789abcdef?p=KEY');
+  assert.equal(videoEmbed('https://rutube.ru/live/video/0123456789abcdef0123456789abcdef/'), 'https://rutube.ru/play/embed/0123456789abcdef0123456789abcdef');
+  assert.equal(videoEmbed('https://vkvideo.ru/video-12345_456239017'), 'https://vk.com/video_ext.php?oid=-12345&id=456239017&hd=2');
+  assert.equal(videoEmbed('https://example.com/x'), null);
+  assert.equal(videoEmbed('javascript:alert(1)'), null);
+});
+
+test('уроки: учитель создаёт, ученик видит только опубликованные', async () => {
+  const { db, T, S1 } = await world(); const st = fakeStore();
+  await rejects(callS(db, st, { action: 'lesson_save', token: S1, title: 'x' }), 403);
+  await rejects(callS(db, st, { action: 'lesson_save', token: T, title: 'x', video: 'https://evil.com/v' }), 400);
+  const up = await callS(db, st, { action: 'file_upload_url', token: T, name: 'конспект/1.pdf', size: 1000 });
+  assert.match(up.key, /^lessons\/[\w.-]+\/конспект_1\.pdf$/);
+  await rejects(callS(db, st, { action: 'file_upload_url', token: T, name: 'big.mp4', size: 200 * 1024 * 1024 }), 400);
+  await rejects(callS(db, st, { action: 'file_upload_url', token: S1, name: 'a', size: 1 }), 403);
+  const a = (await callS(db, st, { action: 'lesson_save', token: T, title: 'Выборы', video: 'https://youtu.be/dQw4w9WgXcQ',
+    test_name: 'Выборы', files: [{ key: up.key, name: 'конспект.pdf', size: 1000 }], published: true })).lesson;
+  await callS(db, st, { action: 'lesson_save', token: T, title: 'Черновик', published: false });
+  assert.equal((await callS(db, st, { action: 'lessons_list', token: T })).lessons.length, 2);
+  const mine = (await callS(db, st, { action: 'lessons_list', token: S1 })).lessons;
+  assert.deepEqual(mine.map((l) => l.title), ['Выборы']);
+  const g = (await callS(db, st, { action: 'lesson_get', token: S1, id: a.id })).lesson;
+  assert.equal(g.embed, 'https://www.youtube.com/embed/dQw4w9WgXcQ');
+  assert.equal(g.files[0].url, 'https://down/' + up.key + '#конспект.pdf');
+  await rejects(callS(db, st, { action: 'lesson_save', token: T, title: 'x', files: [{ key: '../../etc/passwd', name: 'x' }] }), 400);
+});
+
+test('уроки: убранные и удалённые файлы стираются из хранилища', async () => {
+  const { db, T, S1 } = await world(); const st = fakeStore();
+  const f = (n) => ({ key: `lessons/k${n}/f${n}.pdf`, name: `f${n}.pdf`, size: 1 });
+  const l = (await callS(db, st, { action: 'lesson_save', token: T, title: 'Урок', files: [f(1), f(2)] })).lesson;
+  const draft = await callS(db, st, { action: 'lesson_get', token: S1, id: l.id }).catch((e) => e.status);
+  assert.equal(draft, 404);                                                     // черновик ученику не виден
+  await callS(db, st, { action: 'lesson_save', token: T, id: l.id, title: 'Урок', files: [f(2)], published: true });
+  assert.deepEqual(st.removed, ['lessons/k1/f1.pdf']);
+  await rejects(callS(db, st, { action: 'lesson_delete', token: S1, id: l.id }), 403);
+  await callS(db, st, { action: 'lesson_delete', token: T, id: l.id });
+  assert.deepEqual(st.removed, ['lessons/k1/f1.pdf', 'lessons/k2/f2.pdf']);
+  assert.equal((await callS(db, st, { action: 'lessons_list', token: T })).lessons.length, 0);
+});
