@@ -1,0 +1,29 @@
+// Публикация сайта в Yandex Object Storage (бакет-сайт mashavibe.ru).
+// Запускается GitHub Actions при каждом изменении сайта, можно и вручную:
+//   S3_KEY_ID=… S3_SECRET=… node backend/publish-site.js
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const { signedFetch } = require('./s3');
+
+const BUCKET = process.env.SITE_BUCKET || 'mashavibe.ru';
+const ROOT = process.env.SITE_DIR || path.join(__dirname, '..');   // папка с файлами сайта
+const FILES = ['index.html', 'cabinet.js', 'design/tokens.css'];
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
+
+async function main() {
+  const keyId = process.env.S3_KEY_ID, secret = process.env.S3_SECRET;
+  if (!keyId || !secret) throw new Error('Нужны S3_KEY_ID и S3_SECRET');
+  for (const rel of FILES) {
+    const body = fs.readFileSync(path.join(ROOT, rel));
+    await signedFetch({
+      method: 'PUT', host: 'storage.yandexcloud.net', path: `/${BUCKET}/${rel}`, body, keyId, secret,
+      // сайт маленький и без версий в именах файлов: браузер каждый раз сверяется с сервером (ответ 304 почти бесплатный)
+      headers: { 'Content-Type': TYPES[path.extname(rel)] || 'application/octet-stream', 'Cache-Control': 'no-cache' },
+    });
+    console.log(`✓ ${rel} (${Math.round(body.length / 1024)} КБ)`);
+  }
+  console.log(`Опубликовано в бакет ${BUCKET}`);
+}
+
+main().catch((e) => { console.error(e.message); process.exit(1); });
