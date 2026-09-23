@@ -53,33 +53,46 @@ const parse = (s) => (s == null ? null : JSON.parse(s));
 
 const META_COLS = 'id, student, test_name, created_at, p1_score, p1_total, p2_n, p2_max, p2_score, checked_at';
 
-const SCHEMA = [
-  `CREATE TABLE users (login Utf8, full_name Utf8, role Utf8, pass Utf8, created_at Utf8, PRIMARY KEY (login))`,
-  `CREATE TABLE avatars (login Utf8, img Utf8, PRIMARY KEY (login))`,
-  `CREATE TABLE subs (id Utf8, student Utf8, test_name Utf8, created_at Utf8, p1_score Int32, p1_total Int32,
-     p2_n Int32, p2_max Int32, p2_score Int32, checked_at Utf8, PRIMARY KEY (id),
-     INDEX by_student GLOBAL SYNC ON (student))`,
-  `CREATE TABLE sub_body (id Utf8, p1 Utf8, p2 Utf8, grades Utf8, comment Utf8, PRIMARY KEY (id))`,
-  `CREATE TABLE lessons (id Utf8, title Utf8, video Utf8, test_name Utf8, files Utf8, published Bool,
-     created_at Utf8, updated_at Utf8, PRIMARY KEY (id))`,
-];
-// новые колонки добавляются к уже созданным таблицам
-const MIGRATIONS = [
-  `ALTER TABLE lessons ADD COLUMN deadline Utf8`,
-  `ALTER TABLE sub_body ADD COLUMN files Utf8`,
-];
+// Схема: таблицы и их колонки. При развёртывании создаются недостающие таблицы и колонки,
+// существующие данные не трогаются.
+const TABLES = {
+  users: { cols: { login: 'Utf8', full_name: 'Utf8', role: 'Utf8', pass: 'Utf8', created_at: 'Utf8' }, pk: 'login' },
+  avatars: { cols: { login: 'Utf8', img: 'Utf8' }, pk: 'login' },
+  subs: { cols: { id: 'Utf8', student: 'Utf8', test_name: 'Utf8', created_at: 'Utf8', p1_score: 'Int32', p1_total: 'Int32',
+    p2_n: 'Int32', p2_max: 'Int32', p2_score: 'Int32', checked_at: 'Utf8' }, pk: 'id', extra: 'INDEX by_student GLOBAL SYNC ON (student)' },
+  sub_body: { cols: { id: 'Utf8', p1: 'Utf8', p2: 'Utf8', grades: 'Utf8', comment: 'Utf8', files: 'Utf8' }, pk: 'id' },
+  lessons: { cols: { id: 'Utf8', title: 'Utf8', video: 'Utf8', test_name: 'Utf8', deadline: 'Utf8', files: 'Utf8', published: 'Bool',
+    created_at: 'Utf8', updated_at: 'Utf8' }, pk: 'id' },
+};
+// колонки существующей таблицы или null, если таблицы нет
+async function tableColumns(name) {
+  const d = await driver();
+  try {
+    return await d.tableClient.withSession(async (s) => (await s.describeTable(name)).columns.map((c) => c.name));
+  } catch (e) {
+    const text = `${e && e.constructor && e.constructor.name} ${e && e.name} ${e && e.message}`;
+    if (/SchemeError|not found|not exist|isn't exist|does not exist/i.test(text)) return null;
+    throw e;
+  }
+}
 const LESSON_COLS = 'id, title, video, test_name, deadline, files, published, created_at, updated_at';
 const lessonRow = (r) => (r ? { ...r, deadline: r.deadline || '', files: parse(r.files) || [], published: !!r.published } : null);
 
 const db = {
   async createSchema() {
-    for (const q of SCHEMA) {
-      try { await scheme(q); }
-      catch (e) { if (!/already exist|path exist|exists already/i.test(String(e.message))) throw e; }
-    }
-    for (const q of MIGRATIONS) {
-      try { await scheme(q); }
-      catch (e) { if (!/exist|duplicat/i.test(String(e.message))) throw e; }
+    for (const [name, t] of Object.entries(TABLES)) {
+      const have = await tableColumns(name);
+      if (!have) {
+        const cols = Object.entries(t.cols).map(([c, type]) => `${c} ${type}`).join(', ');
+        await scheme(`CREATE TABLE ${name} (${cols}, PRIMARY KEY (${t.pk})${t.extra ? ', ' + t.extra : ''})`);
+        console.log(`   создана таблица ${name}`);
+        continue;
+      }
+      for (const [c, type] of Object.entries(t.cols)) {
+        if (have.includes(c)) continue;
+        await scheme(`ALTER TABLE ${name} ADD COLUMN ${c} ${type}`);
+        console.log(`   ${name}: добавлена колонка ${c}`);
+      }
     }
   },
 
