@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#e8e5f7">
 <title>ЕГЭ с Машей Вайб</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,7 +32,6 @@ body{
 .sw{width:18px;height:18px;border-radius:var(--radius-pill);cursor:pointer;border:var(--border) solid var(--line-strong);padding:0;transition:transform .15s ease}
 .sw:active{transform:scale(.9)}
 .sw[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.sw.t-paper{background:#ffffff} .sw.t-night{background:#0a0a0a}
 .bars{margin-bottom:30px}
 .track{height:4px;border-radius:0;background:var(--line);overflow:hidden}
 .track>i{display:block;height:100%;width:0;background:var(--accent);transition:width .55s cubic-bezier(.22,1,.36,1)}
@@ -232,7 +231,7 @@ body{
 .land h1{font-family:var(--font-display);font-weight:700;font-size:clamp(26px,6.4vw,34px);letter-spacing:-.02em;line-height:1.15;margin:10px 0 12px}
 .land-sub{color:var(--muted);font-size:15px;line-height:1.6;margin:0 auto 26px;max-width:40ch}
 .land-go{font-size:16px;padding:18px 20px;margin-top:26px}
-/* фото на главной: вырезанная фигура стоит в чёрной рамке, голова выходит за край */
+/* фото на главной: вырезанная фигура стоит на плашке, голова выходит за край */
 .land-hero{position:relative;width:min(100%,400px);aspect-ratio:1/1;margin:-26px auto 0}   /* сверху у картинки прозрачный край */
 .land-block{position:absolute;left:0;right:0;bottom:0;height:68%;background:var(--surface);border:var(--border) solid var(--ink)}
 .land-hero img{position:absolute;left:var(--border);right:var(--border);bottom:var(--border);top:0;width:calc(100% - 2 * var(--border));height:calc(100% - var(--border));object-fit:contain;object-position:bottom}
@@ -362,20 +361,59 @@ input[type=file]{display:none}
 @media(min-width:680px){.panel{padding:42px 44px}.qtext{font-size:16.5px}}
 @media(max-width:380px){.panel{padding:28px 22px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
-/* ---- clean girl brutalism: жёсткие рамки 2px, заголовки прописными Montserrat ---- */
-.panel,.tcard,.land-card,.dl,.dl-empty,.hwbox,.fitem,.rs-tile,.pstat,.creds,.vbox,.cell,.tin,.essay,.qn,.fdrop,.empty,
-.sent,.acct,.ava,.ava-big,.btn.ghost,.st-draft,.qtype,.tbadge{border-width:var(--border)}
-.btn{border:var(--border) solid var(--accent)}
-.btn.ghost{border-color:var(--ink)}
-.sect{border-top-width:var(--border)}.sect:last-of-type{border-bottom-width:var(--border)}
-.mark b,.land h1,.home h1,.cab-h,.allhead h1,.sect>summary .st,.gtitle{text-transform:uppercase;letter-spacing:-.01em}
-.mark b{font-weight:900}
-.land h1{font-weight:900;line-height:1.05}
-.cab-h,.home h1,.allhead h1{font-weight:800}
-.rs-big b,.rs-tile b,.pstat b,.land-card b{font-weight:800}
-.tabs{border-bottom-width:var(--border)}.tab{border-bottom-width:3px}
-.land-go{text-transform:uppercase;letter-spacing:.04em}
-.qnum{font-family:var(--font-display);font-weight:800;font-size:13px;letter-spacing:.04em}
+/* ---- клэйморфизм: пухлые плашки, двойные тени, крупные скругления, Comfortaa ---- */
+body{background:
+  radial-gradient(520px 520px at 6% 4%,var(--glow-1),transparent 62%),
+  radial-gradient(460px 460px at 96% 22%,var(--glow-2),transparent 62%),
+  radial-gradient(620px 620px at 50% 108%,var(--glow-3),transparent 62%),var(--bg);background-attachment:fixed}
+.mark b{font-weight:700;letter-spacing:-.01em}
+.panel{border-color:transparent;box-shadow:var(--shadow-lift)}
+.land h1,.home h1,.cab-h,.allhead h1{font-weight:700;letter-spacing:-.02em}
+.land h1{line-height:1.15}
+/* кнопки — «подушки» с градиентом */
+.btn{background:var(--btn-grad);box-shadow:var(--btn-shadow);border:0;font-weight:700;letter-spacing:.01em;
+  transition:transform .15s ease,box-shadow .2s ease,filter .2s ease}
+.btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.btn:active{transform:translateY(2px) scale(.99);box-shadow:var(--shadow-press)}
+.btn.ghost{background:var(--surface);color:var(--ink);border:0;box-shadow:var(--shadow-soft)}
+.btn.ghost:hover{background:var(--surface);color:var(--cobalt)}
+.acct{border-color:transparent;background:var(--surface);box-shadow:var(--shadow-soft)}
+.sw{border-color:transparent;box-shadow:var(--shadow-soft)}
+.sw.t-paper{background:var(--swatch-paper)}.sw.t-night{background:var(--swatch-night)}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 3px var(--cobalt)}
+/* карточки — выпуклые, без рамок */
+.tcard,.land-card,.dl,.hwbox,.fitem,.rs-tile,.pstat,.creds{border-color:transparent;background:var(--surface);box-shadow:var(--shadow-clay)}
+.tcard:hover,.land-card:hover,.dl:hover,a.fitem:hover{border-color:transparent;background:var(--surface);transform:translateY(-2px)}
+.tlist{gap:14px}
+.sect{border-color:var(--line)}
+.dl.over{border-color:transparent;background:var(--bad-soft)}
+.dl-box{border:0;border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow-clay)}
+.empty,.dl-empty{border-color:var(--line-strong)}
+.vbox{border-color:transparent;box-shadow:var(--shadow-soft)}
+.sent{border-color:transparent;box-shadow:var(--shadow-soft)}
+/* поля и клетки — «вдавленные» */
+.tin,.essay,.cell{border-color:transparent;background:var(--surface-sunk);box-shadow:var(--shadow-press)}
+.cell.fill{background:var(--surface-sunk)}
+.cell.act,.tin:focus,.essay:focus{border-color:var(--cobalt);box-shadow:var(--shadow-press),0 0 0 3px var(--cobalt-soft)}
+.fdrop{box-shadow:var(--shadow-press)}
+/* чипы вопросов — кругляши */
+.qn{border-radius:var(--radius-pill);border-color:transparent;box-shadow:var(--shadow-soft)}
+.qn.cur{box-shadow:var(--shadow-soft),0 0 0 3px var(--cobalt)}
+.track{height:8px;border-radius:99px;background:var(--surface-sunk);box-shadow:var(--shadow-press)}
+.track>i{border-radius:99px;background:var(--btn-grad)}
+.qnum{font-family:var(--font-display);font-weight:700;letter-spacing:.02em}
+.tabs{border-bottom:0;gap:8px}
+.tab{border:0;border-radius:var(--radius-pill);padding:10px 16px}
+.tab.on{background:var(--surface);color:var(--cobalt);box-shadow:var(--shadow-soft)}
+.st-ok,.st-wait,.st-draft,.dl .dl-b,.tbadge,.qtype,.sect>summary .sc{border-radius:var(--radius-pill)}
+.rs-big b,.rs-tile b,.pstat b,.land-card b{font-weight:700}
+.toast{border-radius:var(--radius-md)}
+.ava,.ava-big{border-color:transparent;box-shadow:var(--shadow-soft)}
+/* главная: фото Маши на пухлой плашке */
+.land-block{border:0;border-radius:var(--radius-lg);background:var(--hero-grad);box-shadow:var(--shadow-clay),inset 0 -10px 22px rgba(30,20,110,.18),inset 0 6px 14px rgba(255,255,255,.35)}
+.land-tag{right:-8px;border-radius:var(--radius-pill);background:var(--surface);color:var(--cobalt);box-shadow:var(--shadow-soft);padding:9px 14px;font-weight:700}
+.land-hero img{border-radius:0 0 calc(var(--radius-lg) - var(--border)) calc(var(--radius-lg) - var(--border))}
+.land-go{font-size:16.5px;padding:19px 20px}
 </style>
 </head>
 <body>

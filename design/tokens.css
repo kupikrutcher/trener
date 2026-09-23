@@ -1,73 +1,95 @@
-/* Маша Вайб — design tokens. Стиль: clean girl brutalism
-   (как в «Стилях Лёрни»): чистый белый, жёсткие чёрные линии, один синий акцент,
-   салатовый маркер, без скруглений и теней, заголовки Montserrat прописными.
+/* Маша Вайб — design tokens. Стиль: клэйморфизм (как в «Стилях Лёрни»),
+   палитра темнее — фиолетово-синяя: мягкие «пухлые» плашки, двойные тени (тёмная + светлый блик),
+   большие скругления, Comfortaa в заголовках / Manrope в тексте.
    Внизу — алиасы на старые имена (--bg, --accent, --muted…). */
 
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=PT+Sans:wght@400;700&family=JetBrains+Mono:wght@500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap");
 
 :root,
 [data-theme="paper"] {
   /* поверхности */
-  --paper: #ffffff;         /* фон страницы */
-  --surface: #ffffff;       /* панели, карточки */
-  --surface-sunk: #f0f0f0;  /* пустые клетки, поля, треки */
-  --line: #0a0a0a;          /* жёсткие чёрные линии */
-  --line-strong: #0a0a0a;   /* рамки полей и клеток */
+  --paper: #e8e5f7;         /* фон страницы — лавандово-синий */
+  --surface: #f8f7ff;       /* панели, карточки */
+  --surface-sunk: #e2def5;  /* пустые клетки, поля, треки */
+  --line: #d5cfee;
+  --line-strong: #b4abe0;
   /* текст */
-  --ink: #0a0a0a;
-  --ink-muted: #5c5c5c;
-  /* действие — один синий акцент */
-  --cobalt: #1546f5;
+  --ink: #1e1a3c;
+  --ink-muted: #5a5480;
+  /* действие — фиолетово-синий */
+  --cobalt: #5446d8;
   --on-cobalt: #ffffff;
-  --cobalt-soft: #e7ecfe;
-  /* маркер: только заливка */
-  --marker: #cfff3c;
-  --on-marker: #0a0a0a;
+  --cobalt-soft: #e2defb;
+  /* маркер: мятный, только заливка */
+  --marker: #b6f0c9;
+  --on-marker: #1e1a3c;
   /* состояния: всегда вместе со словом или ✓/✕ */
-  --ok: #0a8f3c;
-  --ok-soft: #e4f7e9;
-  --bad: #e5192b;
-  --bad-soft: #fce3e5;
+  --ok: #26845a;
+  --ok-soft: #dcf4e6;
+  --bad: #cf3f67;
+  --bad-soft: #fbe1ea;
   --focus-ring: var(--cobalt);
-  --shadow-lift: none;
-  /* толщина рамок */
-  --border: 2px;
+  /* клэй: тёмная тень снизу-справа и светлый блик сверху-слева */
+  --shadow-soft: 4px 4px 10px rgba(84, 70, 216, .16), -3px -3px 8px rgba(255, 255, 255, .85);
+  --shadow-clay: 12px 12px 26px rgba(84, 70, 216, .22), -8px -8px 20px rgba(255, 255, 255, .9);
+  --shadow-lift: 18px 18px 36px rgba(84, 70, 216, .26), -10px -10px 26px rgba(255, 255, 255, .95);
+  --shadow-press: inset 3px 3px 7px rgba(84, 70, 216, .16), inset -3px -3px 7px rgba(255, 255, 255, .8);
+  --btn-grad: linear-gradient(145deg, #6a5cf0, #4a3cc9);
+  --btn-shadow: 8px 10px 20px rgba(74, 60, 201, .38), -5px -5px 14px rgba(255, 255, 255, .85), inset 0 -4px 0 rgba(20, 10, 90, .18), inset 0 2px 0 rgba(255, 255, 255, .25);
+  --hero-grad: linear-gradient(160deg, #c9c1ff, #8f82f0);
+  --glow-1: #b9adff66;
+  --glow-2: #a9c4ff66;
+  --glow-3: #d8c8ff55;
+  --border: 1px;
 
   /* шрифты */
-  --font-display: "Montserrat", "Arial Black", system-ui, sans-serif;
-  --font-sans: "PT Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Comfortaa", "Manrope", system-ui, sans-serif;
+  --font-sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
 
   /* отступы */
   --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
   --space-6: 24px; --space-8: 32px; --space-12: 48px;
 
-  /* радиусы — брутализм: без скруглений */
-  --radius-cell: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-pill: 0px;
+  /* радиусы — мягкие и крупные */
+  --radius-cell: 14px;
+  --radius-md: 18px;
+  --radius-lg: 28px;
+  --radius-pill: 99px;
+
+  /* кружки-переключатели тем */
+  --swatch-paper: #f8f7ff;
+  --swatch-night: #1f1c38;
 }
 
-/* «Ночь» — та же система наоборот: чёрный лист, белые линии */
+/* «Ночь» — тот же клэй в тёмно-фиолетовом */
 [data-theme="night"] {
-  --paper: #0a0a0a;
-  --surface: #0a0a0a;
-  --surface-sunk: #1c1c1c;
-  --line: #f5f5f5;
-  --line-strong: #f5f5f5;
-  --ink: #f5f5f5;
-  --ink-muted: #a3a3a3;
-  --cobalt: #6b8bff;
-  --on-cobalt: #0a0a0a;
-  --cobalt-soft: #16204a;
-  --marker: #cfff3c;
-  --on-marker: #0a0a0a;
-  --ok: #4ade80;
-  --ok-soft: #0f2e1c;
-  --bad: #ff5a67;
-  --bad-soft: #3a1115;
-  --shadow-lift: none;
+  --paper: #15132a;
+  --surface: #1f1c38;
+  --surface-sunk: #29254a;
+  --line: #332f5a;
+  --line-strong: #4b4585;
+  --ink: #eceafb;
+  --ink-muted: #a8a2d2;
+  --cobalt: #9a8cff;
+  --on-cobalt: #15132a;
+  --cobalt-soft: #2d2858;
+  --marker: #8fe0ad;
+  --on-marker: #15132a;
+  --ok: #7fdba4;
+  --ok-soft: #1c3329;
+  --bad: #ff8aa8;
+  --bad-soft: #3b1f2c;
+  --shadow-soft: 4px 4px 10px rgba(0, 0, 0, .35), -2px -2px 6px rgba(255, 255, 255, .03);
+  --shadow-clay: 10px 10px 24px rgba(0, 0, 0, .45), -6px -6px 16px rgba(154, 140, 255, .06);
+  --shadow-lift: 16px 16px 34px rgba(0, 0, 0, .5), -8px -8px 22px rgba(154, 140, 255, .07);
+  --shadow-press: inset 3px 3px 7px rgba(0, 0, 0, .35), inset -2px -2px 6px rgba(154, 140, 255, .06);
+  --btn-grad: linear-gradient(145deg, #a99dff, #7e6ef5);
+  --btn-shadow: 8px 10px 22px rgba(0, 0, 0, .5), -4px -4px 12px rgba(154, 140, 255, .08), inset 0 -4px 0 rgba(20, 10, 90, .25), inset 0 2px 0 rgba(255, 255, 255, .3);
+  --hero-grad: linear-gradient(160deg, #5a4fc4, #2f2878);
+  --glow-1: #5446d833;
+  --glow-2: #3a5bd833;
+  --glow-3: #7a4fd822;
   color-scheme: dark;
 }
 
