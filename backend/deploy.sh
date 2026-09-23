@@ -38,7 +38,8 @@ YDB_ENDPOINT=$YDB_ENDPOINT YDB_DATABASE=$YDB_DATABASE YDB_ACCESS_TOKEN_CREDENTIA
 echo "→ функция"
 yc serverless function get "$FN" >/dev/null 2>&1 || yc serverless function create "$FN" >/dev/null
 rm -f /tmp/trener-api.zip
-zip -qr /tmp/trener-api.zip index.js app.js db-ydb.js package.json node_modules
+# зависимости облако ставит само по package.json — в архив только код
+zip -q /tmp/trener-api.zip index.js app.js db-ydb.js package.json package-lock.json
 yc serverless function version create --function-name "$FN" \
   --runtime nodejs22 --entrypoint index.handler --memory 256m --execution-timeout 30s \
   --service-account-id "$SA_ID" --source-path /tmp/trener-api.zip \

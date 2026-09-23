@@ -1,6 +1,6 @@
 /* ===== Кабинеты: вход, отправка работ, проверка части 2 ===== */
 /* Сервер — функция в Yandex Cloud (папка backend/). Адрес функции: */
-const API_URL = window.TRENER_API || '';
+const API_URL = window.TRENER_API || 'https://functions.yandexcloud.net/d4epjak23r01meequ6fs';
 
 const CAB = !!API_URL;
 let me = null;              // {login, full_name, role, avatar}

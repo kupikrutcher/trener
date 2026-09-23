@@ -26,9 +26,10 @@ async function query(yql, params = {}) {
     return r.resultSets.map((rs) => TypedData.createNativeObjects(rs).map((o) => ({ ...o })));
   });
 }
+// создание таблиц — через Query-сервис (в табличных сессиях этой версии SDK DDL нет)
 async function scheme(yql) {
   const d = await driver();
-  return d.tableClient.withSession((s) => s.executeSchemeQuery(yql));
+  return d.queryClient.do({ fn: async (s) => { const r = await s.execute({ text: yql }); await r.opFinished; } });
 }
 
 const optStr = (v) => (v == null ? V.optionalNull(T.UTF8) : V.optional(V.utf8(v)));
@@ -49,7 +50,7 @@ const db = {
   async createSchema() {
     for (const q of SCHEMA) {
       try { await scheme(q); }
-      catch (e) { if (!/already exists|path exist/i.test(String(e.message))) throw e; }
+      catch (e) { if (!/already exist|path exist|exists already/i.test(String(e.message))) throw e; }
     }
   },
 
