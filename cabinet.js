@@ -64,7 +64,8 @@ function paintAcct(){
   }else{
     b.className='acct'; b.textContent = me ? 'Личный кабинет' : 'Войти'; b.removeAttribute('title'); b.removeAttribute('aria-label');
   }
-  b.onclick = ()=> me ? openCabinet() : cabLogin();
+  b.onclick = ()=>{ if(window.setNav) setNav(''); me ? openCabinet() : cabLogin(); };
+  const chk=document.querySelector('.side-nav [data-nav="check"]'); if(chk) chk.hidden=!(me&&me.role==='teacher');
   const hi=document.getElementById('landhi'); if(hi) hi.textContent = me ? 'Привет, '+firstName(me.full_name)+'!' : 'Привет!';
 }
 function pickAvatar(){
@@ -262,7 +263,7 @@ async function cabStudent(){
         <div class="prof-act">
           <button class="linkbtn" onclick="pickAvatar()">Сменить фото</button>
           <button class="linkbtn back" id="avarm" onclick="saveAvatar(null)" style="${me.avatar?'':'display:none'}">Убрать</button>
-          <button class="linkbtn back" onclick="doLogout()">Выйти</button>
+          <button class="logout" onclick="doLogout()">Выйти</button>
         </div>
       </div>
     </div>
@@ -501,7 +502,7 @@ async function cabTeacher(tab){
 /* личный кабинет учителя: ученики, пароль, выход */
 function teacherProfile(){
   cabShow(`<div class="cab"><div class="cab-top"><h2 class="cab-h">Личный кабинет</h2>
-    <div class="sact"><button class="linkbtn back" onclick="changePass()">Сменить пароль</button><button class="linkbtn" onclick="doLogout()">Выйти</button></div></div>
+    <div class="sact"><button class="linkbtn back" onclick="changePass()">Сменить пароль</button><button class="logout" onclick="doLogout()">Выйти</button></div></div>
     <p class="cab-sub">${esc(me.full_name||'')} · учитель</p>
     <div id="tbody" class="cab-load">Загружаем…</div>
     <button class="btn ghost" style="margin-top:22px" onclick="cabTeacher('check')">Перейти в курс</button></div>`);
@@ -590,6 +591,59 @@ function cabGoCourse(){
   if(!CAB) return hwList();
   if(!me) return cabLogin(()=>cabGoCourse());
   return me.role==='teacher' ? cabTeacher('check') : lessonsList();
+}
+/* левая панель: Проверка (учитель), Уроки, Расписание, Банк заданий, Полезные файлы */
+function cabNav(k){
+  if(!CAB) return hwList();
+  if(!me) return cabLogin(()=>navGo(k));
+  const teacher=me.role==='teacher';
+  if(k==='check') return teacher ? cabTeacher('check') : lessonsList();
+  if(k==='lessons') return teacher ? cabTeacher('lessons') : lessonsList();
+  if(k==='schedule') return scheduleView();
+  if(k==='bank') return teacher ? cabTeacher('tests') : bankView();
+  if(k==='files') return filesView();
+}
+/* расписание: публикации уроков и сроки ДЗ по дням; сначала сегодня и дальше, ниже — прошедшее */
+async function scheduleView(){
+  cabShow(`<div class="cab"><h2 class="cab-h">Расписание</h2><p class="cab-sub">Уроки и сроки сдачи ДЗ</p><div id="sch" class="cab-load">Загружаем…</div></div>`);
+  let lessons; try{ lessons=(await api('lessons_list')).lessons; }catch(e){ const b=$('#sch'); if(b) b.textContent='Не удалось загрузить: '+e.message; return; }
+  const box=$('#sch'); if(!box) return; box.className='';
+  const ev=[];
+  lessons.forEach(l=>{
+    ev.push({ t:+new Date(l.created_at), l, kind:'урок' });
+    if(l.deadline&&l.test_name) ev.push({ t:+new Date(l.deadline), l, kind:'dz' });
+  });
+  const day=x=>{ const d=new Date(x); d.setHours(0,0,0,0); return +d; }, today=day(Date.now());
+  const up=ev.filter(e=>day(e.t)>=today).sort((a,b)=>a.t-b.t), past=ev.filter(e=>day(e.t)<today).sort((a,b)=>b.t-a.t);
+  const dayLabel=t=>{ const d=Math.round((day(t)-today)/DAY), s=new Date(t).toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'});
+    return d===0?'Сегодня · '+s:d===1?'Завтра · '+s:s; };
+  const row=e=>{ const done=e.kind==='dz'&&lessonDone(e.l);
+    return `<div class="sch-ev" onclick="lessonView('${esc(e.l.id)}')"><div style="flex:1;min-width:0"><b>${esc(e.l.title)}</b>
+      <span>${e.kind==='dz'?'Сдать ДЗ до '+new Date(e.t).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}):'Новый урок'}${e.l.test_name&&e.kind!=='dz'?' · ДЗ: '+esc(e.l.test_name):''}</span></div>
+      <span class="sch-k${e.kind==='dz'?(done?' ok':' dz'):''}">${e.kind==='dz'?(done?'✓ сдано':'дедлайн'):'урок'}</span></div>`; };
+  const group=list=>{ let out='', cur=null;
+    list.forEach(e=>{ const d=day(e.t); if(d!==cur){ cur=d; out+=`<div class="sch-day${d===today?' today':''}">${dayLabel(e.t)}</div>`; } out+=row(e); });
+    return out; };
+  box.innerHTML = (up.length?group(up):`<div class="empty">Впереди ничего не запланировано</div>`)
+    + (past.length?`<details class="qfold" style="margin-top:22px"><summary>Прошедшее · ${past.length}</summary>${group(past)}</details>`:'');
+}
+/* банк заданий: ученикам тесты открываются только через уроки — здесь пока заглушка */
+function bankView(){
+  cabShow(`<div class="cab"><h2 class="cab-h">Банк заданий</h2>
+    <div class="empty" style="margin-top:18px">Скоро здесь появится банк заданий для самостоятельной тренировки.<br>Сейчас все задания — в уроках.</div>
+    <button class="btn" onclick="navGo('lessons')">К урокам</button></div>`);
+}
+/* полезные файлы: материалы всех уроков в одном месте */
+async function filesView(){
+  cabShow(`<div class="cab"><h2 class="cab-h">Полезные файлы</h2><p class="cab-sub">Материалы из всех уроков</p><div id="fls" class="cab-load">Загружаем…</div></div>`);
+  let groups;
+  try{
+    const lessons=(await api('lessons_list')).lessons.filter(l=>l.files_n);
+    groups=await Promise.all(lessons.map(l=>api('lesson_get',{ id:l.id }).then(r=>r.lesson)));
+  }catch(e){ const b=$('#fls'); if(b) b.textContent='Не удалось загрузить: '+e.message; return; }
+  const box=$('#fls'); if(!box) return; box.className='';
+  box.innerHTML = groups.filter(l=>l.files.length).map(l=>`<div class="files-h">${esc(l.title)}</div><div class="flist">${fileLinksHTML(l.files)}</div>`).join('')
+    || `<div class="empty">Файлов пока нет.<br>Когда учитель прикрепит материалы к уроку, они появятся здесь.</div>`;
 }
 /* название в шапке: к урокам курса; гостю — входная страница */
 function cabGoLessons(){
