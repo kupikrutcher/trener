@@ -5,7 +5,7 @@ name: Публикация сайта
 on:
   push:
     branches: [main]
-    paths: [index.html, cabinet.js, design/tokens.css, backend/publish-site.js, backend/s3.js]
+    paths: [index.html, cabinet.js, design/tokens.css, 'img/**', backend/publish-site.js, backend/s3.js]
   workflow_dispatch:
 
 concurrency:

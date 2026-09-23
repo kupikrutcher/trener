@@ -231,7 +231,16 @@ body{
 .land-hi{font-size:14px;color:var(--accent);font-weight:600;letter-spacing:.02em}
 .land h1{font-family:var(--font-display);font-weight:700;font-size:clamp(26px,6.4vw,34px);letter-spacing:-.02em;line-height:1.15;margin:10px 0 12px}
 .land-sub{color:var(--muted);font-size:15px;line-height:1.6;margin:0 auto 26px;max-width:40ch}
-.land-go{font-size:16px;padding:18px 20px}
+.land-go{font-size:16px;padding:18px 20px;margin-top:40px}
+/* фото на главной: вырезанная фигура стоит на салатовом блоке с чёрной рамкой, голова выходит за край */
+.land-hero{position:relative;width:min(100%,400px);aspect-ratio:1/1;margin:34px auto 0}
+.land-block{position:absolute;left:0;right:0;bottom:0;height:58%;background:var(--marker);border:var(--border) solid var(--ink)}
+.land-hero img{position:absolute;left:var(--border);right:var(--border);bottom:var(--border);top:0;width:calc(100% - 2 * var(--border));height:calc(100% - var(--border));object-fit:contain;object-position:bottom}
+.land-tag{position:absolute;right:-10px;bottom:26px;background:var(--ink);color:var(--paper);font:800 11.5px/1 var(--font-display);
+  text-transform:uppercase;letter-spacing:.06em;padding:8px 10px}
+/* под уроками — отдельный бокс с дедлайнами */
+.dl-box{border:var(--border) solid var(--ink);padding:16px 16px 18px;margin-top:24px}
+.dl-box .dl-h{margin-top:0}
 #landextra:empty{display:none}
 #landextra{margin-top:18px;text-align:left}
 .land-card{display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--bg);cursor:pointer;transition:border-color .2s,background .2s}
@@ -533,6 +542,11 @@ function home(){
     <div class="land">
       <h1>Годовой курс Маши Вайб</h1>
       <p class="land-sub">Котенок, рада тебя приветствовать на своей платформе! Готов идти к заветной сотке?</p>
+      <figure class="land-hero">
+        <div class="land-block" aria-hidden="true"></div>
+        <img src="img/masha.webp" width="800" height="800" alt="Маша Вайб" decoding="async" fetchpriority="high">
+        <figcaption class="land-tag">ЕГЭ · обществознание</figcaption>
+      </figure>
       <button class="btn land-go" onclick="goHW()">Приступить к подготовке</button>
       <div id="landextra"></div>
     </div>`;

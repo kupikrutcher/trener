@@ -154,18 +154,9 @@ async function changePass(){
 
 /* ---------- главная: карточка профиля ---------- */
 async function landExtra(){
-  const box=document.getElementById('landextra'); if(!box||!CAB) return;
+  // на главной только приветствие, фото и кнопка; дедлайны — на странице уроков
+  const box=document.getElementById('landextra'); if(box) box.innerHTML='';
   paintAcct();
-  if(!me){ box.innerHTML=''; return; }
-  if(me.role==='teacher'){
-    let count=0; try{ count=(await api('todo_count')).count; }catch(e){}
-    box.innerHTML=`<div class="land-card" onclick="cabTeacher('todo')"><div><b>${count||0}</b></div><span>работ ждут проверки →</span></div>`;
-    return;
-  }
-  let lessons=[];
-  try{ lessons=(await api('lessons_list')).lessons; }catch(e){}
-  if(!document.getElementById('landextra')) return;
-  box.innerHTML=deadlinesHTML(lessons);
 }
 
 /* ---------- дедлайны: невыполненные уроки (ДЗ не отправлено), у которых срок близко или прошёл ---------- */
@@ -618,6 +609,7 @@ async function lessonsList(){
         <div class="tmeta">${fmtDay(l.created_at)}${l.test_name?' · ДЗ: '+esc(l.test_name):''}${l.deadline&&l.test_name?' · до '+fmtDeadline(l.deadline):''}${l.files_n?' · файлов: '+l.files_n:''}</div></div>
       ${lessonDone(l)?'<span class="st-ok">сдано</span>':(l.deadline&&l.test_name&&+new Date(l.deadline)<Date.now()?'<span class="st-wait" style="color:var(--bad);background:var(--bad-soft)">просрочено</span>':'')}<span class="tgo">→</span>
     </div>`).join('')}</div>` : `<div class="empty">Уроков пока нет.<br>Когда учитель опубликует урок, он появится здесь.</div>`;
+  box.innerHTML += `<div class="dl-box">${deadlinesHTML(lessons)}</div>`;
 }
 async function lessonView(id){
   cabShow(`<div class="cab-load">Загружаем урок…</div>`);
