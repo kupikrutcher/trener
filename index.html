@@ -78,7 +78,17 @@ body{
 .tcard:hover{border-color:var(--accent);background:var(--accent-soft)}
 .tcard:active{transform:translateY(1px)}
 .tinfo{flex:1;min-width:0}
-.tname{font-weight:600;font-size:15.5px;letter-spacing:.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tname{font-weight:600;font-size:15.5px;letter-spacing:.01em;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.sect{border-top:1px solid var(--line)}
+.sect:last-of-type{border-bottom:1px solid var(--line);margin-bottom:22px}
+.sect>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:16px 2px;cursor:pointer;user-select:none}
+.sect>summary::-webkit-details-marker{display:none}
+.sect>summary .st{font-weight:600;font-size:16px;letter-spacing:-.005em}
+.sect>summary .sc{font-size:12px;color:var(--muted);border:1px solid var(--line-strong);border-radius:99px;padding:1px 8px}
+.sect>summary .sa{margin-left:auto;color:var(--muted);font-size:13px;transition:transform .25s ease}
+.sect[open]>summary .sa{transform:rotate(90deg)}
+.sect>summary:hover .st{color:var(--accent)}
+.sect .tlist{margin-bottom:18px}
 .tmeta{font-size:12.5px;color:var(--muted);margin-top:3px;letter-spacing:.02em}
 .tbadge{font-size:10.5px;color:var(--muted);border:1px solid var(--line-strong);border-radius:99px;padding:2px 8px;margin-left:8px;letter-spacing:.03em;vertical-align:middle}
 .trm{flex:none;width:28px;height:28px;border-radius:8px;border:none;background:none;color:var(--muted);font-size:15px;cursor:pointer;transition:color .2s,background .2s;line-height:1}
@@ -301,11 +311,56 @@ function fmtExpl(t){
 }
 
 /* ---- home / library ---- */
+/* разделы главной: встроенные тесты по разделам кодификатора, свои — отдельно */
+const SECTIONS=[
+  ['Сборники по разделам',['Человек и Общество','Социология','Экономика','Политика','Право']],
+  ['Человек и общество',['Человек, потребности, общество','Деятельность, социализация','Мышление, познание; истина',
+    'Мировоззрение, сознание, Образование, образовательное право','Культура, искусство','Наука, религия',
+    'Общественный прогресс, типы обществ','Глобализация и глобальные проблемы, мировая экономика']],
+  ['Экономика',['Экономические системы; Экономические циклы','Рыночный механизм','Задание на спрос-предложение с графиком',
+    'Задание на спрос-предложение с графиком (2)','Конкуренция как основа функционирования рынка. Типы рыночных структур',
+    'Фирма, предпринимательская деятельность, ОПФП','Фирма в экономике','Источники финансирования бизнеса, издержки, экономический рост',
+    'Рынок труда, безработица','Инфляция','Финансовый рынок, Финансовые институты, Банковская система; Финансовые услуги',
+    'Ценные бумаги','Государство в экономике, общественные блага, государственный бюджет','Налоги']],
+  ['Социальные отношения',['Социальные институты, социальные группы, этносы',
+    'Социальные статусы, социальная стратификация, социальная мобильность','Социальный контроль, социальные нормы, мораль',
+    'Отклоняющееся поведение, социальный конфликт','Семья; Молодежь как социальная группа']],
+  ['Политика',['Политическая власть, политическая система',
+    'Государство, Форма государства, политические режимы, Демократия, гражданское общество, правовое государство',
+    'Выборы','Политические партии, Политическая идеология','Политическая элита, политическое лидерство',
+    'Политическая культура, СМИ в политике, Политическое участие, политический процесс']],
+  ['Право',['Право как социальный институт, правоотношения','Система права','Конституция РФ, конституционные права',
+    'Гражданство РФ','Федеративное устройство РФ','Органы власти РФ, Законодательный процесс, Конституционное судопроизводство',
+    'Гражданское право, гражданское процессуальное право, арбитражный процесс','Семейное право','Трудовое право',
+    'Административное право, экологическое право, уголовное право, уголовное процессуальное право',
+    'Юридическая ответственность, Правоохранительные органы','Воинская обязанность, АГС']],
+  ['Повторение и пробники',['Повторение','Повторение и закрепление','Повторение и закрепление (2)','Повторение и закрепление (3)',
+    'Обобщение и повторение','пробник 1','пробник №2']]
+];
+function groupTests(){
+  const used=new Set(), out=[];
+  SECTIONS.forEach(([title,names])=>{
+    const list=names.map(n=>tests.find(t=>t.builtin&&t.name===n)).filter(Boolean);
+    list.forEach(t=>used.add(t.id));
+    if(list.length) out.push([title,list]);
+  });
+  const rest=tests.filter(t=>t.builtin&&!used.has(t.id));
+  if(rest.length) out.push(['Другое',rest]);
+  const mine=tests.filter(t=>!t.builtin);
+  if(mine.length) out.push(['Мои тесты',mine]);
+  return out;
+}
+function openSects(){try{return JSON.parse(localStorage.getItem('tr_open')||'[]')}catch(e){return []}}
+function sectToggle(el){
+  const o=new Set(openSects()), k=el.dataset.k;
+  el.open?o.add(k):o.delete(k);
+  try{localStorage.setItem('tr_open',JSON.stringify([...o]))}catch(e){}
+}
 function home(){
   $('#bars').style.display='none';
   $('#foot').textContent='';
   app.className='panel fade';
-  const cards=tests.map(t=>`
+  const card=t=>`
     <div class="tcard" onclick="openTest('${t.id}')">
       <div class="tinfo">
         <div class="tname">${esc(t.name)}</div>
@@ -313,12 +368,18 @@ function home(){
       </div>
       ${t.builtin?'':`<button class="trm" title="Удалить" onclick="event.stopPropagation();removeTest('${t.id}')">✕</button>`}
       <span class="tgo">→</span>
-    </div>`).join('');
+    </div>`;
+  const open=openSects();
+  const sects=groupTests().map(([title,list])=>`
+    <details class="sect" data-k="${esc(title)}" ontoggle="sectToggle(this)"${open.indexOf(title)>=0?' open':''}>
+      <summary><span class="st">${esc(title)}</span><span class="sc">${list.length}</span><span class="sa">›</span></summary>
+      <div class="tlist">${list.map(card).join('')}</div>
+    </details>`).join('');
   app.innerHTML=`
     <div class="home">
       <h1>Тесты</h1>
       <p class="sub">Выбери тест или добавь свой. Имя теста = имя файла.</p>
-      ${tests.length?`<div class="tlist">${cards}</div>`:`<div class="empty">Пока нет тестов.<br>Добавь CSV-файл, чтобы начать.</div>`}
+      ${tests.length?sects:`<div class="empty">Пока нет тестов.<br>Добавь CSV-файл, чтобы начать.</div>`}
       <button class="btn ghost" onclick="document.getElementById('file').click()">+ Добавить тесты (CSV)</button>
       <div class="note">Можно выбрать сразу несколько файлов. Формат CSV: «Часть», «Номер задания», «Балл», «Текст задания», «Ответ», «Пояснение». Задания части 2 идут с полем для развёрнутого ответа. Старый формат из 4 колонок тоже читается.</div>
     </div>`;
