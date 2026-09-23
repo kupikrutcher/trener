@@ -1,72 +1,77 @@
-/* Маша Вайб — design tokens.
-   Источник правды: design/tokens.json. Этот файл — то же самое в CSS.
-   Внизу — алиасы на старые имена (--bg, --accent, --muted…), чтобы этап 1
-   был заменой одного блока :root без правки остального CSS. */
+/* Маша Вайб — design tokens. Стиль: clean girl brutalism
+   (как в «Стилях Лёрни»): чистый белый, жёсткие чёрные линии, один синий акцент,
+   салатовый маркер, без скруглений и теней, заголовки Montserrat прописными.
+   Внизу — алиасы на старые имена (--bg, --accent, --muted…). */
 
-@import url("https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=PT+Sans:wght@400;700&family=JetBrains+Mono:wght@500;600&display=swap");
 
 :root,
 [data-theme="paper"] {
   /* поверхности */
-  --paper: #f4f5f1;         /* фон страницы */
+  --paper: #ffffff;         /* фон страницы */
   --surface: #ffffff;       /* панели, карточки */
-  --surface-sunk: #eceee8;  /* пустые клетки, поля, треки */
-  --line: #daddd5;          /* декоративные разделители */
-  --line-strong: #8e9488;   /* рамки полей и клеток, ≥3:1 */
+  --surface-sunk: #f0f0f0;  /* пустые клетки, поля, треки */
+  --line: #0a0a0a;          /* жёсткие чёрные линии */
+  --line-strong: #0a0a0a;   /* рамки полей и клеток */
   /* текст */
-  --ink: #141827;
-  --ink-muted: #596070;
-  /* действие */
-  --cobalt: #2f45e0;
+  --ink: #0a0a0a;
+  --ink-muted: #5c5c5c;
+  /* действие — один синий акцент */
+  --cobalt: #1546f5;
   --on-cobalt: #ffffff;
-  --cobalt-soft: #e6e9fd;
-  /* фирменный маркер: только заливка */
-  --marker: #ffd93d;
-  --on-marker: #141827;
+  --cobalt-soft: #e7ecfe;
+  /* маркер: только заливка */
+  --marker: #cfff3c;
+  --on-marker: #0a0a0a;
   /* состояния: всегда вместе со словом или ✓/✕ */
-  --ok: #16703f;
-  --ok-soft: #ddf1e5;
-  --bad: #b3361a;
-  --bad-soft: #fbe3db;
+  --ok: #0a8f3c;
+  --ok-soft: #e4f7e9;
+  --bad: #e5192b;
+  --bad-soft: #fce3e5;
   --focus-ring: var(--cobalt);
-  --shadow-lift: 0 1px 0 rgba(20,24,39,.05), 0 12px 32px -16px rgba(20,24,39,.22);
+  --shadow-lift: none;
+  /* толщина рамок */
+  --border: 2px;
 
   /* шрифты */
-  --font-display: "Unbounded", "Arial Black", system-ui, sans-serif;
-  --font-sans: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Montserrat", "Arial Black", system-ui, sans-serif;
+  --font-sans: "PT Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
 
   /* отступы */
   --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
   --space-6: 24px; --space-8: 32px; --space-12: 48px;
 
-  /* радиусы */
-  --radius-cell: 6px;   /* клетки ответа, чипы, статусы */
-  --radius-md: 12px;    /* кнопки, поля, карточки */
-  --radius-lg: 20px;    /* панель вопроса */
-  --radius-pill: 999px; /* только маркер-плашки и аватар */
+  /* радиусы — брутализм: без скруглений */
+  --radius-cell: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-pill: 0px;
 }
 
+/* «Ночь» — та же система наоборот: чёрный лист, белые линии */
 [data-theme="night"] {
-  --paper: #0e1120;
-  --surface: #171b2e;
-  --surface-sunk: #111427;
-  --line: #262b42;
-  --line-strong: #6a7190;
-  --ink: #eef0f7;
-  --ink-muted: #9ca2b8;
-  --cobalt: #93a3ff;
-  --on-cobalt: #0e1120;
-  --cobalt-soft: #1e2448;
-  --ok: #5fd39a;
-  --ok-soft: #173226;
-  --bad: #ff8f70;
-  --bad-soft: #3a1d16;
-  --shadow-lift: 0 1px 0 rgba(0,0,0,.4), 0 12px 32px -16px rgba(0,0,0,.6);
+  --paper: #0a0a0a;
+  --surface: #0a0a0a;
+  --surface-sunk: #1c1c1c;
+  --line: #f5f5f5;
+  --line-strong: #f5f5f5;
+  --ink: #f5f5f5;
+  --ink-muted: #a3a3a3;
+  --cobalt: #6b8bff;
+  --on-cobalt: #0a0a0a;
+  --cobalt-soft: #16204a;
+  --marker: #cfff3c;
+  --on-marker: #0a0a0a;
+  --ok: #4ade80;
+  --ok-soft: #0f2e1c;
+  --bad: #ff5a67;
+  --bad-soft: #3a1115;
+  --shadow-lift: none;
   color-scheme: dark;
 }
 
-/* ---- Алиасы на старые имена из index.html (этап 1). Удалить на этапе 2+ ---- */
+/* ---- Алиасы на старые имена из index.html ---- */
 :root, [data-theme] {
   --bg: var(--paper);
   --muted: var(--ink-muted);

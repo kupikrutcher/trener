@@ -326,7 +326,7 @@ function drawProgress(el, subs){
     [0,50,100].forEach(v=>{ g+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${L-8}" y="${y(v)+4}" text-anchor="end">${v}%</text>`; });
     const every=Math.max(1,Math.ceil(n/Math.floor(iw/30)));
     pts.forEach((p,i)=>{
-      const cx=L+step*i+step/2, x=cx-bw/2, top=y(p.pct), h=T+ih-top, r=Math.min(4,bw/2,h);
+      const cx=L+step*i+step/2, x=cx-bw/2, top=y(p.pct), h=T+ih-top, r=0;   // брутализм: без скруглений
       g+= h>0 ? `<path class="bar" data-i="${i}" d="M${x},${T+ih}V${top+r}Q${x},${top} ${x+r},${top}H${x+bw-r}Q${x+bw},${top} ${x+bw},${top+r}V${T+ih}Z"/>`
               : `<rect class="bar" data-i="${i}" x="${x}" y="${T+ih-1}" width="${bw}" height="1"/>`;
       if(i%every===0||i===n-1) g+=`<text class="ax" x="${cx}" y="${H-6}" text-anchor="middle">${i+1}</text>`;

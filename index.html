@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#f4f5f1">
+<meta name="theme-color" content="#ffffff">
 <title>ЕГЭ с Машей Вайб</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,19 +29,19 @@ body{
 .mark b{font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:-.01em}
 .mark span{font-size:12px;color:var(--muted);font-weight:400}
 .themes{display:flex;gap:9px}
-.sw{width:18px;height:18px;border-radius:50%;cursor:pointer;border:1.5px solid var(--line-strong);padding:0;transition:transform .15s ease}
+.sw{width:18px;height:18px;border-radius:var(--radius-pill);cursor:pointer;border:var(--border) solid var(--line-strong);padding:0;transition:transform .15s ease}
 .sw:active{transform:scale(.9)}
 .sw[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.sw.t-paper{background:#f4f5f1} .sw.t-night{background:#171b2e}
+.sw.t-paper{background:#ffffff} .sw.t-night{background:#0a0a0a}
 .bars{margin-bottom:30px}
-.track{height:3px;border-radius:99px;background:var(--line);overflow:hidden}
+.track{height:4px;border-radius:0;background:var(--line);overflow:hidden}
 .track>i{display:block;height:100%;width:0;background:var(--accent);transition:width .55s cubic-bezier(.22,1,.36,1)}
 .meta{display:flex;justify-content:space-between;margin-top:12px;font-size:12.5px;color:var(--muted);letter-spacing:.02em}
 .meta b{color:var(--ink);font-weight:600}
 .qnav{display:flex;gap:6px;overflow-x:auto;margin-top:12px;padding:7px 2px 10px;scrollbar-width:thin;scroll-behavior:smooth;
   -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%);
   mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%)}
-.qnav::-webkit-scrollbar{height:4px}.qnav::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:99px}
+.qnav::-webkit-scrollbar{height:4px}.qnav::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:0}
 .qn{flex:none;min-width:34px;height:34px;padding:0 6px;border-radius:var(--radius-cell);border:1px solid var(--line-strong);background:var(--surface);
   color:var(--muted);font:600 13px/1 inherit;font-family:inherit;cursor:pointer;transition:background .2s,border-color .2s,color .2s,box-shadow .2s}
 .qn:first-child{margin-left:12px}.qn:last-child{margin-right:12px}
@@ -77,7 +77,7 @@ body{
 .sect .tlist{margin-bottom:18px}
 .tmeta{font-size:12.5px;color:var(--muted);margin-top:3px;letter-spacing:.02em}
 .tbadge{font-size:10.5px;color:var(--muted);border:1px solid var(--line-strong);border-radius:var(--radius-cell);padding:2px 8px;margin-left:8px;letter-spacing:.03em;vertical-align:middle}
-.trm{flex:none;width:28px;height:28px;border-radius:8px;border:none;background:none;color:var(--muted);font-size:15px;cursor:pointer;transition:color .2s,background .2s;line-height:1}
+.trm{flex:none;width:28px;height:28px;border-radius:var(--radius-cell);border:none;background:none;color:var(--muted);font-size:15px;cursor:pointer;transition:color .2s,background .2s;line-height:1}
 .trm:hover{color:var(--bad);background:var(--bad-soft)}
 .tgo{flex:none;color:var(--muted);font-size:18px}
 .tcard:hover .tgo{color:var(--accent)}
@@ -133,7 +133,7 @@ body{
 .rz{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
 .vrow{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
 .verdict.ok .vrow{color:var(--ok)} .verdict.bad .vrow{color:var(--bad)}
-.vdot{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:var(--on-cobalt);font-size:13px;flex:none}
+.vdot{width:22px;height:22px;border-radius:var(--radius-pill);display:grid;place-items:center;color:var(--on-cobalt);font-size:13px;flex:none}
 .verdict.ok .vdot{background:var(--ok)} .verdict.bad .vdot{background:var(--bad)}
 .cline{margin-top:12px;font-size:14px;color:var(--muted)}
 .cline b{color:var(--ink);font-size:17px;letter-spacing:.06em;margin-left:4px}
@@ -218,7 +218,7 @@ body{
 .creds{margin-top:16px;border:1px solid var(--line-strong);border-radius:var(--radius-md);padding:16px;background:var(--bg)}
 .creds-h{font-size:13.5px;font-weight:600;margin-bottom:10px}
 .crow{display:grid;grid-template-columns:1fr auto auto;gap:12px;font-size:13.5px;padding:7px 0;border-top:1px solid var(--line);align-items:center}
-.crow code{font-family:var(--font-mono);font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
+.crow code{font-family:var(--font-mono);font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-cell);padding:2px 6px}
 .stable{display:flex;flex-direction:column}
 .srow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);flex-wrap:wrap}
 .sname{display:flex;flex-direction:column;gap:3px;font-size:14.5px;min-width:0}
@@ -240,11 +240,11 @@ body{
 .land-card span{font-size:13px;color:var(--muted);line-height:1.45}
 .land-note{font-size:13px;color:var(--muted);text-align:center;line-height:1.6}
 /* ---- аватар ---- */
-.ava{flex:none;width:34px;height:34px;border-radius:50%;padding:0;border:1.5px solid var(--line-strong);background:var(--line);overflow:hidden;cursor:pointer;
+.ava{flex:none;width:34px;height:34px;border-radius:var(--radius-pill);padding:0;border:1.5px solid var(--line-strong);background:var(--line);overflow:hidden;cursor:pointer;
   margin-left:auto;margin-right:14px;display:grid;place-items:center;transition:border-color .2s,box-shadow .2s}
 .ava:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .ava img,.ava svg,.ava-big img,.ava-big svg{width:100%;height:100%;object-fit:cover;display:block}
-.ava-big{position:relative;flex:none;width:72px;height:72px;border-radius:50%;overflow:hidden;background:var(--line);border:1.5px solid var(--line-strong);cursor:pointer;padding:0}
+.ava-big{position:relative;flex:none;width:72px;height:72px;border-radius:var(--radius-pill);overflow:hidden;background:var(--line);border:1.5px solid var(--line-strong);cursor:pointer;padding:0}
 .ava-big::after{content:'Сменить';position:absolute;inset:auto 0 0 0;height:26px;background:rgba(0,0,0,.45);color:#fff;font-size:10.5px;font-weight:600;
   display:grid;place-items:center;opacity:0;transition:opacity .2s}
 .ava-big:hover::after{opacity:1}
@@ -258,7 +258,7 @@ body{
 .pstat span{display:block;font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35}
 .plegend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:6px}
 .plegend i{display:inline-block;vertical-align:middle;margin-right:6px}
-.plegend .lb{width:10px;height:10px;border-radius:3px;background:var(--accent)}
+.plegend .lb{width:10px;height:10px;border-radius:var(--radius-cell);background:var(--accent)}
 .plegend .lt{width:16px;height:0;border-top:2px dashed var(--ink)}
 .pchart{position:relative;width:100%;height:210px}
 .pchart svg{display:block;overflow:visible}
@@ -268,7 +268,7 @@ body{
 .pchart.hov .bar{opacity:.35}.pchart.hov .bar.on{opacity:1}
 .pchart .trend{stroke:var(--ink);stroke-width:2;fill:none;stroke-dasharray:6 5;stroke-linecap:round;opacity:.8}
 .pchart .hit{fill:transparent;cursor:default}
-.ptip{position:absolute;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;line-height:1.45;padding:8px 10px;border-radius:9px;
+.ptip{position:absolute;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;line-height:1.45;padding:8px 10px;border-radius:var(--radius-md);
   white-space:nowrap;transform:translate(-50%,calc(-100% - 10px));opacity:0;transition:opacity .12s;z-index:2}
 .ptip.show{opacity:1}
 .ptip b{font-size:13.5px}
@@ -284,7 +284,7 @@ body{
 .fitem{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--bg);
   color:var(--ink);text-decoration:none;font-size:14px;transition:border-color .2s,background .2s}
 a.fitem:hover{border-color:var(--accent);background:var(--accent-soft)}
-.fitem .fic{flex:none;width:34px;height:34px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:10.5px;font-weight:700;letter-spacing:.02em}
+.fitem .fic{flex:none;width:34px;height:34px;border-radius:var(--radius-cell);background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:10.5px;font-weight:700;letter-spacing:.02em}
 .fitem .fnm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fitem .fsz{flex:none;font-size:12px;color:var(--muted)}
 .fitem .fst{flex:none;font-size:12px;color:var(--muted)}
@@ -353,6 +353,20 @@ input[type=file]{display:none}
 @media(min-width:680px){.panel{padding:42px 44px}.qtext{font-size:16.5px}}
 @media(max-width:380px){.panel{padding:28px 22px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* ---- clean girl brutalism: жёсткие рамки 2px, заголовки прописными Montserrat ---- */
+.panel,.tcard,.land-card,.dl,.dl-empty,.hwbox,.fitem,.rs-tile,.pstat,.creds,.vbox,.cell,.tin,.essay,.qn,.fdrop,.empty,
+.sent,.acct,.ava,.ava-big,.btn.ghost,.st-draft,.qtype,.tbadge{border-width:var(--border)}
+.btn{border:var(--border) solid var(--accent)}
+.btn.ghost{border-color:var(--ink)}
+.sect{border-top-width:var(--border)}.sect:last-of-type{border-bottom-width:var(--border)}
+.mark b,.land h1,.home h1,.cab-h,.allhead h1,.sect>summary .st,.gtitle{text-transform:uppercase;letter-spacing:-.01em}
+.mark b{font-weight:900}
+.land h1{font-weight:900;line-height:1.05}
+.cab-h,.home h1,.allhead h1{font-weight:800}
+.rs-big b,.rs-tile b,.pstat b,.land-card b{font-weight:800}
+.tabs{border-bottom-width:var(--border)}.tab{border-bottom-width:3px}
+.land-go{text-transform:uppercase;letter-spacing:.04em}
+.qnum{font-family:var(--font-display);font-weight:800;font-size:13px;letter-spacing:.04em}
 </style>
 </head>
 <body>
@@ -628,7 +642,7 @@ function render(){
   if(isP2(q)) return renderP2(q);
   app.innerHTML=`
     <div class="qhead">
-      <span class="qnum">${esc(q.n||('Задание '+(idx+1)))}</span>
+      <span class="qnum">Задание ${esc(String(q.n||(idx+1)))}</span>
       <span class="qtype">${qType(q.text)}</span>
     </div>
     <div class="qtext">${fmtQ(q.text)}</div>
@@ -842,7 +856,7 @@ function finishEarly(){
   const items=bank.map((q,i)=>isP2(q)?p2Item(q):`
     <div class="allitem">
       <div class="qhead">
-        <span class="qnum">${esc(q.n||('Задание '+(i+1)))}</span>
+        <span class="qnum">Задание ${esc(String(q.n||(i+1)))}</span>
         <span class="qtype">${qType(q.text)}</span>
       </div>
       <div class="qtext">${fmtQ(q.text)}</div>
