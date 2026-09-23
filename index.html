@@ -254,7 +254,7 @@ function loadTests(){
   tests=BUILTINS.map((t,i)=>({id:'b'+i,name:t.name,builtin:true,questions:t.questions}));
   try{
     const raw=localStorage.getItem('tr_tests');
-    if(raw){JSON.parse(raw).forEach(t=>{if(t&&t.questions&&t.questions.length)tests.push({id:t.id,name:t.name,questions:t.questions})})}
+    if(raw){JSON.parse(raw).forEach(t=>{if(t&&t.questions&&t.questions.length&&!BUILTINS.some(b=>b.name===t.name))tests.push({id:t.id,name:t.name,questions:t.questions})})}
   }catch(e){}
 }
 function saveTests(){
@@ -313,7 +313,7 @@ function fmtExpl(t){
 /* ---- home / library ---- */
 /* разделы главной: встроенные тесты по разделам кодификатора, свои — отдельно */
 const SECTIONS=[
-  ['Сборники по разделам',['Человек и Общество','Социология','Экономика','Политика','Право']],
+  ['Мясорубка',['Человек и Общество','Социология','Экономика','Политика','Право']],
   ['Человек и общество',['Человек, потребности, общество','Деятельность, социализация','Мышление, познание; истина',
     'Мировоззрение, сознание, Образование, образовательное право','Культура, искусство','Наука, религия',
     'Общественный прогресс, типы обществ','Глобализация и глобальные проблемы, мировая экономика']],
@@ -346,8 +346,6 @@ function groupTests(){
   });
   const rest=tests.filter(t=>t.builtin&&!used.has(t.id));
   if(rest.length) out.push(['Другое',rest]);
-  const mine=tests.filter(t=>!t.builtin);
-  if(mine.length) out.push(['Мои тесты',mine]);
   return out;
 }
 function openSects(){try{return JSON.parse(localStorage.getItem('tr_open')||'[]')}catch(e){return []}}
@@ -377,11 +375,8 @@ function home(){
     </details>`).join('');
   app.innerHTML=`
     <div class="home">
-      <h1>Тесты</h1>
-      <p class="sub">Выбери тест или добавь свой. Имя теста = имя файла.</p>
       ${tests.length?sects:`<div class="empty">Пока нет тестов.<br>Добавь CSV-файл, чтобы начать.</div>`}
       <button class="btn ghost" onclick="document.getElementById('file').click()">+ Добавить тесты (CSV)</button>
-      <div class="note">Можно выбрать сразу несколько файлов. Формат CSV: «Часть», «Номер задания», «Балл», «Текст задания», «Ответ», «Пояснение». Задания части 2 идут с полем для развёрнутого ответа. Старый формат из 4 колонок тоже читается.</div>
     </div>`;
 }
 
