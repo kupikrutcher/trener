@@ -32,6 +32,11 @@ rm -rf "$SITE_DIR"
 echo "→ сертификат Let's Encrypt (Certificate Manager)"
 yc certificate-manager certificate get --name "$CERT" >/dev/null 2>&1 || \
   yc certificate-manager certificate request --name "$CERT" --domains "$DOMAIN,$WWW" --challenge dns >/dev/null
+# записи для проверки домена появляются через несколько секунд после запроса
+for i in $(seq 1 12); do
+  [ "$(yc certificate-manager certificate get --name "$CERT" --full --format json | jq '.challenges | length')" -gt 0 ] && break
+  sleep 5
+done
 STATUS=$(yc certificate-manager certificate get --name "$CERT" --format json | jq -r .status)
 CERT_ID=$(yc certificate-manager certificate get --name "$CERT" --format json | jq -r .id)
 
