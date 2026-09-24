@@ -658,31 +658,77 @@ function scheduleView(tab){
     <div id="sch" class="cab-load">Загружаем…</div></div>`);
   return schTab==='plan' ? planView() : lessonsSchedule();
 }
+/* план курса: списком по блокам или календарём по месяцам (planCal) */
+let planCal=false, calMonth=null, calDay=null;
+function planToday(){ const d=new Date(); d.setHours(0,0,0,0); return +d; }
+function planFmt(t,o){ return new Date(t).toLocaleDateString('ru-RU',o); }
+function planTags(e){ return `<span class="cp-k ${e.k}">${PLAN_KIND[e.k]}</span>${e.probe?'<span class="cp-probe">Пробник</span>':''}`; }
+function planRow(e){
+  const today=planToday(), past=e.t<today, now=e.t===today;
+  return `<div class="cp-ev${past?' past':''}${now?' now':''}">
+    <div class="cp-d"><b>${planFmt(e.t,{day:'numeric'})}</b><span>${planFmt(e.t,{month:'short'}).replace('.','')} · ${planFmt(e.t,{weekday:'short'})}</span></div>
+    <div class="cp-b"><div class="cp-tags">${planTags(e)}</div><div class="cp-t">${esc(e.title)}</div></div>
+    ${past?'<span class="cp-done">✓ прошло</span>':now?'<span class="cp-today">сегодня</span>':''}</div>`;
+}
+function planToggle(cal){ planCal=cal; calDay=null; planView(); }
 function planView(){
   const box=$('#sch'); if(!box) return; box.className='';
-  const today=new Date(); today.setHours(0,0,0,0);
-  const blocks=coursePlan(), all=blocks.flatMap(b=>b.items), next=all.find(e=>e.t>=+today);
-  const fmt=(t,o)=>new Date(t).toLocaleDateString('ru-RU',o);
+  if(planCal) return calView(box);
+  const today=planToday();
+  const blocks=coursePlan(), all=blocks.flatMap(b=>b.items), next=all.find(e=>e.t>=today);
   const when=t=>{ const d=Math.round((t-today)/DAY); return d===0?'Сегодня':d===1?'Завтра':'Через '+d+' '+(d%10===1&&d%100!==11?'день':(d%10>=2&&d%10<=4&&(d%100<10||d%100>=20)?'дня':'дней')); };
-  const tags=e=>`<span class="cp-k ${e.k}">${PLAN_KIND[e.k]}</span>${e.probe?'<span class="cp-probe">Пробник</span>':''}`;
-  const row=e=>{ const past=e.t<+today, now=e.t===+today;
-    return `<div class="cp-ev${past?' past':''}${now?' now':''}">
-      <div class="cp-d"><b>${fmt(e.t,{day:'numeric'})}</b><span>${fmt(e.t,{month:'short'}).replace('.','')} · ${fmt(e.t,{weekday:'short'})}</span></div>
-      <div class="cp-b"><div class="cp-tags">${tags(e)}</div><div class="cp-t">${esc(e.title)}</div></div>
-      ${past?'<span class="cp-done">✓ прошло</span>':now?'<span class="cp-today">сегодня</span>':''}</div>`; };
   const cur=next?blocks.find(b=>b.items.includes(next)):null;
-  box.innerHTML=(next?`<div class="cp-next">
+  box.innerHTML=`<button class="btn ghost cp-switch" onclick="planToggle(true)">Открыть как календарь</button>`
+    +(next?`<div class="cp-next">
       <div class="cp-next-h">Следующее занятие · ${when(next.t)}</div>
-      <div class="cp-next-d">${fmt(next.t,{weekday:'long',day:'numeric',month:'long'})}</div>
-      <div class="cp-tags">${tags(next)}</div><div class="cp-next-t">${esc(next.title)}</div></div>`
+      <div class="cp-next-d">${planFmt(next.t,{weekday:'long',day:'numeric',month:'long'})}</div>
+      <div class="cp-tags">${planTags(next)}</div><div class="cp-next-t">${esc(next.title)}</div></div>`
     :`<div class="empty">Курс завершён. Удачи на экзамене.</div>`)
-    + blocks.map(b=>{ const done=b.items.every(e=>e.t<+today);
+    + blocks.map(b=>{ const done=b.items.every(e=>e.t<today);
       return `<details class="sect cp-block"${b===cur?' open':''}>
         <summary><span class="st">${b.name}</span><span class="cp-m">${b.months}</span>${done?'<span class="cp-bdone">✓ пройден</span>':''}<span class="sc">${b.items.length}</span><span class="sa">›</span></summary>
-        <div class="cp-list">${b.items.map(row).join('')}</div>
+        <div class="cp-list">${b.items.map(planRow).join('')}</div>
         ${b===blocks[blocks.length-1]?'<div class="cp-final">Неделя перед ЕГЭ — финальный интенсив-повторение</div>':''}
       </details>`; }).join('');
 }
+/* календарь: сетка месяца пн–вс, занятия на днях; по клику на день — его занятия под сеткой */
+function calView(box){
+  const all=coursePlan().flatMap(b=>b.items), today=planToday();
+  const months=[...new Set(all.map(e=>{ const d=new Date(e.t); return d.getFullYear()*12+d.getMonth(); }))];
+  if(calMonth==null||months.indexOf(calMonth)<0){
+    const nd=new Date((all.find(e=>e.t>=today)||all[all.length-1]).t); calMonth=nd.getFullYear()*12+nd.getMonth();
+  }
+  const y=Math.floor(calMonth/12), m=calMonth%12, mi=months.indexOf(calMonth);
+  const byDay={}; all.forEach(e=>{ (byDay[e.t]=byDay[e.t]||[]).push(e); });
+  const first=new Date(y,m,1), lead=(first.getDay()+6)%7, days=new Date(y,m+1,0).getDate();
+  const cells=[]; for(let k=0;k<lead;k++) cells.push('<div class="cal-c cal-empty"></div>');
+  for(let d=1;d<=days;d++){
+    const t=+new Date(y,m,d), ev=byDay[t]||[], past=t<today;
+    const cls=['cal-c']; if(ev.length) cls.push('has'); if(t===today) cls.push('today'); if(past) cls.push('past'); if(t===calDay) cls.push('sel');
+    const label=planFmt(t,{day:'numeric',month:'long'})+(ev.length?': '+ev.map(e=>PLAN_KIND[e.k]+' — '+e.title).join('; '):'');
+    cells.push(ev.length
+      ? `<button class="${cls.join(' ')}" aria-label="${esc(label)}" aria-pressed="${t===calDay}" onclick="calPick(${t})"><span class="cal-n">${d}</span>
+          ${ev.map(e=>`<span class="cal-e ${e.k}"><span class="cal-s" aria-hidden="true">${CAL_KIND[e.k][0]}</span><span class="cal-k">${CAL_KIND[e.k]}</span>${e.probe?'<span class="cal-p">пробник</span>':''}<span class="cal-t">${esc(e.title)}</span></span>`).join('')}</button>`
+      : `<div class="${cls.join(' ')}"><span class="cal-n">${d}</span></div>`);
+  }
+  const sel=calDay&&byDay[calDay];
+  const monthName=first.toLocaleDateString('ru-RU',{month:'long',year:'numeric'}).replace(' г.','');
+  box.innerHTML=`<button class="btn ghost cp-switch" onclick="planToggle(false)">Показать списком</button>
+    <div class="cal">
+      <div class="cal-h">
+        <button class="cal-nav" onclick="calGo(-1)" aria-label="Предыдущий месяц"${mi<=0?' disabled':''}>‹</button>
+        <div class="cal-m">${monthName}</div>
+        <button class="cal-nav" onclick="calGo(1)" aria-label="Следующий месяц"${mi>=months.length-1?' disabled':''}>›</button>
+      </div>
+      <div class="cal-w">${['пн','вт','ср','чт','пт','сб','вс'].map(w=>`<span>${w}</span>`).join('')}</div>
+      <div class="cal-g">${cells.join('')}</div>
+      <div class="cal-leg">${['L','G','R'].map(k=>`<span class="cal-e ${k}"><span class="cal-k"><b class="cal-lk">${CAL_KIND[k][0]} — </b>${CAL_KIND[k]}</span></span>`).join('')}</div>
+    </div>
+    ${sel?`<div class="cp-list cal-sel">${sel.map(planRow).join('')}</div>`:`<p class="cal-hint">Нажми на день, чтобы увидеть занятие.</p>`}`;
+}
+const CAL_KIND={ L:'Урок', G:'Практика', C:'Практика', R:'Репетиция' };
+function calGo(d){ calMonth+=d; calDay=null; planView(); }
+function calPick(t){ calDay=calDay===t?null:t; planView(); }
 /* уроки и сроки ДЗ по дням; сначала сегодня и дальше, ниже — прошедшее */
 async function lessonsSchedule(){
   let lessons; try{ lessons=(await api('lessons_list')).lessons; }catch(e){ const b=$('#sch'); if(b) b.textContent='Не удалось загрузить: '+e.message; return; }
