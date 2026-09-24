@@ -265,7 +265,7 @@ body{
 .cal{padding:var(--space-4);border-radius:var(--radius-lg);background:var(--surface);border:1px solid var(--line-strong);box-shadow:var(--shadow-clay)}
 .cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3)}
 .cal-m{font:700 18px/1.2 var(--font-display);text-transform:capitalize}
-.cal-nav{width:40px;height:40px;border:0;border-radius:var(--radius-md);background:var(--surface-sunk);box-shadow:var(--shadow-press);color:var(--ink);font-size:20px;cursor:pointer}
+.cal-nav{display:grid;place-items:center;padding:0;flex:none;width:40px;height:40px;border:0;border-radius:var(--radius-md);background:var(--surface-sunk);box-shadow:var(--shadow-press);color:var(--ink);cursor:pointer}
 .cal-nav:hover{color:var(--cobalt)}.cal-nav:disabled{opacity:.35;cursor:default;color:var(--muted)}
 .cal-nav:focus-visible,.cal-c:focus-visible{outline:none;box-shadow:0 0 0 3px var(--cobalt-soft);border-color:var(--cobalt)}
 .cal-w,.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}

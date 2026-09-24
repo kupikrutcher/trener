@@ -716,9 +716,9 @@ function calView(box){
   box.innerHTML=`<button class="btn ghost cp-switch" onclick="planToggle(false)">Показать списком</button>
     <div class="cal">
       <div class="cal-h">
-        <button class="cal-nav" onclick="calGo(-1)" aria-label="Предыдущий месяц"${mi<=0?' disabled':''}>‹</button>
+        <button class="cal-nav" onclick="calGo(-1)" aria-label="Предыдущий месяц"${mi<=0?' disabled':''}><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <div class="cal-m">${monthName}</div>
-        <button class="cal-nav" onclick="calGo(1)" aria-label="Следующий месяц"${mi>=months.length-1?' disabled':''}>›</button>
+        <button class="cal-nav" onclick="calGo(1)" aria-label="Следующий месяц"${mi>=months.length-1?' disabled':''}><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9.5 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="cal-w">${['пн','вт','ср','чт','пт','сб','вс'].map(w=>`<span>${w}</span>`).join('')}</div>
       <div class="cal-g">${cells.join('')}</div>
