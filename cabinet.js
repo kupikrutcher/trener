@@ -708,7 +708,7 @@ async function lessonsSchedule(){
 }
 /* банк заданий части 1 (bank.json, собирается tools/xlsx_to_bank.py): фильтры по блоку, теме и номеру,
    подборка решается как обычный тест, но учителю не отправляется и ответы открыты сразу */
-let bankData=null, bankF={ block:'', topic:'', n:'' }, bankShown=30;
+let bankData=null, bankF={ block:'', topic:'', n:'' };
 try{ Object.assign(bankF, JSON.parse(localStorage.getItem('tr_bankf')||'{}')); }catch(e){}
 async function bankView(){
   cabShow(`<div class="cab"><h2 class="cab-h">Банк заданий</h2><p class="cab-sub">Часть 1 · задания с ответами и пояснениями</p>
@@ -718,7 +718,7 @@ async function bankView(){
     catch(e){ const b=$('#bnk'); if(b) b.textContent='Не удалось загрузить банк заданий. Проверь интернет.'; return; }
     bankData.topicName=Object.fromEntries(bankData.topics.map(t=>[t.code,t.name]));
   }
-  bankShown=30; bankDraw();
+  bankDraw();
 }
 function bankMatch(q,skip){
   return (skip==='block'||!bankF.block||q.block===bankF.block)
@@ -736,50 +736,80 @@ function bankLabel(){
 }
 function bankDraw(){
   const box=$('#bnk'); if(!box||!bankData) return; box.className='';
-  const D=bankData, cb=bankCount('block'), ct=bankCount('topic'), cn=bankCount('n'), list=bankList();
-  const cut=(s,k)=>s.length>k?s.slice(0,k-1)+'…':s;
-  const opt=(v,label,c,cur)=>`<option value="${esc(v)}"${v===cur?' selected':''}${c?'':' disabled'}>${esc(label)}${c?' · '+c:''}</option>`;
-  const topicOpts=D.blocks.filter(b=>!bankF.block||b===bankF.block).map(b=>{
-    const ts=D.topics.filter(t=>t.block===b).map(t=>opt(t.code,cut(t.code+' '+t.name,70),ct[t.code]||0,bankF.topic)).join('');
-    return bankF.block?ts:`<optgroup label="${esc(b)}">${ts}</optgroup>`;
-  }).join('');
+  const D=bankData, cb=bankCount('block'), ct=bankCount('topic'), cn=bankCount('n'), n=bankList().length;
+  const topics=D.blocks.filter(b=>!bankF.block||b===bankF.block).flatMap(b=>[
+    ...(bankF.block?[]:[{ group:b }]),
+    ...D.topics.filter(t=>t.block===b).map(t=>({ v:t.code, code:t.code, label:t.name, c:ct[t.code]||0 }))]);
   const nums=[...new Set(D.questions.map(q=>q.n))].sort((a,b)=>a-b);
   const any=bankF.block||bankF.topic||bankF.n;
   box.innerHTML=`
     <div class="bank-f">
-      <div><label class="lab" for="bf-b">Блок</label>
-        <select id="bf-b" class="tin" onchange="bankSet('block',this.value)"><option value="">Все блоки</option>
-          ${D.blocks.map(b=>opt(b,b,cb[b]||0,bankF.block)).join('')}</select></div>
-      <div><label class="lab" for="bf-t">Тема</label>
-        <select id="bf-t" class="tin" onchange="bankSet('topic',this.value)"><option value="">Все темы</option>${topicOpts}</select></div>
-      <div><label class="lab" for="bf-n">Номер задания</label>
-        <select id="bf-n" class="tin" onchange="bankSet('n',this.value)"><option value="">Все номера</option>
-          ${nums.map(n=>opt(n,'Задание '+n,cn[n]||0,bankF.n)).join('')}</select></div>
+      ${ddHTML('bf-block','Блок','Все блоки',bankF.block,D.blocks.map(b=>({ v:b, label:b, c:cb[b]||0 })))}
+      ${ddHTML('bf-topic','Тема','Все темы',bankF.topic,topics)}
+      ${ddHTML('bf-n','Номер задания','Все номера',bankF.n,nums.map(v=>({ v, label:'Задание '+v, c:cn[v]||0 })))}
     </div>
-    <div class="bank-sum"><span>Найдено: <b>${plural(list.length)}</b></span>
+    <div class="bank-sum"><span>Найдено: <b>${plural(n)}</b></span>
       ${any?`<button class="linkbtn" onclick="bankReset()">Сбросить фильтры</button>`:''}</div>
-    ${list.length?`<button class="btn" onclick="bankRun(0)">Решать подборку</button>
-    <div class="tlist bank-list">${list.slice(0,bankShown).map((q,i)=>`
-      <div class="tcard" role="button" tabindex="0" onclick="bankRun(${i})" onkeydown="if(event.key==='Enter')bankRun(${i})">
-        <div class="tinfo"><div class="tname">${esc(q.text.split('\n')[0])}</div>
-          <div class="tmeta">Задание ${esc(q.n)} · ${esc(q.topic)} ${esc(cut(D.topicName[q.topic]||'',48))} · ${esc(q.block)}</div></div>
-        <span class="tgo">→</span></div>`).join('')}</div>
-    ${list.length>bankShown?`<button class="btn ghost" onclick="bankShown+=30;bankDraw()">Показать ещё · осталось ${list.length-bankShown}</button>`:''}`
-    :`<div class="empty">По этим фильтрам заданий нет.</div>`}`;
+    ${n?`<button class="btn" onclick="bankRun()">Решать подборку</button>`:`<div class="empty">По этим фильтрам заданий нет.</div>`}`;
 }
+/* выпадающий список в стиле сайта вместо системного select: кнопка + listbox, клавиши ↑ ↓ Enter Esc.
+   id вида «bf-<ключ фильтра>»; пункт с c===0 недоступен, { group } — подзаголовок */
+function ddHTML(id,label,ph,cur,items){
+  const sel=items.find(i=>i.v===cur);
+  const opts=[{ v:'', label:ph }, ...items].map((it,k)=>it.group!=null
+    ? `<div class="dd-g" role="presentation">${esc(it.group)}</div>`
+    : `<div class="dd-o" role="option" id="${id}-o${k}" data-v="${esc(it.v)}" aria-selected="${it.v===cur}"${it.c===0?' aria-disabled="true"':''}
+        onclick="ddPick('${id}',this)" title="${esc((it.code?it.code+' ':'')+it.label)}"><span class="dd-l">${it.code?`<b class="dd-code">${esc(it.code)}</b> `:''}${esc(it.label)}</span>${it.c?`<span class="dd-c">${it.c}</span>`:''}</div>`).join('');
+  return `<div class="dd" id="${id}"><span class="lab" id="${id}-l">${label}</span>
+    <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="${id}-l ${id}-v"
+      onclick="ddToggle('${id}')" onkeydown="ddKey(event,'${id}')"><span class="dd-v" id="${id}-v">${esc(sel?(sel.code?sel.code+' ':'')+sel.label:ph)}</span><span class="dd-ch" aria-hidden="true">›</span></button>
+    <div class="dd-pop" role="listbox" aria-labelledby="${id}-l" hidden>${opts}</div></div>`;
+}
+function ddEls(id){ const r=document.getElementById(id); return r&&{ btn:r.querySelector('.dd-btn'), pop:r.querySelector('.dd-pop') }; }
+function ddOpts(pop){ return [...pop.querySelectorAll('.dd-o:not([aria-disabled])')]; }
+function ddActive(id,o){
+  const e=ddEls(id); e.pop.querySelectorAll('.dd-o.act').forEach(x=>x.classList.remove('act'));
+  if(!o) return; o.classList.add('act'); e.btn.setAttribute('aria-activedescendant',o.id); o.scrollIntoView({ block:'nearest' });
+}
+function ddClose(id){
+  const e=ddEls(id); if(!e||e.pop.hidden) return;
+  e.pop.hidden=true; e.btn.setAttribute('aria-expanded','false'); e.btn.removeAttribute('aria-activedescendant');
+}
+function ddToggle(id){
+  const e=ddEls(id); if(!e) return;
+  if(!e.pop.hidden) return ddClose(id);
+  document.querySelectorAll('.dd').forEach(d=>d.id!==id&&ddClose(d.id));
+  e.pop.hidden=false; e.btn.setAttribute('aria-expanded','true');
+  ddActive(id, e.pop.querySelector('.dd-o[aria-selected="true"]')||ddOpts(e.pop)[0]);
+}
+function ddPick(id,o){
+  if(o.getAttribute('aria-disabled')) return;
+  ddClose(id); bankSet(id.slice(3),o.dataset.v);
+  const e=ddEls(id); if(e) e.btn.focus();
+}
+function ddKey(ev,id){
+  const e=ddEls(id), open=!e.pop.hidden, list=ddOpts(e.pop), i=list.indexOf(e.pop.querySelector('.dd-o.act'));
+  if(ev.key==='ArrowDown'||ev.key==='ArrowUp'){
+    ev.preventDefault(); if(!open) return ddToggle(id);
+    ddActive(id, list[Math.max(0,Math.min(list.length-1,i+(ev.key==='ArrowDown'?1:-1)))]);
+  }else if((ev.key==='Enter'||ev.key===' ')&&open){ ev.preventDefault(); if(list[i]) ddPick(id,list[i]); }
+  else if(ev.key==='Escape'&&open){ ev.preventDefault(); ddClose(id); }
+  else if(ev.key==='Tab') ddClose(id);
+}
+document.addEventListener('click',ev=>{ document.querySelectorAll('.dd').forEach(d=>{ if(!d.contains(ev.target)) ddClose(d.id); }); });
 function bankSet(k,v){
   bankF[k]=v;
   if(k==='block'&&bankF.topic&&!(v&&bankData.topics.some(t=>t.code===bankF.topic&&t.block===v))) bankF.topic='';
   if(k==='topic'&&v) bankF.block=bankData.topics.find(t=>t.code===v).block;
   try{ localStorage.setItem('tr_bankf',JSON.stringify(bankF)); }catch(e){}
-  bankShown=30; bankDraw();
+  bankDraw();
 }
 function bankReset(){ bankF={ block:'', topic:'', n:'' }; bankSet('n',''); }
 /* подборка решается движком тестов; window.bankSel отличает её от ДЗ (ответы открыты, «К банку заданий») */
-function bankRun(start){
+function bankRun(){
   const list=bankList(); if(!list.length) return;
   window.bankSel=list; bank=list.slice(); curId=''; curName=curBase='Банк · '+bankLabel();
-  review=null; idx=start||0; score=0; results=[]; render(); window.scrollTo({top:0});
+  review=null; idx=0; score=0; results=[]; render(); window.scrollTo({top:0});
 }
 /* полезные файлы: материалы всех уроков в одном месте */
 async function filesView(){

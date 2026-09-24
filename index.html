@@ -206,11 +206,34 @@ body{
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--cobalt);box-shadow:var(--shadow-soft)}
 /* банк заданий: фильтры блок / тема / номер */
 .bank-f{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:var(--space-3)}
-.bank-f select.tin{appearance:auto;padding:11px 12px;font-size:14.5px;text-overflow:ellipsis}
 .bank-sum{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);margin:var(--space-4) 0 var(--space-3);font-size:14px;color:var(--muted)}
 .bank-sum b{color:var(--ink)}
-.bank-list{margin-top:var(--space-6)}
-@media (max-width:640px){.bank-f{grid-template-columns:1fr}}
+/* выпадающий список в стиле сайта: «вдавленное» поле + выпуклая панель */
+.dd{position:relative;min-width:0}
+.dd-btn{width:100%;min-height:48px;display:flex;align-items:center;gap:var(--space-2);padding:12px 14px;text-align:left;font:500 14.5px/1.3 var(--font-sans);color:var(--ink);
+  background:var(--surface-sunk);box-shadow:var(--shadow-press);border:1px solid transparent;border-radius:var(--radius-md);cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.dd-btn:hover{border-color:var(--line-strong)}
+.dd-btn:focus-visible,.dd-btn[aria-expanded="true"]{outline:none;border-color:var(--cobalt);box-shadow:var(--shadow-press),0 0 0 3px var(--cobalt-soft)}
+.dd-v{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dd-ch{flex:none;color:var(--muted);transform:rotate(90deg);transition:transform .2s}
+.dd-btn[aria-expanded="true"] .dd-ch{transform:rotate(-90deg);color:var(--cobalt)}
+.dd-pop{position:absolute;z-index:30;top:calc(100% + 6px);left:0;min-width:100%;width:max-content;max-width:min(440px,calc(100vw - 2 * var(--space-4)));
+  max-height:340px;overflow:auto;padding:6px;background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius-md);box-shadow:var(--shadow-lift);
+  animation:ddIn .16s cubic-bezier(.22,1,.36,1)}
+.bank-f .dd:last-child .dd-pop{left:auto;right:0}
+.dd-pop[hidden]{display:none}
+@keyframes ddIn{from{opacity:0;transform:translateY(-4px)}}
+.dd-o{display:flex;align-items:baseline;gap:var(--space-3);padding:10px 12px;border-radius:var(--radius-cell);font-size:14px;line-height:1.4;cursor:pointer}
+.dd-o.act,.dd-o:hover{background:var(--cobalt-soft)}
+.dd-o[aria-selected="true"]{color:var(--cobalt);font-weight:600}
+.dd-o[aria-selected="true"]::after{content:"✓";margin-left:var(--space-2)}
+.dd-o[aria-disabled="true"]{color:var(--muted);opacity:.5;cursor:default;background:none}
+.dd-l{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dd-code{font-family:var(--font-mono);font-weight:600;font-size:12.5px;color:var(--cobalt)}
+.dd-c{margin-left:auto;padding-left:var(--space-2);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dd-g{padding:12px 12px 4px;font:700 11px/1 var(--font-sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.dd-pop{animation:none}.dd-ch{transition:none}}
+@media (max-width:640px){.bank-f{grid-template-columns:1fr}.dd-pop,.bank-f .dd:last-child .dd-pop{left:0;right:0;width:auto;max-width:none}}
 /* расписание: план курса по блокам */
 .cp-next{padding:var(--space-6);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow-clay);border:1px solid var(--line-strong);margin-bottom:var(--space-6)}
 .cp-next-h{font:700 12px/1 var(--font-sans);letter-spacing:.06em;text-transform:uppercase;color:var(--cobalt)}
