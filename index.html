@@ -31,10 +31,13 @@ body{
 .mark{display:flex;align-items:baseline;gap:10px;cursor:pointer}
 .mark b{font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:-.01em}
 .mark span{font-size:12px;color:var(--muted);font-weight:400}
-.themes{display:flex;gap:9px}
-.sw{width:18px;height:18px;border-radius:var(--radius-pill);cursor:pointer;border:var(--border) solid var(--line-strong);padding:0;transition:transform .15s ease}
-.sw:active{transform:scale(.9)}
-.sw[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.theme-tog{flex:none;display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:var(--radius-pill);cursor:pointer;
+  background:var(--surface);color:var(--cobalt);transition:transform .15s ease}
+.theme-tog:active{transform:scale(.92)}
+.theme-tog svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.theme-tog .i-moon path{fill:currentColor;stroke:none}
+.theme-tog .i-sun{display:none}
+[data-theme="night"] .theme-tog .i-sun{display:block}[data-theme="night"] .theme-tog .i-moon{display:none}
 .bars{margin-bottom:30px}
 .track{height:4px;border-radius:0;background:var(--line);overflow:hidden}
 .track>i{display:block;height:100%;width:0;background:var(--accent);transition:width .55s cubic-bezier(.22,1,.36,1)}
@@ -227,9 +230,9 @@ body{
 .sname span{font-size:12.5px;color:var(--muted)}
 .sact{display:flex;gap:14px}
 @media(max-width:420px){.crow{grid-template-columns:1fr;gap:4px}}
-@media(max-width:480px){.acct,.ava{margin-right:10px}.themes{gap:7px}}
+@media(max-width:480px){.acct,.ava{margin-right:10px}}
 .acct,.mark b{white-space:nowrap}
-@media(max-width:420px){.mark b{font-size:13.5px}.acct{padding:7px 10px;font-size:12px;margin-right:8px}.themes{gap:6px}}
+@media(max-width:420px){.mark b{font-size:13.5px}.acct{padding:7px 10px;font-size:12px;margin-right:8px}}
 /* ---- главная ---- */
 .land{text-align:center;padding:10px 0 4px}
 .land-hi{font-size:14px;color:var(--accent);font-weight:600;letter-spacing:.02em}
@@ -383,9 +386,7 @@ body{background:
 .btn.ghost{background:var(--surface);color:var(--ink);border:0;box-shadow:var(--shadow-soft)}
 .btn.ghost:hover{background:var(--surface);color:var(--cobalt)}
 .acct{border-color:transparent;background:var(--surface);box-shadow:var(--shadow-soft)}
-.sw{border-color:transparent;box-shadow:var(--shadow-soft)}
-.sw.t-paper{background:var(--swatch-paper)}.sw.t-night{background:var(--swatch-night)}
-.sw[aria-pressed="true"]{box-shadow:0 0 0 3px var(--cobalt)}
+.theme-tog{box-shadow:var(--shadow-soft)}
 /* карточки — выпуклые, без рамок */
 .tcard,.land-card,.dl,.hwbox,.fitem,.rs-tile,.pstat,.creds{border-color:transparent;background:var(--surface);box-shadow:var(--shadow-clay)}
 .tcard:hover,.land-card:hover,.dl:hover,a.fitem:hover{border-color:transparent;background:var(--surface);transform:translateY(-2px)}
@@ -484,10 +485,10 @@ body{background:
     <button class="burger" onclick="sideToggle(true)" aria-label="Разделы курса"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5h14M5 12h14M5 16.5h9"/></svg></button>
     <div class="mark" onclick="goLessons()"><b>ЕГЭ с Машей Вайб</b></div>
     <button class="acct" id="acct" style="display:none"></button>
-    <div class="themes" id="themes">
-      <button class="sw t-paper"  data-t="paper"  aria-label="Бумага"></button>
-      <button class="sw t-night"  data-t="night"  aria-label="Ночь"></button>
-    </div>
+    <button class="theme-tog" id="themetog" onclick="setTheme(document.documentElement.dataset.theme==='night'?'paper':'night')">
+      <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.6A7.8 7.8 0 0 1 9.4 4.5a7.8 7.8 0 1 0 10.1 10.1z"/></svg>
+      <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.5 5.5 7 7M17 17l1.5 1.5M5.5 18.5 7 17M17 7l1.5-1.5"/></svg>
+    </button>
   </div>
 
   <div class="bars" id="bars" style="display:none">
@@ -520,9 +521,8 @@ function setTheme(t){
   if(THEMES.indexOf(t)<0) t='paper';
   document.documentElement.setAttribute('data-theme',t);
   try{localStorage.setItem('tr_theme',t)}catch(e){}
-  document.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed', b.dataset.t===t));
+  const b=$('#themetog'); if(b){ const l=t==='night'?'Светлая тема':'Тёмная тема'; b.setAttribute('aria-label',l); b.title=l; }
 }
-document.querySelectorAll('.sw').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.t)));
 (function(){let t='paper';try{t=localStorage.getItem('tr_theme')||'paper'}catch(e){}setTheme(t)})();
 
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');

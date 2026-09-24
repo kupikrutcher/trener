@@ -56,10 +56,6 @@
   --radius-md: 18px;
   --radius-lg: 28px;
   --radius-pill: 99px;
-
-  /* кружки-переключатели тем */
-  --swatch-paper: #f8f7ff;
-  --swatch-night: #1f1c38;
 }
 
 /* «Ночь» — тот же клэй в тёмно-фиолетовом */
