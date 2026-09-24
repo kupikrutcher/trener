@@ -204,6 +204,39 @@ body{
 .seg{display:inline-flex;gap:4px;padding:4px;margin-bottom:16px;background:var(--surface-sunk);border-radius:var(--radius-pill);box-shadow:var(--shadow-press)}
 .seg button{border:0;background:none;padding:8px 14px;border-radius:var(--radius-pill);font:600 13.5px/1 var(--font-sans);color:var(--muted);cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--cobalt);box-shadow:var(--shadow-soft)}
+/* банк заданий: фильтры блок / тема / номер */
+.bank-f{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:var(--space-3)}
+.bank-f select.tin{appearance:auto;padding:11px 12px;font-size:14.5px;text-overflow:ellipsis}
+.bank-sum{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);margin:var(--space-4) 0 var(--space-3);font-size:14px;color:var(--muted)}
+.bank-sum b{color:var(--ink)}
+.bank-list{margin-top:var(--space-6)}
+@media (max-width:640px){.bank-f{grid-template-columns:1fr}}
+/* расписание: план курса по блокам */
+.cp-next{padding:var(--space-6);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow-clay);border:1px solid var(--line-strong);margin-bottom:var(--space-6)}
+.cp-next-h{font:700 12px/1 var(--font-sans);letter-spacing:.06em;text-transform:uppercase;color:var(--cobalt)}
+.cp-next-d{font:700 22px/1.25 var(--font-display);margin:var(--space-3) 0}
+.cp-next-t{font-size:17px;font-weight:600;line-height:1.4;margin-top:var(--space-2)}
+.cp-block>summary .cp-m{font-size:13px;color:var(--muted)}
+.cp-bdone{font-size:12px;font-weight:600;color:var(--ok)}
+.cp-list{display:flex;flex-direction:column;gap:var(--space-2);margin-bottom:var(--space-6)}
+.cp-ev{display:flex;align-items:flex-start;gap:var(--space-4);padding:var(--space-3) var(--space-4);border-radius:var(--radius-md);background:var(--surface);border:1px solid var(--line)}
+.cp-ev.now{border-color:var(--cobalt);box-shadow:0 0 0 3px var(--cobalt-soft)}
+.cp-ev.past{background:transparent}.cp-ev.past .cp-t,.cp-ev.past .cp-d b{color:var(--muted)}
+.cp-d{flex:none;width:58px;text-align:center}
+.cp-d b{display:block;font:700 22px/1.1 var(--font-display);font-variant-numeric:tabular-nums}
+.cp-d span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.cp-b{flex:1;min-width:0}
+.cp-t{font-size:15px;line-height:1.45;margin-top:var(--space-1)}
+.cp-tags{display:flex;flex-wrap:wrap;gap:6px}
+.cp-k,.cp-probe{font-size:11.5px;font-weight:700;border-radius:var(--radius-pill);padding:3px 10px}
+.cp-k.L{color:var(--cobalt);background:var(--cobalt-soft)}
+.cp-k.G,.cp-k.C{color:var(--ink);background:var(--surface-sunk)}
+.cp-k.R{color:var(--on-marker);background:var(--marker)}
+.cp-probe{color:var(--ink-muted);border:1px solid var(--line-strong)}
+.cp-done,.cp-today{flex:none;font-size:12px;font-weight:600;color:var(--muted);align-self:center}
+.cp-today{color:var(--cobalt)}
+.cp-final{margin:0 0 var(--space-6);padding:var(--space-4);text-align:center;font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;border:1px dashed var(--line-strong);border-radius:var(--radius-md)}
+@media (max-width:420px){.cp-ev{gap:var(--space-3);padding:var(--space-3)}.cp-d{width:48px}}
 .fbar{display:flex;gap:10px;align-items:baseline;font-size:13.5px;color:var(--muted);margin-bottom:12px}
 .fbar b{color:var(--ink)}
 .sumline{font-size:15px;margin:6px 0 10px}.sumline b{font-family:var(--font-display);font-size:18px}
@@ -703,7 +736,7 @@ function metaLine(qs){const p2=qs.length-countP1(qs);
 function testBank(t){ return window.p1OnlyFor&&p1OnlyFor(t) ? t.questions.filter(q=>!isP2(q)) : t.questions; }
 function openTest(id){
   const t=tests.find(x=>x.id===id); if(!t)return;
-  bank=testBank(t); curId=t.id; curName=t.name; curBase=t.name; begin();
+  window.bankSel=null; bank=testBank(t); curId=t.id; curName=t.name; curBase=t.name; begin();
 }
 function removeTest(id){
   tests=tests.filter(t=>t.id!==id); saveTests(); hwList(); return;
@@ -926,7 +959,7 @@ function resultActions(wrong,withAll){
     ${p2n?`<div class="resnote">Часть 2 проверит учитель. Баллы появятся в профиле после проверки.</div>`:''}
     <div class="rs-links">
       <button class="linkbtn" onclick="openTest2()">Решать заново</button>
-      <button class="linkbtn" onclick="goHW()">К ДЗ</button>
+      ${window.bankSel?`<button class="linkbtn" onclick="navGo('bank')">К банку заданий</button>`:`<button class="linkbtn" onclick="goHW()">К ДЗ</button>`}
       ${withAll?`<button class="linkbtn" onclick="finishEarly()">Все задания с ответами</button>`:''}
     </div>`;
 }
@@ -948,7 +981,7 @@ function finish(){
   afterResult();
 }
 /* restart current base test from scratch */
-function openTest2(){ const t=tests.find(x=>x.name===curBase); if(t) bank=testBank(t); curName=curBase; begin(); }
+function openTest2(){ const t=tests.find(x=>x.name===curBase); if(t) bank=testBank(t); else if(window.bankSel) bank=bankSel.slice(); curName=curBase; begin(); }
 
 /* early finish: chart + all questions + answers + explanation toggles */
 function finishEarly(){

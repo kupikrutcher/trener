@@ -10,7 +10,7 @@ let submitted = new Set();  // названия ДЗ, которые учени�
 
 /* ученик видит правильные ответы и пояснения только в ДЗ, которое уже отправил; в разборе — всегда */
 function answersLocked(){
-  return !!(CAB && me && me.role!=='teacher' && !review && !submitted.has(curBase));
+  return !!(CAB && me && me.role!=='teacher' && !review && !window.bankSel && !submitted.has(curBase));
 }
 /* ДЗ уже отправлено — ученик может решать заново только часть 1, вторая скрыта */
 function p1OnlyFor(t){ return !!(CAB && me && me.role!=='teacher' && t && submitted.has(t.name)); }
@@ -425,7 +425,7 @@ function initGradeFiles(s){
 /* разбор отправленной работы в самом тесте: ответы, правильные ответы, пояснения, оценки */
 function openReview(){
   const s=curSub, t=findTest(s.test_name); if(!t) return;
-  bank=t.questions; curId=t.id; curBase=t.name; curName=t.name+' · разбор';
+  window.bankSel=null; bank=t.questions; curId=t.id; curBase=t.name; curName=t.name+' · разбор';
   results=[]; score=0;
   (s.p1||[]).forEach(x=>{ const q=bank[x.i]; if(q&&x.user){ results[x.i]={q,n:q.n,user:x.user,answer:norm(q.answer),ok:!!x.ok}; if(x.ok) score++; } });
   (s.p2||[]).forEach(x=>{ const q=bank[x.i]; if(q&&x.text) results[x.i]={q,n:q.n,user:x.text,p2:true}; });
@@ -600,12 +600,91 @@ function cabNav(k){
   if(k==='check') return teacher ? cabTeacher('check') : lessonsList();
   if(k==='lessons') return teacher ? cabTeacher('lessons') : lessonsList();
   if(k==='schedule') return scheduleView();
-  if(k==='bank') return teacher ? cabTeacher('tests') : bankView();
+  if(k==='bank') return bankView();
   if(k==='files') return filesView();
 }
-/* расписание: публикации уроков и сроки ДЗ по дням; сначала сегодня и дальше, ниже — прошедшее */
-async function scheduleView(){
-  cabShow(`<div class="cab"><h2 class="cab-h">Расписание</h2><p class="cab-sub">Уроки и сроки сдачи ДЗ</p><div id="sch" class="cab-load">Загружаем…</div></div>`);
+/* план курса «Вайб» (из «Расписание Вайб.pdf»): «ММ-ДД|вид|тема|п», п — в этот день пробник.
+   Вид: L — урок, G — практика в минигруппе, C — практика в классе, R — репетиция ЕГЭ. Сентябрь–декабрь — 2026, дальше 2027 */
+const COURSE_PLAN=[
+  ['1 блок','сентябрь–октябрь',['09-14|L|Всё о ЕГЭ по обществознанию: структура, разбор каждого задания, критерии оценивания, ловушки, инсайды от экспертов и составителей|п',
+    '09-16|L|Биосоциальная сущность. Мировоззрение','09-19|G|Вторая часть ЕГЭ','09-21|L|Мышление, деятельность, потребности, интересы','09-23|L|Познание',
+    '09-26|G|Отрабатываем теорию','09-28|L|Истина и свобода','09-30|L|Культура, искусство, мораль + духовные ценности российского общества',
+    '10-03|C|Раздел «ЧиО»','10-05|L|Образование, наука','10-07|L|Завальные задания прошлых лет. Вторая часть','10-10|G|«Гробы» с реального ЕГЭ']],
+  ['2 блок','октябрь–ноябрь',['10-12|L|Строение общества|п','10-14|L|25 задание. Самое дорогое задание ЕГЭ','10-17|G|25 задание',
+    '10-19|L|Задание 18 (термины), 24 (сложные планы), 25 (обоснование + примеры РФ)','10-21|L|Религия, типы общества','10-24|G|Задания 18, 24, 25',
+    '10-26|L|Прогресс, глобальные проблемы','10-28|L|Обобщение раздела «Человек и общество»','10-31|C|Банк заданий ФИПИ',
+    '11-02|L|Экономика и факторы производства','11-04|L|Экономические системы. Рост и развитие','11-07|G|Экономика']],
+  ['3 блок','ноябрь–декабрь',['11-09|L|Рынок и конкуренция|п','11-11|L|Спрос и предложение','11-14|G|Вторая часть','11-16|L|Как решать графики на ЕГЭ? Задание 21',
+    '11-18|L|Предпринимательство','11-21|G|Задание 21','11-23|L|Новые темы кодификатора ЕГЭ 2027. Экономика','11-25|L|Рациональное поведение в экономике',
+    '11-28|C|Решаем вариант','11-30|L|Финансовые институты. Банки','12-02|L|Ценные бумаги','12-05|G|Экономика']],
+  ['4 блок','декабрь',['12-07|L|Финансовая грамотность на ЕГЭ|п','12-09|L|Рынок труда. Безработица','12-12|G|Планы','12-14|L|Инфляция',
+    '12-16|L|Государство в экономике','12-19|G|Примеры на реалии РФ','12-21|L|Гос. бюджет. Мировая экономика','12-23|L|Налоги. Систематизация экономики',
+    '12-26|G|Экономика','12-28|L|Стратификация и мобильность','12-29|L|Нации. Семья','12-30|L|Соц. конфликт, группы, молодёжь']],
+  ['5 блок','январь–февраль',['01-09|C|Весь вариант ЕГЭ|п','01-11|L|Соц. контроль, девиации, социализация','01-13|L|Власть, пол. система, государство',
+    '01-16|G|Тестовая часть','01-18|L|Форма государства','01-20|L|Новые темы кодификатора 2027 г. в Политике','01-23|G|Задание 23',
+    '01-25|L|Задание 23: Политика','01-27|L|Гражданское общество, правовое гос-во, пол. участие, СМИ','01-30|G|Вторая часть',
+    '02-01|L|Пол. процесс, элита, лидерство','02-03|L|Завальные задания прошлых лет — Политика']],
+  ['6 блок','февраль–март',['02-06|G|Политика|п','02-08|L|Всё о 13 задании','02-10|L|Избирательная кампания, пол. партии','02-13|G|Задание 13',
+    '02-15|L|Органы государственной власти. Задание 13','02-17|L|Предметы ведения. Задание 13','02-20|C|Задание 13','02-22|L|Систематизация Политики',
+    '02-24|L|Система права','02-27|G|Повторение','03-01|L|Юридическая ответственность','03-03|L|Обучение экспертов. Ловушки оценивания']],
+  ['7 блок','март',['03-06|G|Право|п','03-08|L|Гражданское право 1/2. Тематическая практика','03-10|L|Гражданское право 2/2. Тематическая практика',
+    '03-13|G|Вторая часть','03-15|L|Практика по Праву. Отработка 25 задания','03-17|L|Организационно-правовые формы предприятия','03-20|C|Тестовая часть',
+    '03-22|L|Трудовое право','03-24|L|Самые сложные планы по Праву','03-27|G|Планы','03-29|L|Семейное право',
+    '03-31|L|Воинская обязанность, налоговое право, гражданство РФ']],
+  ['8 блок','апрель',['04-03|G|Термины|п','04-05|L|Изменения в законодательстве и ЕГЭ 2027 г. Новое в праве','04-07|L|Экологическое право',
+    '04-10|C|Задания с реального ЕГЭ','04-12|L|Гражданский процесс','04-14|L|Задания с досрока ЕГЭ','04-17|G|Задания с досрока ЕГЭ',
+    '04-19|L|Административное право','04-21|L|Уголовное право','04-24|G|Право','04-26|L|Правоохранительные органы. Судебная система',
+    '04-28|L|Конституция — вся теория и практика']],
+  ['9 блок','май',['05-01|G|Конституция','05-03|L|23 задание: Экономика, Соц. отношения, Политика (все задания и ответы)',
+    '05-05|L|23 задание: Духовная сфера (все задания и ответы)','05-08|C|23 задание','05-10|L|23 задание: Право (все задания и ответы)',
+    '05-11|L|Задание 18 — термины и признаки (все блоки)','05-12|L|Отработка всех мер в РФ + всех личностей (для 25-го задания)','05-15|G|25 задание',
+    '05-17|L|Решаем «гробовые» задания с ЕГЭ прошлых лет','05-18|L|Весь спецификатор. Все нужные для ЕГЭ указы Президента и др. законы',
+    '05-19|L|Задание 24 — Сложные планы','05-22|R|Репетиция ЕГЭ-2027 — полноценная процедура экзамена|п']],
+];
+const PLAN_KIND={ L:'Урок', G:'Практика в минигруппе', C:'Практика в классе', R:'Репетиция ЕГЭ' };
+function coursePlan(){
+  return COURSE_PLAN.map(([name,months,items])=>({ name, months, items:items.map(s=>{
+    const [md,k,title,p]=s.split('|'), [m,d]=md.split('-').map(Number);
+    return { t:+new Date(m>=9?2026:2027, m-1, d), k, title, probe:!!p };
+  }) }));
+}
+let schTab='plan';
+function scheduleView(tab){
+  if(tab) schTab=tab;
+  cabShow(`<div class="cab"><h2 class="cab-h">Расписание</h2><p class="cab-sub">Курс «Вайб» · сентябрь–май</p>
+    <div class="seg" role="group" aria-label="Что показать">
+      <button aria-pressed="${schTab==='plan'}" onclick="scheduleView('plan')">План курса</button>
+      <button aria-pressed="${schTab==='hw'}" onclick="scheduleView('hw')">Уроки и ДЗ</button></div>
+    <div id="sch" class="cab-load">Загружаем…</div></div>`);
+  return schTab==='plan' ? planView() : lessonsSchedule();
+}
+function planView(){
+  const box=$('#sch'); if(!box) return; box.className='';
+  const today=new Date(); today.setHours(0,0,0,0);
+  const blocks=coursePlan(), all=blocks.flatMap(b=>b.items), next=all.find(e=>e.t>=+today);
+  const fmt=(t,o)=>new Date(t).toLocaleDateString('ru-RU',o);
+  const when=t=>{ const d=Math.round((t-today)/DAY); return d===0?'Сегодня':d===1?'Завтра':'Через '+d+' '+(d%10===1&&d%100!==11?'день':(d%10>=2&&d%10<=4&&(d%100<10||d%100>=20)?'дня':'дней')); };
+  const tags=e=>`<span class="cp-k ${e.k}">${PLAN_KIND[e.k]}</span>${e.probe?'<span class="cp-probe">Пробник</span>':''}`;
+  const row=e=>{ const past=e.t<+today, now=e.t===+today;
+    return `<div class="cp-ev${past?' past':''}${now?' now':''}">
+      <div class="cp-d"><b>${fmt(e.t,{day:'numeric'})}</b><span>${fmt(e.t,{month:'short'}).replace('.','')} · ${fmt(e.t,{weekday:'short'})}</span></div>
+      <div class="cp-b"><div class="cp-tags">${tags(e)}</div><div class="cp-t">${esc(e.title)}</div></div>
+      ${past?'<span class="cp-done">✓ прошло</span>':now?'<span class="cp-today">сегодня</span>':''}</div>`; };
+  const cur=next?blocks.find(b=>b.items.includes(next)):null;
+  box.innerHTML=(next?`<div class="cp-next">
+      <div class="cp-next-h">Следующее занятие · ${when(next.t)}</div>
+      <div class="cp-next-d">${fmt(next.t,{weekday:'long',day:'numeric',month:'long'})}</div>
+      <div class="cp-tags">${tags(next)}</div><div class="cp-next-t">${esc(next.title)}</div></div>`
+    :`<div class="empty">Курс завершён. Удачи на экзамене.</div>`)
+    + blocks.map(b=>{ const done=b.items.every(e=>e.t<+today);
+      return `<details class="sect cp-block"${b===cur?' open':''}>
+        <summary><span class="st">${b.name}</span><span class="cp-m">${b.months}</span>${done?'<span class="cp-bdone">✓ пройден</span>':''}<span class="sc">${b.items.length}</span><span class="sa">›</span></summary>
+        <div class="cp-list">${b.items.map(row).join('')}</div>
+        ${b===blocks[blocks.length-1]?'<div class="cp-final">Неделя перед ЕГЭ — финальный интенсив-повторение</div>':''}
+      </details>`; }).join('');
+}
+/* уроки и сроки ДЗ по дням; сначала сегодня и дальше, ниже — прошедшее */
+async function lessonsSchedule(){
   let lessons; try{ lessons=(await api('lessons_list')).lessons; }catch(e){ const b=$('#sch'); if(b) b.textContent='Не удалось загрузить: '+e.message; return; }
   const box=$('#sch'); if(!box) return; box.className='';
   const ev=[];
@@ -627,11 +706,80 @@ async function scheduleView(){
   box.innerHTML = (up.length?group(up):`<div class="empty">Впереди ничего не запланировано</div>`)
     + (past.length?`<details class="qfold" style="margin-top:22px"><summary>Прошедшее · ${past.length}</summary>${group(past)}</details>`:'');
 }
-/* банк заданий: ученикам тесты открываются только через уроки — здесь пока заглушка */
-function bankView(){
-  cabShow(`<div class="cab"><h2 class="cab-h">Банк заданий</h2>
-    <div class="empty" style="margin-top:18px">Скоро здесь появится банк заданий для самостоятельной тренировки.<br>Сейчас все задания — в уроках.</div>
-    <button class="btn" onclick="navGo('lessons')">К урокам</button></div>`);
+/* банк заданий части 1 (bank.json, собирается tools/xlsx_to_bank.py): фильтры по блоку, теме и номеру,
+   подборка решается как обычный тест, но учителю не отправляется и ответы открыты сразу */
+let bankData=null, bankF={ block:'', topic:'', n:'' }, bankShown=30;
+try{ Object.assign(bankF, JSON.parse(localStorage.getItem('tr_bankf')||'{}')); }catch(e){}
+async function bankView(){
+  cabShow(`<div class="cab"><h2 class="cab-h">Банк заданий</h2><p class="cab-sub">Часть 1 · задания с ответами и пояснениями</p>
+    <div id="bnk" class="cab-load">Загружаем…</div></div>`);
+  if(!bankData){
+    try{ const r=await fetch('bank.json'); if(!r.ok) throw 0; bankData=await r.json(); }
+    catch(e){ const b=$('#bnk'); if(b) b.textContent='Не удалось загрузить банк заданий. Проверь интернет.'; return; }
+    bankData.topicName=Object.fromEntries(bankData.topics.map(t=>[t.code,t.name]));
+  }
+  bankShown=30; bankDraw();
+}
+function bankMatch(q,skip){
+  return (skip==='block'||!bankF.block||q.block===bankF.block)
+    && (skip==='topic'||!bankF.topic||q.topic===bankF.topic)
+    && (skip==='n'||!bankF.n||q.n===bankF.n);
+}
+function bankList(){ return bankData.questions.filter(q=>bankMatch(q)); }
+function bankCount(key){   // сколько заданий даст каждое значение фильтра при остальных выбранных
+  const c={}; bankData.questions.forEach(q=>{ if(bankMatch(q,key)) c[q[key]]=(c[q[key]]||0)+1; }); return c;
+}
+function bankLabel(){
+  const p=[]; if(bankF.n) p.push('Задание '+bankF.n);
+  if(bankF.topic) p.push(bankF.topic+' '+bankData.topicName[bankF.topic]); else if(bankF.block) p.push(bankF.block);
+  return p.join(' · ')||'Все задания';
+}
+function bankDraw(){
+  const box=$('#bnk'); if(!box||!bankData) return; box.className='';
+  const D=bankData, cb=bankCount('block'), ct=bankCount('topic'), cn=bankCount('n'), list=bankList();
+  const cut=(s,k)=>s.length>k?s.slice(0,k-1)+'…':s;
+  const opt=(v,label,c,cur)=>`<option value="${esc(v)}"${v===cur?' selected':''}${c?'':' disabled'}>${esc(label)}${c?' · '+c:''}</option>`;
+  const topicOpts=D.blocks.filter(b=>!bankF.block||b===bankF.block).map(b=>{
+    const ts=D.topics.filter(t=>t.block===b).map(t=>opt(t.code,cut(t.code+' '+t.name,70),ct[t.code]||0,bankF.topic)).join('');
+    return bankF.block?ts:`<optgroup label="${esc(b)}">${ts}</optgroup>`;
+  }).join('');
+  const nums=[...new Set(D.questions.map(q=>q.n))].sort((a,b)=>a-b);
+  const any=bankF.block||bankF.topic||bankF.n;
+  box.innerHTML=`
+    <div class="bank-f">
+      <div><label class="lab" for="bf-b">Блок</label>
+        <select id="bf-b" class="tin" onchange="bankSet('block',this.value)"><option value="">Все блоки</option>
+          ${D.blocks.map(b=>opt(b,b,cb[b]||0,bankF.block)).join('')}</select></div>
+      <div><label class="lab" for="bf-t">Тема</label>
+        <select id="bf-t" class="tin" onchange="bankSet('topic',this.value)"><option value="">Все темы</option>${topicOpts}</select></div>
+      <div><label class="lab" for="bf-n">Номер задания</label>
+        <select id="bf-n" class="tin" onchange="bankSet('n',this.value)"><option value="">Все номера</option>
+          ${nums.map(n=>opt(n,'Задание '+n,cn[n]||0,bankF.n)).join('')}</select></div>
+    </div>
+    <div class="bank-sum"><span>Найдено: <b>${plural(list.length)}</b></span>
+      ${any?`<button class="linkbtn" onclick="bankReset()">Сбросить фильтры</button>`:''}</div>
+    ${list.length?`<button class="btn" onclick="bankRun(0)">Решать подборку</button>
+    <div class="tlist bank-list">${list.slice(0,bankShown).map((q,i)=>`
+      <div class="tcard" role="button" tabindex="0" onclick="bankRun(${i})" onkeydown="if(event.key==='Enter')bankRun(${i})">
+        <div class="tinfo"><div class="tname">${esc(q.text.split('\n')[0])}</div>
+          <div class="tmeta">Задание ${esc(q.n)} · ${esc(q.topic)} ${esc(cut(D.topicName[q.topic]||'',48))} · ${esc(q.block)}</div></div>
+        <span class="tgo">→</span></div>`).join('')}</div>
+    ${list.length>bankShown?`<button class="btn ghost" onclick="bankShown+=30;bankDraw()">Показать ещё · осталось ${list.length-bankShown}</button>`:''}`
+    :`<div class="empty">По этим фильтрам заданий нет.</div>`}`;
+}
+function bankSet(k,v){
+  bankF[k]=v;
+  if(k==='block'&&bankF.topic&&!(v&&bankData.topics.some(t=>t.code===bankF.topic&&t.block===v))) bankF.topic='';
+  if(k==='topic'&&v) bankF.block=bankData.topics.find(t=>t.code===v).block;
+  try{ localStorage.setItem('tr_bankf',JSON.stringify(bankF)); }catch(e){}
+  bankShown=30; bankDraw();
+}
+function bankReset(){ bankF={ block:'', topic:'', n:'' }; bankSet('n',''); }
+/* подборка решается движком тестов; window.bankSel отличает её от ДЗ (ответы открыты, «К банку заданий») */
+function bankRun(start){
+  const list=bankList(); if(!list.length) return;
+  window.bankSel=list; bank=list.slice(); curId=''; curName=curBase='Банк · '+bankLabel();
+  review=null; idx=start||0; score=0; results=[]; render(); window.scrollTo({top:0});
 }
 /* полезные файлы: материалы всех уроков в одном месте */
 async function filesView(){
