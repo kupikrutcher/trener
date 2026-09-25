@@ -250,3 +250,11 @@ body::after{width:170px;height:170px;left:40px;bottom:-50px;animation-duration:1
   .land-hero{width:min(84%,clamp(200px,calc(100dvh - 530px),320px))}
   .land-tag{right:-18px;font-size:12.5px;padding:10px 14px}
 }
+
+
+/* активная вкладка — фиалковый глянцевый пластилин с белым текстом (как главная кнопка), видно сразу */
+.side-nav button[aria-current]{background:linear-gradient(180deg,var(--btn-top),var(--btn-bot));color:var(--on-cobalt);
+  box-shadow:0 12px 20px -10px rgba(98,80,236,.65),inset 0 -4px 8px rgba(40,20,150,.3),inset 0 4px 8px rgba(255,255,255,.4)}
+.side-nav button[aria-current] svg{background:rgba(255,255,255,.92)!important;color:var(--cobalt-ink)!important;box-shadow:0 4px 8px -4px rgba(40,20,150,.5)}
+.tab.on,.seg button[aria-pressed="true"]{background:linear-gradient(180deg,var(--btn-top),var(--btn-bot));color:var(--on-cobalt);
+  box-shadow:0 10px 16px -8px rgba(98,80,236,.6),inset 0 -3px 6px rgba(40,20,150,.3),inset 0 3px 6px rgba(255,255,255,.4)}
