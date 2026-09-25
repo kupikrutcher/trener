@@ -109,7 +109,7 @@ const isoOrEmpty = (v) => {
   return d.toISOString();
 };
 const safeName = (n) => String(n).replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').slice(0, 120) || 'file';
-const pubLesson = (l) => ({ id: l.id, title: l.title, video: l.video, embed: videoEmbed(l.video), test_name: l.test_name, deadline: l.deadline || '',
+const pubLesson = (l) => ({ id: l.id, title: l.title, video: l.video, embed: videoEmbed(l.video), test_name: l.test_name, deadline: l.deadline || '', block: l.block || 0,
   published: !!l.published, created_at: l.created_at, updated_at: l.updated_at, files_n: (l.files || []).length });
 
 /* ---------- действия ---------- */
@@ -305,10 +305,13 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       const test_name = req.test_name ? str(req.test_name, 300, 'test_name') : '';
       const files = fileList(req.files, 'lessons');
       const deadline = isoOrEmpty(req.deadline);
+      // номер блока курса: 1–99, пусто/0 — без блока
+      const block = req.block == null || req.block === '' ? 0 : Number(req.block);
+      if (!Number.isInteger(block) || block < 0 || block > 99) fail(400, 'Номер блока — целое число от 1 до 99');
       const now = new Date().toISOString();
       const old = req.id ? await db.getLesson(str(req.id, 40, 'id')) : null;
       if (req.id && !old) fail(404, 'Урок не найден');
-      const lesson = { id: old ? old.id : newId(), title, video, test_name, deadline, files, published: !!req.published,
+      const lesson = { id: old ? old.id : newId(), title, video, test_name, deadline, files, published: !!req.published, block,
         created_at: old ? old.created_at : now, updated_at: now };
       await db.putLesson(lesson);
       if (old) await dropRemoved(store, old.files, files);

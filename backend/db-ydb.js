@@ -62,7 +62,7 @@ const TABLES = {
     p2_n: 'Int32', p2_max: 'Int32', p2_score: 'Int32', checked_at: 'Utf8' }, pk: 'id', extra: 'INDEX by_student GLOBAL SYNC ON (student)' },
   sub_body: { cols: { id: 'Utf8', p1: 'Utf8', p2: 'Utf8', grades: 'Utf8', comment: 'Utf8', files: 'Utf8' }, pk: 'id' },
   lessons: { cols: { id: 'Utf8', title: 'Utf8', video: 'Utf8', test_name: 'Utf8', deadline: 'Utf8', files: 'Utf8', published: 'Bool',
-    created_at: 'Utf8', updated_at: 'Utf8' }, pk: 'id' },
+    created_at: 'Utf8', updated_at: 'Utf8', block: 'Int32' }, pk: 'id' },
 };
 // колонки существующей таблицы или null, если таблицы нет
 async function tableColumns(name) {
@@ -75,8 +75,8 @@ async function tableColumns(name) {
     throw e;
   }
 }
-const LESSON_COLS = 'id, title, video, test_name, deadline, files, published, created_at, updated_at';
-const lessonRow = (r) => (r ? { ...r, deadline: r.deadline || '', files: parse(r.files) || [], published: !!r.published } : null);
+const LESSON_COLS = 'id, title, video, test_name, deadline, files, published, created_at, updated_at, block';
+const lessonRow = (r) => (r ? { ...r, deadline: r.deadline || '', files: parse(r.files) || [], published: !!r.published, block: r.block || 0 } : null);
 
 const db = {
   async createSchema() {
@@ -183,12 +183,12 @@ const db = {
   },
   async putLesson(l) {
     await query(`DECLARE $id AS Utf8; DECLARE $title AS Utf8; DECLARE $video AS Utf8; DECLARE $test_name AS Utf8; DECLARE $deadline AS Utf8;
-      DECLARE $files AS Utf8; DECLARE $published AS Bool; DECLARE $created_at AS Utf8; DECLARE $updated_at AS Utf8;
-      UPSERT INTO lessons (${LESSON_COLS}) VALUES ($id, $title, $video, $test_name, $deadline, $files, $published, $created_at, $updated_at);`, {
+      DECLARE $files AS Utf8; DECLARE $published AS Bool; DECLARE $created_at AS Utf8; DECLARE $updated_at AS Utf8; DECLARE $block AS Int32;
+      UPSERT INTO lessons (${LESSON_COLS}) VALUES ($id, $title, $video, $test_name, $deadline, $files, $published, $created_at, $updated_at, $block);`, {
       $id: V.utf8(l.id), $title: V.utf8(l.title), $video: V.utf8(l.video || ''), $test_name: V.utf8(l.test_name || ''),
       $deadline: V.utf8(l.deadline || ''),
       $files: V.utf8(JSON.stringify(l.files || [])), $published: V.bool(!!l.published),
-      $created_at: V.utf8(l.created_at), $updated_at: V.utf8(l.updated_at),
+      $created_at: V.utf8(l.created_at), $updated_at: V.utf8(l.updated_at), $block: V.int32(l.block || 0),
     });
   },
   async deleteLesson(id) {
