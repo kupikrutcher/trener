@@ -54,7 +54,9 @@ http.createServer(async (req, res) => {
     const r = await handler({ httpMethod: req.method, headers: req.headers, body, isBase64Encoded: false });
     res.writeHead(r.statusCode, r.headers); return res.end(r.body);
   }
-  const f = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]).replace(/^\/$/, '/index.html'));
+  let f = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]).replace(/^\/$/, '/index.html'));
+  // адреса экранов (/lessons, /schedule…) — как в бакете: неизвестный путь без расширения отдаёт index.html
+  if (f.startsWith(ROOT) && !fs.existsSync(f) && !path.extname(f)) f = path.join(ROOT, 'index.html');
   if (!f.startsWith(ROOT) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream' });
   if (f.endsWith('index.html')) return res.end(fs.readFileSync(f, 'utf8')

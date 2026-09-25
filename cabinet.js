@@ -94,6 +94,7 @@ function openCabinet(){ if(!me) return cabLogin(); me.role==='teacher' ? teacher
 
 /* ---------- вход ---------- */
 function cabLogin(then){
+  setUrl('login');
   afterLogin = then || null;
   cabShow(`
     <div class="cab">
@@ -244,6 +245,7 @@ function subBadge(s){
   return s.checked_at ? '<span class="st-ok">проверено</span>' : '<span class="st-wait">ждёт проверки</span>';
 }
 async function cabStudent(){
+  setUrl('cabinet');
   cabShow(`<div class="cab">
     <div class="prof">
       <button class="ava-big" id="avabig" onclick="pickAvatar()" title="Сменить фото">${avaInner(me)}</button>
@@ -338,6 +340,7 @@ function drawProgress(el, subs){
 /* ---------- одна работа: просмотр (ученик) и проверка (учитель) ---------- */
 let curSub=null;
 async function cabSubmission(id){
+  setUrl('works/'+encodeURIComponent(id));
   cabShow(`<div class="cab-load">Загружаем работу…</div>`);
   let s;
   try{ s=(await api('sub_get',{ id })).sub; }
@@ -459,6 +462,7 @@ function tabsHTML(){
 function checkShow(mode){ checkMode=mode; if(mode==='todo') filterStudent=null; cabTeacher('check'); }
 async function cabTeacher(tab){
   teacherTab=['check','lessons','tests'].includes(tab)?tab:'check';
+  setUrl('course/'+teacherTab);
   cabShow(`<div class="cab"><h2 class="cab-h">Курс</h2>
     ${tabsHTML()}<div id="tbody" class="cab-load">Загружаем…</div></div>`);
   if(teacherTab==='lessons') return teacherLessons();
@@ -493,6 +497,7 @@ async function cabTeacher(tab){
 }
 /* личный кабинет учителя: ученики, пароль, выход */
 function teacherProfile(){
+  setUrl('cabinet');
   cabShow(`<div class="cab"><div class="cab-top"><h2 class="cab-h">Личный кабинет</h2>
     <div class="sact"><button class="linkbtn back" onclick="changePass()">Сменить пароль</button><button class="logout" onclick="doLogout()">Выйти</button></div></div>
     <p class="cab-sub">${esc(me.full_name||'')} · учитель</p>
@@ -638,6 +643,7 @@ function coursePlan(){
 let schTab='plan';
 function scheduleView(tab){
   if(tab) schTab=tab;
+  setUrl(schTab==='plan'?'schedule':'schedule/hw');
   cabShow(`<div class="cab"><h2 class="cab-h">Расписание</h2><p class="cab-sub">Курс «Вайб» · сентябрь–май</p>
     <div class="seg" role="group" aria-label="Что показать">
       <button aria-pressed="${schTab==='plan'}" onclick="scheduleView('plan')">План курса</button>
@@ -744,6 +750,7 @@ async function lessonsSchedule(){
 let bankData=null, bankF={ block:'', topic:'', n:'' };
 try{ Object.assign(bankF, JSON.parse(localStorage.getItem('tr_bankf')||'{}')); }catch(e){}
 async function bankView(){
+  setUrl('bank');
   cabShow(`<div class="cab"><h2 class="cab-h">Банк заданий</h2><p class="cab-sub">Часть 1 · задания с ответами и пояснениями</p>
     <div id="bnk" class="cab-load">Загружаем…</div></div>`);
   if(!bankData){
@@ -846,6 +853,7 @@ function bankRun(){
 }
 /* полезные файлы: материалы всех уроков в одном месте */
 async function filesView(){
+  setUrl('files');
   cabShow(`<div class="cab"><h2 class="cab-h">Полезные файлы</h2><p class="cab-sub">Материалы из всех уроков</p><div id="fls" class="cab-load">Загружаем…</div></div>`);
   let groups;
   try{
@@ -887,6 +895,7 @@ const videoFrame = src => `<div class="vwrap"><iframe src="${esc(src)}" allow="a
 
 let curLesson=null;
 async function lessonsList(){
+  setUrl('lessons');
   cabShow(`<div class="cab">
     <h2 class="cab-h" style="margin:0 0 18px">Уроки</h2>
     <div id="llist" class="cab-load">Загружаем уроки…</div></div>`);
@@ -904,6 +913,7 @@ async function lessonsList(){
   box.innerHTML += `<div class="dl-box">${deadlinesHTML(lessons)}</div>`;
 }
 async function lessonView(id){
+  setUrl('lessons/'+encodeURIComponent(id));
   cabShow(`<div class="cab-load">Загружаем урок…</div>`);
   let l;
   try{ [l]=await Promise.all([api('lesson_get',{ id }).then(r=>r.lesson), loadTests()]); }
@@ -943,6 +953,7 @@ async function teacherLessons(){
 }
 let editL=null;
 async function lessonEdit(id){
+  setUrl(id?'lessons/'+encodeURIComponent(id)+'/edit':'lessons/new');
   editL={ id:null, title:'', video:'', test_name:'', deadline:'', files:[], published:false };
   // без списка заданий нельзя: при сохранении выбранное ДЗ потерялось бы
   try{ await loadTests(); }catch(e){ toast(e.message); return cabTeacher('lessons'); }
@@ -1034,7 +1045,39 @@ async function lessonDelete(){
   catch(e){ toast(e.message); }
 }
 
+/* ---------- адрес → экран (index.html: route/dispatch) ---------- */
+function cabRoute(a,id,sub,p){
+  if(a==='login') return me ? goLessons() : cabLogin();
+  if(!me) return cabLogin(()=>route(p));          // после входа — туда, куда шли
+  const teacher=me.role==='teacher';
+  switch(a){
+    case 'lessons':
+      if(id==='new') return teacher ? lessonEdit(null) : navGo('lessons');
+      if(id) return sub==='edit'&&teacher ? lessonEdit(id) : lessonView(id);
+      return navGo('lessons');
+    case 'schedule': setNav('schedule'); return scheduleView(id==='hw'?'hw':'plan');
+    case 'bank': case 'files': return navGo(a);
+    case 'course': if(!teacher) return navGo('lessons');
+      setNav(id==='lessons'?'lessons':id==='tests'?'':'check'); return cabTeacher(id||'check');
+    case 'cabinet': setNav(''); return openCabinet();
+    case 'works': return id ? cabSubmission(id) : openCabinet();
+    case 'tests': return id ? openTestByUrl(id) : goHW();
+    default: return home();
+  }
+}
+/* тест по ссылке: ученику — только если это ДЗ одного из его уроков (тесты ученикам видны только через уроки) */
+async function openTestByUrl(id){
+  cabShow(`<div class="cab-load">Загружаем задания…</div>`);
+  try{ await loadTests(); }catch(e){ cabShow(`<div class="empty">${esc(e.message)}</div><button class="btn ghost" onclick="route()">Попробовать ещё раз</button>`); return; }
+  const t=tests.find(x=>x.id===id); if(!t) return navGo('lessons');
+  if(me.role!=='teacher'){
+    let ok=false; try{ ok=(await api('lessons_list')).lessons.some(l=>l.test_name===t.name); }catch(e){}
+    if(!ok) return navGo('lessons');
+  }
+  openTest(id);
+}
+
 /* ---------- старт ---------- */
 if(location.hash==='#setup') cabSetup();
-loadMe();
+loadMe().then(()=>{ if(appPath() && location.hash!=='#setup') route(); });
 paintAcct();

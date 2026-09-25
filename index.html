@@ -2,6 +2,9 @@
 <html lang="ru" data-theme="paper">
 <head>
 <meta charset="UTF-8">
+<!-- у экранов свои адреса (/lessons, /schedule…): относительные пути к файлам считаем от корня сайта; зеркало на GitHub Pages живёт в /trener/ -->
+<script>if(location.hostname.endsWith('github.io'))document.write('<base href="/trener/">')</script>
+<base href="/">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#eef0f3">
 <title>ЕГЭ с Машей Вайб</title>
@@ -719,6 +722,7 @@ function sectToggle(el){
 }
 /* главная: приветствие и вход в ДЗ */
 function home(){
+  setUrl('');
   setNav('');
   review=null;
   $('#bars').style.display='none';
@@ -738,6 +742,17 @@ function home(){
       </figure>
     </div>`;
 }
+/* ---- адреса экранов: у каждого экрана свой путь (mashavibe.ru/lessons, /schedule…) — работают «назад», обновление и ссылки ---- */
+const BASE=location.hostname.endsWith('github.io')?'/trener/':'/';
+let routing=false;   // пока открываем экран по адресу — адрес заменяем, а не добавляем в историю
+function appPath(){ let p=location.pathname; if(p.startsWith(BASE)) p=p.slice(BASE.length); return p.replace(/^\/+|\/+$/g,''); }
+function setUrl(p){ const full=BASE+p; if(location.pathname===full) return; history[routing?'replaceState':'pushState'](null,'',full); }
+function route(p){ routing=true; try{ return dispatch(p==null?appPath():p); } finally{ routing=false; } }
+function dispatch(p){
+  const s=p.split('/'), a=s[0]||'', id=s[1]?decodeURIComponent(s[1]):'';
+  return a ? cabRoute(a,id,s[2]||'',p) : home();
+}
+window.addEventListener('popstate',()=>route());
 /* название в шапке ведёт к урокам курса; главная с фото — только при входе на сайт */
 function goLessons(){ sideToggle(false); setNav('lessons'); return cabGoLessons(); }
 /* левая панель: разделы курса; на телефоне выезжает по кнопке-бургеру */
@@ -768,6 +783,7 @@ function metaLine(qs){const p2=qs.length-countP1(qs);
 function testBank(t){ return p1OnlyFor(t) ? t.questions.filter(q=>!isP2(q)) : t.questions; }
 function openTest(id){
   const t=tests.find(x=>x.id===id); if(!t)return;
+  setUrl('tests/'+encodeURIComponent(id));
   window.bankSel=null; bank=testBank(t); curId=t.id; curName=t.name; curBase=t.name; begin();
 }
 function startMistakes(){
@@ -1070,7 +1086,8 @@ function p2Item(q){
 }
 
 loadTests().catch(()=>{});
-home();
+/* главная рисуется сразу; другие адреса откроет cabinet.js, когда узнает, кто вошёл */
+if(!appPath()) home(); else { app.className='panel'; app.innerHTML='<div class="cab-load">Загружаем…</div>'; }
 </script>
 <script src="cabinet.js"></script>
 </body>
