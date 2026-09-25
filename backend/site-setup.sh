@@ -20,14 +20,7 @@ yc storage bucket update --name "$DOMAIN" --public-read \
 yc storage bucket update --name "$WWW" --public-read \
   --website-settings "{\"redirectAllRequests\": {\"protocol\": \"PROTOCOL_HTTPS\", \"hostname\": \"$DOMAIN\"}}" >/dev/null
 
-echo "→ файлы сайта (последняя версия с GitHub)"
-SITE_DIR=$(mktemp -d)
-for f in index.html cabinet.js design/tokens.css; do
-  mkdir -p "$SITE_DIR/$(dirname "$f")"
-  curl -fsSL "https://raw.githubusercontent.com/kupikrutcher/trener/main/$f" -o "$SITE_DIR/$f"
-done
-SITE_DIR=$SITE_DIR S3_KEY_ID=$S3_KEY_ID S3_SECRET=$S3_SECRET SITE_BUCKET=$DOMAIN node publish-site.js
-rm -rf "$SITE_DIR"
+# файлы сайта в бакет кладёт GitHub Actions (.github/workflows/publish-site.yml) при пуше в main
 
 echo "→ сертификат Let's Encrypt (Certificate Manager)"
 yc certificate-manager certificate get --name "$CERT" >/dev/null 2>&1 || \

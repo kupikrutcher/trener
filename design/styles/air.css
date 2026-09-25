@@ -44,10 +44,10 @@ body{background:var(--paper);letter-spacing:-.005em}
 .logout{border-radius:980px;border:0}
 
 /* карточки: белые, без рамок, мягкая тень, крупное скругление */
-.tcard,.land-card,.dl,.hwbox,.fitem,.rs-tile,.pstat,.creds,.sch-ev,.cp-ev{background:var(--surface);border:0;box-shadow:var(--shadow-clay);border-radius:var(--radius-lg)}
+.tcard,.dl,.hwbox,.fitem,.rs-tile,.pstat,.creds,.sch-ev,.cp-ev{background:var(--surface);border:0;box-shadow:var(--shadow-clay);border-radius:var(--radius-lg)}
 .tcard{padding:22px 24px}
 @media (hover:hover) and (pointer:fine){
-  .tcard:hover,.land-card:hover,.dl:hover,a.fitem:hover,.sch-ev:hover{background:var(--surface);box-shadow:var(--shadow-lift);transform:scale(1.01)}
+  .tcard:hover,.dl:hover,a.fitem:hover,.sch-ev:hover{background:var(--surface);box-shadow:var(--shadow-lift);transform:scale(1.01)}
 }
 .tlist{gap:12px}
 .tgo{color:var(--ink-muted)}
@@ -92,7 +92,6 @@ body{background:var(--paper);letter-spacing:-.005em}
 .land-tag{left:16px;top:auto;bottom:16px;transform:none;font:500 13px/1 var(--font-sans);color:var(--ink);background:var(--glass);
   backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);padding:10px 14px;border-radius:99px;box-shadow:var(--shadow-soft)}
 .land-tag svg{display:none}
-#landextra{width:100%;max-width:640px;margin:36px auto 0;text-align:left}
 
 .rs-big b{font-family:var(--font-display);font-weight:700;font-size:80px;letter-spacing:-.05em}
 

@@ -1,3 +1,7 @@
+/* АРХИВ: на сайте не подключён (сайт — стиль «Воздух», design/styles/air.css).
+   Вернуть: скопировать этот файл в design/styles/, img/ — в img/clay/ (пути url(img/…) → url(../../img/clay/…)),
+   подключить <link rel="stylesheet" href="design/styles/clay2.css"> в index.html вместо air.css
+   и вернуть на главную (function home) картинки <img class="deco d1|d2|d3"> — pravo, ekonomika, kurs. */
 /* Стиль «Клэй 2.0» — настоящий клэйморфизм.
    Рецепт материала: мягкая цветная тень СНАРУЖИ (предмет лежит на фоне) + две тени ВНУТРИ:
    блик сверху (свет падает сверху-слева) и затенение снизу — плашка выглядит надутой, а не выдавленной из фона.
@@ -88,7 +92,7 @@ body::after{width:170px;height:170px;left:40px;bottom:-50px;animation-duration:1
 .logout{border:0;border-radius:14px;box-shadow:0 10px 18px -10px rgba(201,58,100,.7),inset 0 -4px 8px rgba(120,0,40,.3),inset 0 4px 8px rgba(255,255,255,.35)}
 
 /* ---- карточки: цветные кусочки глины, каждая в своём оттенке ---- */
-.tcard,.land-card,.dl,.hwbox,.fitem,.rs-tile,.pstat,.creds,.sch-ev,.cp-ev{border:0;border-radius:var(--radius-md);background:var(--surface);box-shadow:var(--clay)}
+.tcard,.dl,.hwbox,.fitem,.rs-tile,.pstat,.creds,.sch-ev,.cp-ev{border:0;border-radius:var(--radius-md);background:var(--surface);box-shadow:var(--clay)}
 .tlist{gap:16px}
 .tlist .tcard:nth-child(5n+1){background:var(--violet);--sh:var(--violet-sh)}
 .tlist .tcard:nth-child(5n+2){background:var(--peach);--sh:var(--peach-sh)}
@@ -96,9 +100,9 @@ body::after{width:170px;height:170px;left:40px;bottom:-50px;animation-duration:1
 .tlist .tcard:nth-child(5n+4){background:var(--sky);--sh:var(--sky-sh)}
 .tlist .tcard:nth-child(5n+5){background:var(--butter);--sh:var(--butter-sh)}
 [data-theme="night"] .tlist .tcard{--sh:0,0,0}
-.tcard,.dl,.sch-ev,a.fitem,.land-card{transition:transform .4s var(--squish),box-shadow .25s ease}
+.tcard,.dl,.sch-ev,a.fitem{transition:transform .4s var(--squish),box-shadow .25s ease}
 @media (hover:hover) and (pointer:fine){
-  .tcard:hover,.land-card:hover,.dl:hover,a.fitem:hover,.sch-ev:hover{transform:translateY(-4px);box-shadow:var(--clay-lg)}
+  .tcard:hover,.dl:hover,a.fitem:hover,.sch-ev:hover{transform:translateY(-4px);box-shadow:var(--clay-lg)}
 }
 .tcard:active,.dl:active,.sch-ev:active,a.fitem:active{transform:scale(.985,.96);transition-duration:.12s}
 /* стрелка — белая бусина */
@@ -215,23 +219,23 @@ body::after{width:170px;height:170px;left:40px;bottom:-50px;animation-duration:1
 /* разделы кодификатора в библиотеке тестов — у каждого своя фигурка */
 .sect>summary::before{content:"";flex:none;width:44px;height:44px;margin:-6px 2px -6px 0;background:no-repeat center/contain;
   filter:drop-shadow(0 6px 6px rgba(var(--sh),.25))}
-.sect[data-k="Человек и общество"]>summary::before{background-image:url(../../img/clay/chelovek.webp)}
-.sect[data-k="Экономика"]>summary::before{background-image:url(../../img/clay/ekonomika.webp)}
-.sect[data-k="Социальные отношения"]>summary::before{background-image:url(../../img/clay/socium.webp)}
-.sect[data-k="Политика"]>summary::before{background-image:url(../../img/clay/politika.webp)}
-.sect[data-k="Право"]>summary::before{background-image:url(../../img/clay/pravo.webp)}
-.sect:not([data-k="Человек и общество"],[data-k="Экономика"],[data-k="Социальные отношения"],[data-k="Политика"],[data-k="Право"])>summary::before{background-image:url(../../img/clay/kurs.webp)}
+.sect[data-k="Человек и общество"]>summary::before{background-image:url(img/chelovek.webp)}
+.sect[data-k="Экономика"]>summary::before{background-image:url(img/ekonomika.webp)}
+.sect[data-k="Социальные отношения"]>summary::before{background-image:url(img/socium.webp)}
+.sect[data-k="Политика"]>summary::before{background-image:url(img/politika.webp)}
+.sect[data-k="Право"]>summary::before{background-image:url(img/pravo.webp)}
+.sect:not([data-k="Человек и общество"],[data-k="Экономика"],[data-k="Социальные отношения"],[data-k="Политика"],[data-k="Право"])>summary::before{background-image:url(img/kurs.webp)}
 .cp-block>summary::before{display:none}
 .sect>summary .st{font-family:var(--font-display);font-weight:800}
 @media (hover:hover){.sect>summary:hover::before{transform:rotate(-8deg) scale(1.08);transition:transform .35s var(--squish)}}
 
 /* результат: рядом с числом — стопка книг-«награда» */
 .rs{position:relative}
-.rs::after{content:"";position:absolute;right:0;top:-6px;width:min(30%,170px);aspect-ratio:360/290;background:url(../../img/clay/kurs.webp) no-repeat center/contain;
+.rs::after{content:"";position:absolute;right:0;top:-6px;width:min(30%,170px);aspect-ratio:360/290;background:url(img/kurs.webp) no-repeat center/contain;
   filter:drop-shadow(0 16px 14px rgba(var(--sh),.3));animation:plop .7s var(--squish) .2s both,bob 5s ease-in-out 1s infinite alternate;pointer-events:none}
 @media(max-width:520px){.rs::after{width:96px;top:0}}
 /* пустые состояния — человечки ждут */
-.empty::before{content:"";display:block;width:120px;aspect-ratio:360/274;margin:0 auto 10px;background:url(../../img/clay/socium.webp) no-repeat center/contain}
+.empty::before{content:"";display:block;width:120px;aspect-ratio:360/274;margin:0 auto 10px;background:url(img/socium.webp) no-repeat center/contain}
 
 /* главная без прокрутки: одна колонка (текст → кнопка → Маша), размер фото подстраивается под высоту окна.
    Книжку из фигурок убрали — хватает двух. */

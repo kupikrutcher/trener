@@ -10,7 +10,7 @@ const store = { ok: true, remove: async (k) => files.delete(k),
   downloadUrl: (k) => `http://localhost:${+process.env.PORT || 8770}/_files/${encodeURIComponent(k)}` };
 const db = memoryDb(), handler = makeHandler(() => db, () => store);
 const ROOT = path.join(__dirname, '..'), PORT = +process.env.PORT || 8770;
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.webp': 'image/webp' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json; charset=utf-8', '.webp': 'image/webp' };
 /* --demo: примерные данные, чтобы посмотреть сайт целиком (вход: demo / demo1234, учитель: masha / teacherpass) */
 async function seedDemo() {
   const { hashPassword } = require('./app');

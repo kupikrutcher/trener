@@ -2,7 +2,6 @@
 /* Сервер — функция в Yandex Cloud (папка backend/). Адрес функции: */
 const API_URL = window.TRENER_API || 'https://functions.yandexcloud.net/d4epjak23r01meequ6fs';
 
-const CAB = !!API_URL;
 let me = null;              // {login, full_name, role, avatar}
 let sentFor = null;         // results текущего прохождения, которое уже отправлено
 let afterLogin = null;
@@ -10,10 +9,10 @@ let submitted = new Set();  // названия ДЗ, которые учени�
 
 /* ученик видит правильные ответы и пояснения только в ДЗ, которое уже отправил; в разборе — всегда */
 function answersLocked(){
-  return !!(CAB && me && me.role!=='teacher' && !review && !window.bankSel && !submitted.has(curBase));
+  return !!(me && me.role!=='teacher' && !review && !window.bankSel && !submitted.has(curBase));
 }
 /* ДЗ уже отправлено — ученик может решать заново только часть 1, вторая скрыта */
-function p1OnlyFor(t){ return !!(CAB && me && me.role!=='teacher' && t && submitted.has(t.name)); }
+function p1OnlyFor(t){ return !!(me && me.role!=='teacher' && t && submitted.has(t.name)); }
 async function loadSubmitted(){
   submitted=new Set();
   if(me && me.role!=='teacher'){ try{ (await api('my_subs')).subs.forEach(s=>submitted.add(s.test_name)); }catch(e){} }
@@ -23,7 +22,7 @@ function cabEl(){ return document.getElementById('acct'); }
 function firstName(n){ const p=(n||'').trim().split(/\s+/); return p[1]||p[0]||''; }
 function fmtDate(s){ const d=new Date(s);
   return d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'})+', '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); }
-function findTest(name){ return tests.find(t=>t.builtin&&t.name===name)||tests.find(t=>t.name===name); }
+function findTest(name){ return tests.find(t=>t.name===name); }
 function cabShow(html){
   $('#bars').style.display='none'; $('#foot').textContent='';
   app.className='panel fade'; app.innerHTML=html; window.scrollTo({top:0});
@@ -42,7 +41,7 @@ async function api(action, data){
   if(!r.ok) throw new Error(j.error||('Ошибка сервера ('+r.status+')'));
   return j;
 }
-function busy(btn,on,text){ if(!btn)return; btn.disabled=on; if(text) btn.textContent=text; btn.style.opacity=on?.6:1; }
+function busy(btn,on,text){ if(!btn)return; btn.disabled=on; if(text) btn.textContent=text; }
 
 /* ---------- сессия ---------- */
 async function loadMe(){
@@ -57,16 +56,14 @@ const AVA_DEFAULT=`<svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" 
 function avaInner(u){ return u&&u.avatar ? `<img src="${u.avatar.replace(/"/g,'')}" alt="">` : AVA_DEFAULT; }
 function paintAcct(){
   const b=cabEl(); if(!b) return;
-  if(!CAB){ b.style.display='none'; return; }
   b.style.display='';
   if(me && me.role!=='teacher'){
     b.className='ava'; b.innerHTML=avaInner(me); b.title='Мой профиль'; b.setAttribute('aria-label','Мой профиль');
   }else{
     b.className='acct'; b.textContent = me ? 'Личный кабинет' : 'Войти'; b.removeAttribute('title'); b.removeAttribute('aria-label');
   }
-  b.onclick = ()=>{ if(window.setNav) setNav(''); me ? openCabinet() : cabLogin(); };
+  b.onclick = ()=>{ setNav(''); me ? openCabinet() : cabLogin(); };
   const chk=document.querySelector('.side-nav [data-nav="check"]'); if(chk) chk.hidden=!(me&&me.role==='teacher');
-  const hi=document.getElementById('landhi'); if(hi) hi.textContent = me ? 'Привет, '+firstName(me.full_name)+'!' : 'Привет!';
 }
 function pickAvatar(){
   const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
@@ -154,18 +151,11 @@ async function changePass(){
   try{ await api('change_password',{ old, password:np }); toast('Пароль изменён'); }catch(e){ toast(e.message); }
 }
 
-/* ---------- главная: карточка профиля ---------- */
-async function landExtra(){
-  // на главной только приветствие, фото и кнопка; дедлайны — на странице уроков
-  const box=document.getElementById('landextra'); if(box) box.innerHTML='';
-  paintAcct();
-}
-
 /* ---------- дедлайны: невыполненные уроки (ДЗ не отправлено), у которых срок близко или прошёл ---------- */
 const DAY=864e5;
 function fmtDeadline(iso){ const d=new Date(iso);
   return d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})+', '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); }
-function daysWord(n){ const a=n%10,b=n%100; return n+' '+(a===1&&b!==11?'день':(a>=2&&a<=4&&(b<10||b>=20)?'дня':'дней')); }
+function daysWord(n){ return n+' '+ru(n,'день','дня','дней'); }
 function deadlineBadge(iso){
   const ms=+new Date(iso)-Date.now();
   if(ms<0){ const d=Math.floor(-ms/DAY); return d<1?'просрочено сегодня':'просрочено на '+daysWord(d); }
@@ -199,9 +189,9 @@ function deadlinesHTML(lessons){
 function renderSendBox(){
   const box=document.getElementById('sendbox'); if(!box) return;
   const t=findTest(curBase);
-  if(CAB && !review && t && curName===curBase && p1OnlyFor(t) && bank!==t.questions){
+  if(!review && t && curName===curBase && p1OnlyFor(t) && bank!==t.questions){
     box.innerHTML=`<div class="resnote">Работа уже сдана. Это повторное решение первой части — учителю оно не отправляется.</div>`; return; }
-  if(!CAB || review || !t || bank!==t.questions || (me&&me.role==='teacher')){ box.innerHTML=''; return; }
+  if(review || !t || bank!==t.questions || (me&&me.role==='teacher')){ box.innerHTML=''; return; }
   if(sentFor===results){ box.innerHTML=`<div class="sent">✓ Работа отправлена учителю</div>`; return; }
   // одна главная кнопка на экран: если есть «Исправить N ошибок», отправка — второстепенная
   const kind=document.getElementById('fixbtn')?'btn ghost':'btn';
@@ -230,7 +220,7 @@ async function sendWork(){
 
 /* изменение к прошлой попытке этого же ДЗ (по первой части) — на экране результата */
 async function resultDelta(){
-  const el=document.getElementById('rsdelta'); if(!el||!CAB||!me||me.role==='teacher') return;
+  const el=document.getElementById('rsdelta'); if(!el||!me||me.role==='teacher') return;
   const t=findTest(curBase); if(!t||review||curName!==curBase) return;   // и полное ДЗ, и повтор только части 1
   const total=countP1(bank); if(!total) return;
   let subs=[]; try{ subs=(await api('my_subs')).subs; }catch(e){ return; }
@@ -280,7 +270,7 @@ async function cabStudent(){
         ${subBadge(s)}<span class="tgo">→</span>
       </div>`).join('')}</div>`
     : `<div class="empty">Отправленных работ пока нет.<br>Реши ДЗ и нажми «Отправить работу учителю» на экране результата.</div>`);
-  box.innerHTML += `<button class="btn ghost" onclick="hwList()">К ДЗ</button>`;
+  box.innerHTML += `<button class="btn ghost" onclick="goHW()">К ДЗ</button>`;
   drawProgress($('#prog'), data);
 }
 
@@ -300,7 +290,7 @@ function trendLine(ys){ const n=ys.length; if(n<2) return null;
 function drawProgress(el, subs){
   if(!el) return;
   const pts=progressPoints(subs||[]), wait=(subs||[]).filter(s=>s.p2_n&&!s.checked_at).length;
-  const waitNote = wait ? `<div class="pnote">${wait===1?'Ещё 1 работа ждёт проверки — появится на графике после неё.':'Ещё '+wait+' работ(ы) ждут проверки — появятся на графике после неё.'}</div>` : '';
+  const waitNote = wait ? `<div class="pnote">Ещё ${wait} ${ru(wait,'работа ждёт','работы ждут','работ ждут')} проверки — ${wait===1?'появится':'появятся'} на графике после неё.</div>` : '';
   if(!pts.length){ el.innerHTML=`<div class="empty" style="margin-bottom:0">График появится, когда будет проверена первая работа.</div>${waitNote}`; return; }
   const ys=pts.map(p=>p.pct), avg=Math.round(ys.reduce((a,b)=>a+b,0)/ys.length), tr=trendLine(ys);
   const dir = tr ? (Math.abs(tr.k)<0.5?'ровно':(tr.k>0?'+':'−')+Math.abs(tr.k).toFixed(1)) : '—';
@@ -321,9 +311,8 @@ function drawProgress(el, subs){
     [0,50,100].forEach(v=>{ g+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${L-8}" y="${y(v)+4}" text-anchor="end">${v}%</text>`; });
     const every=Math.max(1,Math.ceil(n/Math.floor(iw/30)));
     pts.forEach((p,i)=>{
-      const cx=L+step*i+step/2, x=cx-bw/2, top=y(p.pct), h=T+ih-top, r=0;   // брутализм: без скруглений
-      g+= h>0 ? `<path class="bar" data-i="${i}" d="M${x},${T+ih}V${top+r}Q${x},${top} ${x+r},${top}H${x+bw-r}Q${x+bw},${top} ${x+bw},${top+r}V${T+ih}Z"/>`
-              : `<rect class="bar" data-i="${i}" x="${x}" y="${T+ih-1}" width="${bw}" height="1"/>`;
+      const cx=L+step*i+step/2, x=cx-bw/2, h=Math.max(1,T+ih-y(p.pct));   // нулевой результат — полоска в 1px
+      g+=`<rect class="bar" data-i="${i}" x="${x}" y="${T+ih-h}" width="${bw}" height="${h}"/>`;
       if(i%every===0||i===n-1) g+=`<text class="ax" x="${cx}" y="${H-6}" text-anchor="middle">${i+1}</text>`;
     });
     if(tr){ const x1=L+step/2, x2=L+step*(n-1)+step/2, c=v=>Math.max(0,Math.min(100,v));
@@ -353,6 +342,7 @@ async function cabSubmission(id){
   let s;
   try{ s=(await api('sub_get',{ id })).sub; }
   catch(e){ cabShow(`<div class="empty">${esc(e.message)}</div><button class="btn ghost" onclick="openCabinet()">Назад</button>`); return; }
+  await loadTests().catch(()=>{});   // без заданий работа всё равно видна — только без текстов и разбора
   const who = me.role==='teacher' && s.student_name ? `${esc(s.student_name)} · ` : '';
   curSub=s;
   const t=findTest(s.test_name), qs=t?t.questions:[];
@@ -465,15 +455,17 @@ function tabsHTML(){
   const T=[['check','Проверка'],['lessons','Уроки'],['tests','Готовые ДЗ']];
   return `<div class="tabs">${T.map(([k,l])=>`<button class="tab${teacherTab===k?' on':''}" onclick="cabTeacher('${k}')">${l}</button>`).join('')}</div>`;
 }
-/* старые имена вкладок: todo/all — это «Проверка» с нужным фильтром */
+/* «Проверка»: ждут проверки / все работы */
 function checkShow(mode){ checkMode=mode; if(mode==='todo') filterStudent=null; cabTeacher('check'); }
 async function cabTeacher(tab){
-  if(tab==='todo'||tab==='all'){ checkMode=tab; tab='check'; }
   teacherTab=['check','lessons','tests'].includes(tab)?tab:'check';
   cabShow(`<div class="cab"><h2 class="cab-h">Курс</h2>
     ${tabsHTML()}<div id="tbody" class="cab-load">Загружаем…</div></div>`);
   if(teacherTab==='lessons') return teacherLessons();
-  if(teacherTab==='tests'){ const b=$('#tbody'); b.className=''; b.innerHTML=testsListHTML(); return; }
+  if(teacherTab==='tests'){
+    let err=''; try{ await loadTests(); }catch(e){ err=e.message; }
+    const b=$('#tbody'); if(!b) return; b.className=''; if(err) b.textContent=err; else b.innerHTML=testsListHTML(); return;
+  }
   const todo=checkMode==='todo'&&!filterStudent;
   let studs, data;
   try{
@@ -541,14 +533,13 @@ async function addStudents(){
     const r=await api('students_create',{ names });
     lastCreds=r.created;
     await teacherStudents();
-    $('#creds').innerHTML=credsHTML(r.created, r.failed);
+    $('#creds').innerHTML=credsHTML(r.created);
   }catch(e){ busy(btn,false,'Создать логины и пароли'); toast('Ошибка: '+e.message); }
 }
-function credsHTML(list,failed){
+function credsHTML(list){
   return `<div class="creds">
     <div class="creds-h">Создано: ${list.length}. Пароли показываются только сейчас — сохрани их.</div>
     ${list.map(c=>`<div class="crow"><span>${esc(c.full_name)}</span><code>${esc(c.login)}</code><code>${esc(c.password)}</code></div>`).join('')}
-    ${failed&&failed.length?`<div class="cab-err">Не создано: ${failed.map(f=>esc(f.full_name)+' ('+esc(f.error)+')').join(', ')}</div>`:''}
     <div class="rrow" style="margin-top:12px">
       <button class="btn" onclick="downloadCreds()">Скачать CSV</button>
       <button class="btn ghost" onclick="copyCreds()">Скопировать</button>
@@ -567,7 +558,7 @@ async function resetPass(login){
   try{
     const r=await api('student_reset',{ login });
     lastCreds=[{ full_name:p.full_name, login:p.login, password:r.password }];
-    $('#creds').innerHTML=credsHTML(lastCreds,[]);
+    $('#creds').innerHTML=credsHTML(lastCreds);
     $('#creds').scrollIntoView({behavior:'smooth',block:'center'});
   }catch(e){ toast('Ошибка: '+e.message); }
 }
@@ -579,22 +570,18 @@ async function delStudent(login){
 }
 
 /* ---------- уроки ---------- */
-/* ученикам тесты видны только через уроки; учителю — всё */
-function cabCanSeeTests(){ return !CAB || (me && me.role==='teacher'); }
-function cabGoHW(){
-  if(!CAB) return hwList();
-  if(!me) return cabLogin(()=>cabGoHW());
+/* «К ДЗ»: ученику — уроки (тесты открываются из урока), учителю — вкладка «Готовые ДЗ» */
+function goHW(){
+  if(!me) return cabLogin(()=>goHW());
   return me.role==='teacher' ? cabTeacher('tests') : lessonsList();
 }
 /* «Перейти в курс»: учителю курс открывается на вкладке «Проверка» */
-function cabGoCourse(){
-  if(!CAB) return hwList();
-  if(!me) return cabLogin(()=>cabGoCourse());
+function goCourse(){
+  if(!me) return cabLogin(()=>goCourse());
   return me.role==='teacher' ? cabTeacher('check') : lessonsList();
 }
 /* левая панель: Проверка (учитель), Уроки, Расписание, Банк заданий, Полезные файлы */
 function cabNav(k){
-  if(!CAB) return hwList();
   if(!me) return cabLogin(()=>navGo(k));
   const teacher=me.role==='teacher';
   if(k==='check') return teacher ? cabTeacher('check') : lessonsList();
@@ -676,7 +663,7 @@ function planView(){
   if(planCal) return calView(box);
   const today=planToday();
   const blocks=coursePlan(), all=blocks.flatMap(b=>b.items), next=all.find(e=>e.t>=today);
-  const when=t=>{ const d=Math.round((t-today)/DAY); return d===0?'Сегодня':d===1?'Завтра':'Через '+d+' '+(d%10===1&&d%100!==11?'день':(d%10>=2&&d%10<=4&&(d%100<10||d%100>=20)?'дня':'дней')); };
+  const when=t=>{ const d=Math.round((t-today)/DAY); return d===0?'Сегодня':d===1?'Завтра':'Через '+daysWord(d); };
   const cur=next?blocks.find(b=>b.items.includes(next)):null;
   box.innerHTML=`<button class="btn ghost cp-switch" onclick="planToggle(true)">Открыть как календарь</button>`
     +(next?`<div class="cp-next">
@@ -871,12 +858,9 @@ async function filesView(){
 }
 /* название в шапке: к урокам курса; гостю — входная страница */
 function cabGoLessons(){
-  if(!CAB) return hwList();
   if(!me) return home();
   return me.role==='teacher' ? cabTeacher('lessons') : lessonsList();
 }
-/* список ДЗ у учителя с сервером живёт во вкладке «Готовые ДЗ» */
-function cabTeacherTests(){ if(CAB&&me&&me.role==='teacher'){ cabTeacher('tests'); return true; } return false; }
 function fmtDay(s){ return new Date(s).toLocaleDateString('ru-RU',{day:'numeric',month:'long'}); }
 function fmtSize(n){ return n>=1048576?(n/1048576).toFixed(1).replace('.',',')+' МБ':Math.max(1,Math.round(n/1024))+' КБ'; }
 function fileExt(n){ const m=/\.([a-z0-9]{1,5})$/i.exec(n||''); return m?m[1].toUpperCase():'ФАЙЛ'; }
@@ -922,7 +906,7 @@ async function lessonsList(){
 async function lessonView(id){
   cabShow(`<div class="cab-load">Загружаем урок…</div>`);
   let l;
-  try{ l=(await api('lesson_get',{ id })).lesson; }
+  try{ [l]=await Promise.all([api('lesson_get',{ id }).then(r=>r.lesson), loadTests()]); }
   catch(e){ cabShow(`<div class="empty">${esc(e.message)}</div><button class="btn ghost" onclick="goHW()">К урокам</button>`); return; }
   curLesson=l;
   const teacher=me&&me.role==='teacher';
@@ -960,6 +944,8 @@ async function teacherLessons(){
 let editL=null;
 async function lessonEdit(id){
   editL={ id:null, title:'', video:'', test_name:'', deadline:'', files:[], published:false };
+  // без списка заданий нельзя: при сохранении выбранное ДЗ потерялось бы
+  try{ await loadTests(); }catch(e){ toast(e.message); return cabTeacher('lessons'); }
   if(id){
     cabShow(`<div class="cab-load">Загружаем урок…</div>`);
     try{ const l=(await api('lesson_get',{ id })).lesson; editL={ id:l.id, title:l.title, video:l.video||'', test_name:l.test_name||'',
@@ -1049,8 +1035,6 @@ async function lessonDelete(){
 }
 
 /* ---------- старт ---------- */
-if(CAB){
-  if(location.hash==='#setup') cabSetup();
-  loadMe().then(()=>{ if(document.getElementById('landextra')) landExtra(); });
-}
+if(location.hash==='#setup') cabSetup();
+loadMe();
 paintAcct();
