@@ -1,91 +1,99 @@
-/* Маша Вайб — design tokens. Стиль: клэйморфизм (как в «Стилях Лёрни»),
-   палитра темнее — фиолетово-синяя: мягкие «пухлые» плашки, двойные тени (тёмная + светлый блик),
-   большие скругления, Comfortaa в заголовках / Manrope в тексте.
+/* Маша Вайб — design tokens. Стиль «Конспект с маркером»:
+   лист в клетку, чернильно-синий — цвет действия, жёлтый маркер — фирменный жест (одно пятно на экран),
+   рукописные пометки Маши. Unbounded (заголовки, числа) / Onest (текст) / JetBrains Mono (цифры ответа) / Caveat (пометки).
    Внизу — алиасы на старые имена (--bg, --accent, --muted…). */
 
-@import url("https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700&family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Caveat:wght@600;700&display=swap");
 
 :root,
 [data-theme="paper"] {
-  /* поверхности */
-  --paper: #e8e5f7;         /* фон страницы — лавандово-синий */
-  --surface: #f8f7ff;       /* панели, карточки */
-  --surface-sunk: #e2def5;  /* пустые клетки, поля, треки */
-  --line: #d5cfee;
-  --line-strong: #b4abe0;
-  /* текст */
-  --ink: #1e1a3c;
-  --ink-muted: #5a5480;
-  /* действие — фиолетово-синий */
-  --cobalt: #5446d8;
+  /* поверхности: стол, лист, вдавленное поле */
+  --paper: #eef0f3;         /* фон страницы — холодный светлый «стол» */
+  --surface: #ffffff;       /* лист, панели */
+  --surface-sunk: #f3f4f7;  /* пустые поля, треки */
+  --line: #e2e5ec;
+  --line-strong: #c9cfdb;
+  --grid-line: rgba(38, 64, 214, .07);   /* клетка тетради */
+  /* текст — холодный почти-чёрный, как гелевая ручка */
+  --ink: #141722;
+  --ink-muted: #5b6275;
+  /* действие — чернильно-синий */
+  --cobalt: #2640d6;
+  --cobalt-ink: #1a2fa8;    /* нажатие, тень кнопки */
   --on-cobalt: #ffffff;
-  --cobalt-soft: #e2defb;
-  /* маркер: мятный, только заливка */
-  --marker: #b6f0c9;
-  --on-marker: #1e1a3c;
+  --cobalt-soft: #e7ebff;
+  /* маркер: только заливка */
+  --marker: #ffe45c;
+  --on-marker: #141722;
   /* состояния: всегда вместе со словом или ✓/✕ */
-  --ok: #26845a;
-  --ok-soft: #dcf4e6;
-  --bad: #cf3f67;
-  --bad-soft: #fbe1ea;
+  --ok: #1d7a4c;
+  --ok-soft: #e1f4e9;
+  --bad: #c8323f;
+  --bad-soft: #fde6e8;
   --focus-ring: var(--cobalt);
-  /* клэй: тёмная тень снизу-справа и светлый блик сверху-слева */
-  --shadow-soft: 4px 4px 10px rgba(84, 70, 216, .16), -3px -3px 8px rgba(255, 255, 255, .85);
-  --shadow-clay: 12px 12px 26px rgba(84, 70, 216, .22), -8px -8px 20px rgba(255, 255, 255, .9);
-  --shadow-lift: 18px 18px 36px rgba(84, 70, 216, .26), -10px -10px 26px rgba(255, 255, 255, .95);
-  --shadow-press: inset 3px 3px 7px rgba(84, 70, 216, .16), inset -3px -3px 7px rgba(255, 255, 255, .8);
-  --btn-grad: linear-gradient(145deg, #6a5cf0, #4a3cc9);
-  --btn-shadow: 8px 10px 20px rgba(74, 60, 201, .38), -5px -5px 14px rgba(255, 255, 255, .85), inset 0 -4px 0 rgba(20, 10, 90, .18), inset 0 2px 0 rgba(255, 255, 255, .25);
-  --hero-grad: linear-gradient(160deg, #c9c1ff, #8f82f0);
-  --glow-1: #b9adff66;
-  --glow-2: #a9c4ff66;
-  --glow-3: #d8c8ff55;
+  /* глубина: тени тонированы в цвет чернил, один источник света сверху */
+  --shadow-soft: 0 1px 2px rgba(20, 30, 90, .06), 0 2px 6px rgba(20, 30, 90, .05);
+  --shadow-clay: 0 1px 2px rgba(20, 30, 90, .05), 0 8px 24px -8px rgba(20, 30, 90, .14);
+  --shadow-lift: 0 1px 2px rgba(20, 30, 90, .05), 0 24px 60px -24px rgba(20, 30, 90, .22);
+  --shadow-press: inset 0 1px 2px rgba(20, 30, 90, .08);
+  --btn-grad: var(--cobalt);
+  --btn-shadow: 0 1px 0 rgba(255, 255, 255, .18) inset, 0 -2px 0 var(--cobalt-ink) inset, 0 6px 16px -6px rgba(38, 64, 214, .55);
+  --hero-grad: var(--cobalt);
+  --glow-1: transparent;
+  --glow-2: transparent;
+  --glow-3: transparent;
   --border: 1px;
 
   /* шрифты */
-  --font-display: "Comfortaa", "Manrope", system-ui, sans-serif;
-  --font-sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Unbounded", "Onest", system-ui, sans-serif;
+  --font-sans: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --font-hand: "Caveat", "Onest", cursive;
 
   /* отступы */
   --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
   --space-6: 24px; --space-8: 32px; --space-12: 48px;
 
-  /* радиусы — мягкие и крупные */
-  --radius-cell: 14px;
-  --radius-md: 18px;
-  --radius-lg: 28px;
+  /* радиусы: клетка бланка → контрол → лист */
+  --radius-cell: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
   --radius-pill: 99px;
+
+  /* движение (Emil Kowalski): сильный ease-out, короткие длительности */
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --ease-in-out: cubic-bezier(.77, 0, .175, 1);
+  --ease-drawer: cubic-bezier(.32, .72, 0, 1);
+  --dur-press: 140ms;
+  --dur-ui: 200ms;
+  --dur-enter: 420ms;
 }
 
-/* «Ночь» — тот же клэй в тёмно-фиолетовом */
+/* «Ночь» — тетрадь под настольной лампой: тёмно-синий лист, та же клетка, маркер светится */
 [data-theme="night"] {
-  --paper: #15132a;
-  --surface: #1f1c38;
-  --surface-sunk: #29254a;
-  --line: #332f5a;
-  --line-strong: #4b4585;
-  --ink: #eceafb;
-  --ink-muted: #a8a2d2;
-  --cobalt: #9a8cff;
-  --on-cobalt: #15132a;
-  --cobalt-soft: #2d2858;
-  --marker: #8fe0ad;
-  --on-marker: #15132a;
-  --ok: #7fdba4;
-  --ok-soft: #1c3329;
-  --bad: #ff8aa8;
-  --bad-soft: #3b1f2c;
-  --shadow-soft: 4px 4px 10px rgba(0, 0, 0, .35), -2px -2px 6px rgba(255, 255, 255, .03);
-  --shadow-clay: 10px 10px 24px rgba(0, 0, 0, .45), -6px -6px 16px rgba(154, 140, 255, .06);
-  --shadow-lift: 16px 16px 34px rgba(0, 0, 0, .5), -8px -8px 22px rgba(154, 140, 255, .07);
-  --shadow-press: inset 3px 3px 7px rgba(0, 0, 0, .35), inset -2px -2px 6px rgba(154, 140, 255, .06);
-  --btn-grad: linear-gradient(145deg, #a99dff, #7e6ef5);
-  --btn-shadow: 8px 10px 22px rgba(0, 0, 0, .5), -4px -4px 12px rgba(154, 140, 255, .08), inset 0 -4px 0 rgba(20, 10, 90, .25), inset 0 2px 0 rgba(255, 255, 255, .3);
-  --hero-grad: linear-gradient(160deg, #5a4fc4, #2f2878);
-  --glow-1: #5446d833;
-  --glow-2: #3a5bd833;
-  --glow-3: #7a4fd822;
+  --paper: #0d1017;
+  --surface: #151923;
+  --surface-sunk: #1b2030;
+  --line: #242a3a;
+  --line-strong: #353d54;
+  --grid-line: rgba(140, 160, 255, .05);
+  --ink: #e9ecf5;
+  --ink-muted: #9aa3ba;
+  --cobalt: #8a9dff;
+  --cobalt-ink: #5d73f0;
+  --on-cobalt: #0d1017;
+  --cobalt-soft: #1e2645;
+  --marker: #ffe45c;
+  --on-marker: #141722;
+  --ok: #6fd69c;
+  --ok-soft: #15291f;
+  --bad: #ff8a93;
+  --bad-soft: #33181d;
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, .4);
+  --shadow-clay: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 28px -10px rgba(0, 0, 0, .6);
+  --shadow-lift: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 28px 70px -24px rgba(0, 0, 0, .75);
+  --shadow-press: inset 0 1px 2px rgba(0, 0, 0, .35);
+  --btn-shadow: 0 1px 0 rgba(255, 255, 255, .25) inset, 0 -2px 0 var(--cobalt-ink) inset, 0 8px 22px -8px rgba(138, 157, 255, .45);
   color-scheme: dark;
 }
 

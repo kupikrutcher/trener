@@ -9,7 +9,8 @@ const { signedFetch } = require('./s3');
 
 const BUCKET = process.env.SITE_BUCKET || 'mashavibe.ru';
 const ROOT = process.env.SITE_DIR || path.join(__dirname, '..');   // папка с файлами сайта
-const FILES = ['index.html', 'cabinet.js', 'bank.json', 'design/tokens.css', 'img/masha.webp', 'img/icon-32.png', 'img/icon-192.png', 'img/apple-touch-icon.png'];
+const FILES = ['index.html', 'cabinet.js', 'bank.json', 'design/tokens.css', 'design/styles/clay2.css', 'design/styles/air.css',
+  'img/masha.webp', 'img/masha-hd.webp', ...['pravo', 'ekonomika', 'politika', 'socium', 'chelovek', 'kurs'].map((n) => `img/clay/${n}.webp`), 'img/icon-32.png', 'img/icon-192.png', 'img/apple-touch-icon.png'];
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.webp': 'image/webp', '.png': 'image/png' };
 const TEXT = new Set(['.html', '.js', '.css', '.json']);   // картинки уже сжаты — gzip только для текста
 

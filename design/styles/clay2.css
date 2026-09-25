@@ -1,0 +1,252 @@
+/* Стиль «Клэй 2.0» — настоящий клэйморфизм.
+   Рецепт материала: мягкая цветная тень СНАРУЖИ (предмет лежит на фоне) + две тени ВНУТРИ:
+   блик сверху (свет падает сверху-слева) и затенение снизу — плашка выглядит надутой, а не выдавленной из фона.
+   Материал — набор пастельных «пластилинов» (фиалка, персик, мята, небо, масло), у каждого своя тень в тон.
+   Нажатие — пластилин сплющивается. Шрифт — толстый округлый M PLUS Rounded 1c. Рамок нет нигде. */
+@import url("https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap");
+
+:root{
+  --paper:#ebe8f7; --surface:#fbfaff; --surface-sunk:#e3dff4; --line:#dcd6f2; --line-strong:#c3badf;
+  --ink:#221c45; --ink-muted:#5d5684;
+  --cobalt:#6352ec; --cobalt-ink:#4b3bd0; --on-cobalt:#ffffff; --cobalt-soft:#e6e2ff;
+  --marker:#ffe08a; --on-marker:#2b2210;
+  --ok:#1f7f52; --ok-soft:#d8f5e7; --bad:#c93a64; --bad-soft:#ffe0ea;
+  /* пластилины: заливка и её тень */
+  --violet:#e0d9ff; --violet-sh:98,80,236;
+  --peach:#ffdac9;  --peach-sh:230,120,80;
+  --mint:#caf1de;   --mint-sh:50,160,110;
+  --sky:#d2e4ff;    --sky-sh:70,120,220;
+  --butter:#ffebb0; --butter-sh:210,160,40;
+  --sh:84,66,200;          /* основной тон теней */
+  --hi:rgba(255,255,255,.95);  /* блик */
+  /* рецепт клэя: снаружи тень в тон, внутри блик сверху и затенение снизу */
+  --clay-sm:0 10px 18px -10px rgba(var(--sh),.35),inset 0 -5px 10px rgba(var(--sh),.10),inset 0 5px 9px var(--hi);
+  --clay:0 18px 32px -14px rgba(var(--sh),.34),inset 0 -8px 16px rgba(var(--sh),.10),inset 0 8px 14px var(--hi);
+  --clay-lg:0 36px 64px -28px rgba(var(--sh),.40),inset 0 -14px 26px rgba(var(--sh),.08),inset 0 12px 22px var(--hi);
+  --well:inset 0 5px 12px rgba(var(--sh),.16),inset 0 -3px 6px rgba(255,255,255,.85);
+  --shadow-soft:var(--clay-sm); --shadow-clay:var(--clay); --shadow-lift:var(--clay-lg); --shadow-press:var(--well);
+  --btn-top:#8374ff; --btn-bot:#5a48e6;
+  --font-display:"M PLUS Rounded 1c","Nunito",system-ui,sans-serif; --font-sans:"Nunito",system-ui,sans-serif;
+  --radius-cell:16px; --radius-md:22px; --radius-lg:34px;
+  --squish:cubic-bezier(.3,1.4,.5,1);
+}
+[data-theme="night"]{
+  --paper:#16132b; --surface:#241f42; --surface-sunk:#1b1834; --line:#2f2a55; --line-strong:#40397a;
+  --ink:#efecff; --ink-muted:#aea7d8;
+  --cobalt:#a69bff; --cobalt-ink:#8576ff; --on-cobalt:#16132b; --cobalt-soft:#342d66;
+  --marker:#ffd766; --on-marker:#2b2210;
+  --ok:#72e0a9; --ok-soft:#173a2c; --bad:#ff8fae; --bad-soft:#40202f;
+  --violet:#312a61; --peach:#43292b; --mint:#1f3a35; --sky:#223352; --butter:#3d3522;
+  --sh:0,0,0; --hi:rgba(255,255,255,.10);
+  --clay-sm:0 10px 18px -10px rgba(0,0,0,.6),inset 0 -5px 10px rgba(0,0,0,.28),inset 0 5px 9px var(--hi);
+  --clay:0 18px 32px -14px rgba(0,0,0,.6),inset 0 -8px 16px rgba(0,0,0,.28),inset 0 8px 14px var(--hi);
+  --clay-lg:0 36px 64px -28px rgba(0,0,0,.7),inset 0 -14px 26px rgba(0,0,0,.25),inset 0 12px 22px rgba(255,255,255,.07);
+  --well:inset 0 5px 12px rgba(0,0,0,.45),inset 0 -2px 5px rgba(255,255,255,.05);
+  --btn-top:#bdb4ff; --btn-bot:#8e80ff;
+  color-scheme:dark;
+}
+
+/* ---- фон: спокойная лаванда и два глиняных шара, которые медленно плавают ---- */
+body{background:var(--paper);font-weight:600}
+body::before,body::after{content:"";position:fixed;z-index:-1;border-radius:50%;pointer-events:none;animation:float 14s ease-in-out infinite alternate}
+body::before{width:230px;height:230px;right:-110px;top:-120px;
+  background:radial-gradient(circle at 34% 30%,#fff 0,#d9d2ff 22%,#9d8fff 62%,#7a69f0 100%);
+  box-shadow:0 40px 70px -30px rgba(98,80,236,.55),inset -18px -24px 40px rgba(60,40,180,.35)}
+body::after{width:170px;height:170px;left:40px;bottom:-50px;animation-duration:18s;animation-direction:alternate-reverse;
+  background:radial-gradient(circle at 34% 30%,#fff 0,#ffe0d2 24%,#ffb293 64%,#f28d6c 100%);
+  box-shadow:0 30px 60px -26px rgba(230,120,80,.55),inset -14px -18px 30px rgba(200,80,40,.3)}
+[data-theme="night"] body::before{opacity:.55}[data-theme="night"] body::after{opacity:.45}
+@keyframes float{to{transform:translate(-18px,22px) rotate(8deg)}}
+@media(min-width:1000px){body::after{left:300px}}
+
+/* ---- лист ---- */
+.panel{background:var(--surface);border:0;border-radius:var(--radius-lg);box-shadow:var(--clay-lg)}
+.land h1,.home h1,.cab-h,.allhead h1{font-family:var(--font-display);font-weight:900;letter-spacing:-.02em;line-height:1.12}
+.cab-h,.allhead h1{font-size:clamp(24px,3.2vw,32px)}
+.cab-h3,.rs-h,.dl-h,.review h3,.sch-day{font:800 16px/1.3 var(--font-display);letter-spacing:0;text-transform:none;color:var(--ink)}
+.sch-day.today{color:var(--cobalt)}
+.qnum{font-family:var(--font-display);font-weight:900;letter-spacing:0;text-transform:none;font-size:15px;color:var(--cobalt)}
+.tname{font-weight:800}
+.qtext{font-weight:500}
+
+/* ---- кнопки: фиалковый пластилин с бликом; при нажатии сплющивается ---- */
+.btn{border:0;border-radius:var(--radius-md);color:var(--on-cobalt);font:800 16px/1 var(--font-display);letter-spacing:.01em;
+  background:linear-gradient(180deg,var(--btn-top),var(--btn-bot));
+  box-shadow:0 16px 26px -12px rgba(98,80,236,.7),inset 0 -6px 12px rgba(40,20,150,.35),inset 0 6px 10px rgba(255,255,255,.45);
+  transition:transform .35s var(--squish),box-shadow .2s ease,filter .2s ease}
+.btn:hover{filter:none}
+@media (hover:hover) and (pointer:fine){.btn:hover{transform:translateY(-2px);filter:saturate(1.1)}}
+.btn:active{transform:scale(.97,.93);transition-duration:.12s;transition-timing-function:ease-out;
+  box-shadow:0 6px 12px -8px rgba(98,80,236,.7),inset 0 -2px 6px rgba(40,20,150,.3),inset 0 8px 14px rgba(30,10,120,.3)}
+.btn.ghost{background:var(--surface);color:var(--ink);box-shadow:var(--clay-sm)}
+.btn.ghost:active{box-shadow:var(--well)}
+
+/* мелкие кнопки шапки — глиняные бусины */
+.acct,.theme-tog,.burger,.ava{background:var(--surface);border:0;box-shadow:var(--clay-sm);color:var(--ink)}
+.theme-tog{color:var(--cobalt)}
+.acct:active,.theme-tog:active,.burger:active,.ava:active{transform:scale(.92,.88);box-shadow:var(--well)}
+.logout{border:0;border-radius:14px;box-shadow:0 10px 18px -10px rgba(201,58,100,.7),inset 0 -4px 8px rgba(120,0,40,.3),inset 0 4px 8px rgba(255,255,255,.35)}
+
+/* ---- карточки: цветные кусочки глины, каждая в своём оттенке ---- */
+.tcard,.land-card,.dl,.hwbox,.fitem,.rs-tile,.pstat,.creds,.sch-ev,.cp-ev{border:0;border-radius:var(--radius-md);background:var(--surface);box-shadow:var(--clay)}
+.tlist{gap:16px}
+.tlist .tcard:nth-child(5n+1){background:var(--violet);--sh:var(--violet-sh)}
+.tlist .tcard:nth-child(5n+2){background:var(--peach);--sh:var(--peach-sh)}
+.tlist .tcard:nth-child(5n+3){background:var(--mint);--sh:var(--mint-sh)}
+.tlist .tcard:nth-child(5n+4){background:var(--sky);--sh:var(--sky-sh)}
+.tlist .tcard:nth-child(5n+5){background:var(--butter);--sh:var(--butter-sh)}
+[data-theme="night"] .tlist .tcard{--sh:0,0,0}
+.tcard,.dl,.sch-ev,a.fitem,.land-card{transition:transform .4s var(--squish),box-shadow .25s ease}
+@media (hover:hover) and (pointer:fine){
+  .tcard:hover,.land-card:hover,.dl:hover,a.fitem:hover,.sch-ev:hover{transform:translateY(-4px);box-shadow:var(--clay-lg)}
+}
+.tcard:active,.dl:active,.sch-ev:active,a.fitem:active{transform:scale(.985,.96);transition-duration:.12s}
+/* стрелка — белая бусина */
+.tgo{flex:none;width:36px;height:36px;display:grid;place-items:center;border-radius:50%;background:var(--surface);box-shadow:var(--clay-sm);
+  color:var(--cobalt);font-size:16px;font-weight:900}
+@media (hover:hover) and (pointer:fine){.tcard:hover .tgo{transform:translateX(3px) rotate(-8deg)}}
+.dl-box{border:0;border-radius:var(--radius-lg);background:var(--surface-sunk);box-shadow:var(--well);padding:18px}
+.dl.over{background:var(--bad-soft);--sh:201,58,100}
+.cp-next{border:0;background:var(--violet);box-shadow:var(--clay);--sh:var(--violet-sh)}
+.cal{border:0;box-shadow:var(--clay)}
+.cal-c.has{box-shadow:var(--well);border-color:transparent}
+.cp-ev.now{box-shadow:var(--clay),0 0 0 3px var(--cobalt)}
+.vbox{border:0;box-shadow:var(--clay-sm)}
+.vbox.ok{--sh:50,160,110}.vbox.bad{--sh:201,58,100}
+.sent{border:0;box-shadow:var(--clay-sm);--sh:50,160,110}
+.fitem .fic{border-radius:12px;box-shadow:var(--clay-sm)}
+.empty,.dl-empty{border:0;background:var(--surface-sunk);box-shadow:var(--well)}
+
+/* ---- поля: ямки в глине ---- */
+.tin,.essay,.dd-btn,.fdrop{border:0;background:var(--surface-sunk);box-shadow:var(--well);border-radius:var(--radius-md)}
+.tin:focus,.essay:focus,.dd-btn[aria-expanded="true"],.dd-btn:focus-visible{outline:none;box-shadow:var(--well),0 0 0 3px var(--cobalt)}
+.ans-inp{font-size:24px}
+.dd-pop{border:0;border-radius:var(--radius-md);box-shadow:var(--clay-lg)}
+.dd-o{border-radius:12px}
+.seg{border:0;background:var(--surface-sunk);box-shadow:var(--well);border-radius:var(--radius-pill);padding:5px}
+.seg button{border-radius:var(--radius-pill);font-weight:800}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--cobalt);box-shadow:var(--clay-sm)}
+
+/* ---- чипы вопросов — бусины, прогресс — глиняная трубка в жёлобе ---- */
+.qn{width:38px;min-width:38px;height:38px;padding:0;border:0;border-radius:50%;background:var(--surface);box-shadow:var(--clay-sm);font:800 13px/1 var(--font-display);color:var(--ink-muted)}
+.qn:active{transform:scale(.88,.82)}
+.qn.done{background:var(--violet);color:var(--cobalt-ink);--sh:var(--violet-sh)}
+.qn.ok{background:var(--ok-soft);color:var(--ok);--sh:50,160,110}
+.qn.bad{background:var(--bad-soft);color:var(--bad);--sh:201,58,100}
+.qn.cur{background:linear-gradient(180deg,var(--btn-top),var(--btn-bot));color:var(--on-cobalt);
+  box-shadow:0 10px 16px -8px rgba(98,80,236,.7),inset 0 -4px 8px rgba(40,20,150,.35),inset 0 4px 8px rgba(255,255,255,.45)}
+[data-theme="night"] .qn.done{color:var(--cobalt)}
+.qnav{padding:10px 2px 16px}
+.track{height:14px;border-radius:99px;background:var(--surface-sunk);box-shadow:var(--well)}
+.track>i{border-radius:99px;background:linear-gradient(180deg,var(--btn-top),var(--btn-bot));
+  box-shadow:inset 0 -3px 5px rgba(40,20,150,.35),inset 0 3px 4px rgba(255,255,255,.5)}
+
+/* ---- вкладки: жёлоб с глиняной «таблеткой» ---- */
+.tabs{display:inline-flex;max-width:100%;border:0;background:var(--surface-sunk);box-shadow:var(--well);border-radius:var(--radius-pill);padding:5px;gap:4px}
+.tab{border:0;border-radius:var(--radius-pill);padding:10px 16px;font-weight:800}
+.tab.on{background:var(--surface);color:var(--cobalt);box-shadow:var(--clay-sm)}
+/* статусы — маленькие глиняные капсулы */
+.st-ok,.st-wait,.st-draft,.dl .dl-b,.tbadge,.qtype,.sect>summary .sc,.cp-k,.cp-probe,.sch-ev .sch-k{border:0;border-radius:var(--radius-pill);font-weight:800;
+  box-shadow:inset 0 -2px 4px rgba(0,0,0,.08),inset 0 2px 3px rgba(255,255,255,.7)}
+[data-theme="night"] :is(.st-ok,.st-wait,.st-draft,.dl .dl-b,.tbadge,.qtype,.sch-ev .sch-k){box-shadow:inset 0 -2px 4px rgba(0,0,0,.3),inset 0 2px 3px rgba(255,255,255,.08)}
+
+/* ---- главная: Маша на глиняном постаменте, вокруг плавают фигурки ---- */
+.land h1{font-size:clamp(32px,5.4vw,56px)}
+.mv-mark{display:inline-block;background:var(--butter);color:var(--on-marker);padding:.02em .32em .08em;margin:.08em 0 0;border-radius:.42em;
+  box-shadow:0 12px 20px -10px rgba(210,160,40,.6),inset 0 -5px 10px rgba(210,150,20,.25),inset 0 5px 8px rgba(255,255,255,.9);transform:rotate(-2deg)}
+[data-theme="night"] .mv-mark{background:#ffd766;box-shadow:0 12px 20px -10px rgba(0,0,0,.6),inset 0 -5px 10px rgba(160,110,0,.35),inset 0 5px 8px rgba(255,255,255,.6)}
+.mv-mark.draw{background-size:auto;animation:plop .6s var(--squish) .25s both}
+@keyframes plop{0%{opacity:0;transform:rotate(-2deg) scale(.6)}60%{transform:rotate(-2deg) scale(1.06,.94)}}
+.land-sub{font-size:17px;color:var(--ink-muted)}
+.land-go{height:60px;font-size:17px;border-radius:var(--radius-pill)}
+.land-hero{position:relative;width:min(100%,480px)}
+.land-block{border:0;border-radius:44% 44% var(--radius-lg) var(--radius-lg)/34% 34% var(--radius-lg) var(--radius-lg);
+  background:radial-gradient(120% 90% at 30% 10%,#b3a8ff 0,#8a7bff 45%,#6a58f0 100%);
+  box-shadow:0 40px 70px -30px rgba(98,80,236,.75),inset 0 -24px 40px rgba(40,20,150,.35),inset 0 18px 30px rgba(255,255,255,.4)}
+[data-theme="night"] .land-block{background:radial-gradient(120% 90% at 30% 10%,#7d70f0 0,#5a49d8 50%,#3d2fb0 100%)}
+.land-hero img{border-radius:0 0 var(--radius-lg) var(--radius-lg)}
+.land-tag{left:auto;right:-14px;top:auto;bottom:18%;transform:rotate(-5deg);background:var(--surface);color:var(--ink);padding:12px 18px;
+  border-radius:var(--radius-pill);font:800 14px/1 var(--font-display);text-transform:none;box-shadow:var(--clay)}
+.land-tag svg{display:none}
+/* фигурки из глины — сгенерированы в Higgsfield (img/clay), плавают вокруг Маши */
+.land-hero img.deco{display:block;position:absolute;z-index:1;inset:auto;height:auto;border-radius:0;object-fit:initial;pointer-events:none;animation:bob 5s ease-in-out infinite alternate;
+  filter:drop-shadow(0 16px 14px rgba(var(--sh),.28))}
+[data-theme="night"] .land-hero img.deco{filter:drop-shadow(0 16px 16px rgba(0,0,0,.55))}
+.land-hero img.d1{width:34%;left:-19%;top:26%;rotate:-8deg}
+.land-hero img.d2{width:31%;right:-11%;top:0;animation-delay:-2s;rotate:8deg}
+.land-hero img.d3{width:36%;left:-9%;bottom:-13%;animation-delay:-3.5s;rotate:-6deg}
+@media(max-width:600px){.land-hero img.d1{width:28%;left:-7%}.land-hero img.d2{width:27%;right:-5%}.land-hero img.d3{width:30%;left:-3%}}
+@keyframes bob{to{translate:0 -12px}}
+@media (prefers-reduced-motion:reduce){.land-hero img.deco,.rs::after,body::before,body::after{animation:none}}
+
+/* ---- результат: плитки — цветная глина ---- */
+.rs-big b{font-family:var(--font-display);font-weight:900;font-size:72px;letter-spacing:-.03em;color:var(--cobalt)}
+.rs-big span{font-family:var(--font-display);font-weight:800}
+.rs-tile b,.pstat b{font-family:var(--font-display);font-weight:900}
+.rs-tile:nth-child(1),.pstat:nth-child(1){background:var(--mint);--sh:var(--mint-sh)}
+.rs-tile:nth-child(2),.pstat:nth-child(2){background:var(--peach);--sh:var(--peach-sh)}
+.rs-tile:nth-child(3),.pstat:nth-child(3){background:var(--sky);--sh:var(--sky-sh)}
+[data-theme="night"] :is(.rs-tile,.pstat){--sh:0,0,0}
+
+/* ---- левая панель: отдельная глиняная плита, иконки — цветные плиточки ---- */
+.side{border:0;background:var(--surface);box-shadow:var(--clay-lg);border-radius:0 var(--radius-lg) var(--radius-lg) 0}
+@media(min-width:1000px){
+  .side{top:14px;bottom:14px;left:14px;width:250px;border-radius:var(--radius-lg)}
+  body{padding-left:278px}
+}
+.side-mark{font:900 23px/1.2 var(--font-display);letter-spacing:-.02em}
+.side-mark .mv-mark{font-size:.85em;transform:rotate(-3deg)}
+.side-nav{gap:8px}
+.side-nav button{font-weight:800;border-radius:var(--radius-md);padding:9px 12px;color:var(--ink-muted)}
+.side-nav svg{width:36px;height:36px;padding:7px;border-radius:12px;box-sizing:border-box;background:var(--violet);color:var(--cobalt-ink);
+  box-shadow:0 6px 10px -6px rgba(var(--sh),.5),inset 0 -3px 5px rgba(var(--sh),.12),inset 0 3px 4px var(--hi)}
+.side-nav button:nth-child(3) svg{background:var(--peach);color:#b4502c}
+.side-nav button:nth-child(4) svg{background:var(--mint);color:#1f7f52}
+.side-nav button:nth-child(5) svg{background:var(--sky);color:#2d5fc0}
+.side-nav button:nth-child(6) svg{background:var(--butter);color:#8a6400}
+[data-theme="night"] .side-nav svg{color:var(--ink)!important}
+.side-nav button:hover{background:var(--surface-sunk);color:var(--ink)}
+.side-nav button[aria-current]{background:var(--surface);color:var(--ink);box-shadow:var(--clay-sm)}
+.side-nav button:active{transform:scale(.97,.94)}
+.side-foot{display:none}
+.side-dim{background:rgba(30,20,80,.3)}
+.toast{border-radius:var(--radius-pill);background:var(--ink);color:var(--surface);box-shadow:0 18px 30px -12px rgba(30,20,80,.5),inset 0 4px 8px rgba(255,255,255,.15),inset 0 -4px 8px rgba(0,0,0,.3)}
+
+/* разделы кодификатора в библиотеке тестов — у каждого своя фигурка */
+.sect>summary::before{content:"";flex:none;width:44px;height:44px;margin:-6px 2px -6px 0;background:no-repeat center/contain;
+  filter:drop-shadow(0 6px 6px rgba(var(--sh),.25))}
+.sect[data-k="Человек и общество"]>summary::before{background-image:url(../../img/clay/chelovek.webp)}
+.sect[data-k="Экономика"]>summary::before{background-image:url(../../img/clay/ekonomika.webp)}
+.sect[data-k="Социальные отношения"]>summary::before{background-image:url(../../img/clay/socium.webp)}
+.sect[data-k="Политика"]>summary::before{background-image:url(../../img/clay/politika.webp)}
+.sect[data-k="Право"]>summary::before{background-image:url(../../img/clay/pravo.webp)}
+.sect:not([data-k="Человек и общество"],[data-k="Экономика"],[data-k="Социальные отношения"],[data-k="Политика"],[data-k="Право"])>summary::before{background-image:url(../../img/clay/kurs.webp)}
+.cp-block>summary::before{display:none}
+.sect>summary .st{font-family:var(--font-display);font-weight:800}
+@media (hover:hover){.sect>summary:hover::before{transform:rotate(-8deg) scale(1.08);transition:transform .35s var(--squish)}}
+
+/* результат: рядом с числом — стопка книг-«награда» */
+.rs{position:relative}
+.rs::after{content:"";position:absolute;right:0;top:-6px;width:min(30%,170px);aspect-ratio:360/290;background:url(../../img/clay/kurs.webp) no-repeat center/contain;
+  filter:drop-shadow(0 16px 14px rgba(var(--sh),.3));animation:plop .7s var(--squish) .2s both,bob 5s ease-in-out 1s infinite alternate;pointer-events:none}
+@media(max-width:520px){.rs::after{width:96px;top:0}}
+/* пустые состояния — человечки ждут */
+.empty::before{content:"";display:block;width:120px;aspect-ratio:360/274;margin:0 auto 10px;background:url(../../img/clay/socium.webp) no-repeat center/contain}
+
+/* главная без прокрутки: одна колонка (текст → кнопка → Маша), размер фото подстраивается под высоту окна.
+   Книжку из фигурок убрали — хватает двух. */
+.land-hero img.d3{display:none}
+.land{grid-template-columns:1fr;gap:var(--space-4)}
+.land h1{font-size:clamp(28px,3.6vw,46px);margin-bottom:var(--space-3)}
+@media (min-width:700px){.land h1{white-space:nowrap}}
+.panel:has(.land){padding-top:var(--space-8);padding-bottom:var(--space-6)}
+.wrap:has(.land){padding-bottom:var(--space-3)}
+#foot:empty{display:none}
+.land-sub{max-width:60ch;margin-bottom:var(--space-6)}
+.land-go{width:100%;height:58px}
+.land-hero{margin:var(--space-2) auto 0;width:min(100%,clamp(220px,calc(100dvh - 380px),440px))}
+@media (max-width:699px){
+  .land-sub{font-size:15.5px}
+  .land-hero{width:min(84%,clamp(200px,calc(100dvh - 530px),320px))}
+  .land-tag{right:-18px;font-size:12.5px;padding:10px 14px}
+}

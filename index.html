@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#e8e5f7">
+<meta name="theme-color" content="#eef0f3">
 <title>ЕГЭ с Машей Вайб</title>
 <link rel="icon" type="image/png" sizes="32x32" href="img/icon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
@@ -464,56 +464,6 @@ input[type=file]{display:none}
 @media(min-width:680px){.panel{padding:42px 44px}.qtext{font-size:16.5px}}
 @media(max-width:380px){.panel{padding:28px 22px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
-/* ---- клэйморфизм: пухлые плашки, двойные тени, крупные скругления, Comfortaa ---- */
-body{background:
-  radial-gradient(520px 520px at 6% 4%,var(--glow-1),transparent 62%),
-  radial-gradient(460px 460px at 96% 22%,var(--glow-2),transparent 62%),
-  radial-gradient(620px 620px at 50% 108%,var(--glow-3),transparent 62%),var(--bg);background-attachment:fixed}
-.mark b{font-weight:700;letter-spacing:-.01em}
-.panel{border-color:transparent;box-shadow:var(--shadow-lift)}
-.land h1,.home h1,.cab-h,.allhead h1{font-weight:700;letter-spacing:-.02em}
-.land h1{line-height:1.15}
-/* кнопки — «подушки» с градиентом */
-.btn{background:var(--btn-grad);box-shadow:var(--btn-shadow);border:0;font-weight:700;letter-spacing:.01em;
-  transition:transform .15s ease,box-shadow .2s ease,filter .2s ease}
-.btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
-.btn:active{transform:translateY(2px) scale(.99);box-shadow:var(--shadow-press)}
-.btn.ghost{background:var(--surface);color:var(--ink);border:0;box-shadow:var(--shadow-soft)}
-.btn.ghost:hover{background:var(--surface);color:var(--cobalt)}
-.acct{border-color:transparent;background:var(--surface);box-shadow:var(--shadow-soft)}
-.theme-tog{box-shadow:var(--shadow-soft)}
-/* карточки — выпуклые, без рамок */
-.tcard,.land-card,.dl,.hwbox,.fitem,.rs-tile,.pstat,.creds{border-color:transparent;background:var(--surface);box-shadow:var(--shadow-clay)}
-.tcard:hover,.land-card:hover,.dl:hover,a.fitem:hover{border-color:transparent;background:var(--surface);transform:translateY(-2px)}
-.tlist{gap:14px}
-.sect{border-color:var(--line)}
-.dl.over{border-color:transparent;background:var(--bad-soft)}
-.dl-box{border:0;border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow-clay)}
-.empty,.dl-empty{border-color:var(--line-strong)}
-.vbox{border-color:transparent;box-shadow:var(--shadow-soft)}
-.sent{border-color:transparent;box-shadow:var(--shadow-soft)}
-/* поля и клетки — «вдавленные» */
-.tin,.essay{border-color:transparent;background:var(--surface-sunk);box-shadow:var(--shadow-press)}
-.tin:focus,.essay:focus{border-color:var(--cobalt);box-shadow:var(--shadow-press),0 0 0 3px var(--cobalt-soft)}
-.fdrop{box-shadow:var(--shadow-press)}
-/* чипы вопросов — кругляши */
-.qn{border-radius:var(--radius-pill);border-color:transparent;box-shadow:var(--shadow-soft)}
-.qn.cur{box-shadow:var(--shadow-soft),0 0 0 3px var(--cobalt)}
-.track{height:8px;border-radius:99px;background:var(--surface-sunk);box-shadow:var(--shadow-press)}
-.track>i{border-radius:99px;background:var(--btn-grad)}
-.qnum{font-family:var(--font-display);font-weight:700;letter-spacing:.02em}
-.tabs{border-bottom:0;gap:8px}
-.tab{border:0;border-radius:var(--radius-pill);padding:10px 16px}
-.tab.on{background:var(--surface);color:var(--cobalt);box-shadow:var(--shadow-soft)}
-.st-ok,.st-wait,.st-draft,.dl .dl-b,.tbadge,.qtype,.sect>summary .sc{border-radius:var(--radius-pill)}
-.rs-big b,.rs-tile b,.pstat b,.land-card b{font-weight:700}
-.toast{border-radius:var(--radius-md)}
-.ava,.ava-big{border-color:transparent;box-shadow:var(--shadow-soft)}
-/* главная: фото Маши на пухлой плашке */
-.land-block{border:0;border-radius:var(--radius-lg);background:var(--hero-grad);box-shadow:var(--shadow-clay),inset 0 -10px 22px rgba(30,20,110,.18),inset 0 6px 14px rgba(255,255,255,.35)}
-.land-tag{right:-8px;border-radius:var(--radius-pill);background:var(--surface);color:var(--cobalt);box-shadow:var(--shadow-soft);padding:9px 14px;font-weight:700}
-.land-hero img{border-radius:0 0 calc(var(--radius-lg) - var(--border)) calc(var(--radius-lg) - var(--border))}
-.land-go{font-size:16.5px;padding:19px 20px}
 /* ---- левая панель ---- */
 .side{position:fixed;top:0;left:0;bottom:0;width:264px;z-index:30;display:flex;flex-direction:column;gap:28px;padding:30px 18px;overflow-y:auto;
   background:var(--surface);box-shadow:var(--shadow-lift);border-radius:0 var(--radius-lg) var(--radius-lg) 0;
@@ -549,9 +499,6 @@ body{background:
 /* кнопка «Выйти» — всегда красная, квадрат со скруглёнными углами */
 .logout{color:var(--surface);background:var(--bad);border:1.5px solid var(--bad);border-radius:10px;padding:7px 14px;font:700 13px/1 var(--font-sans);cursor:pointer}
 .logout:hover{filter:brightness(1.08)}
-/* карточки чётче: тонкая рамка поверх клэй-тени, чтобы был виден верхний край */
-.tcard,.pstat,.rs-tile,.dl,.hwbox,.fitem,.creds,.land-card{border:1px solid var(--line-strong)}
-.tcard:hover,.dl:hover,.land-card:hover,a.fitem:hover{border-color:var(--cobalt)}
 /* расписание и файлы */
 .sch-day{margin:22px 0 10px;font:700 13px/1 var(--font-sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .sch-day.today{color:var(--cobalt)}
@@ -561,11 +508,124 @@ body{background:
 .sch-ev .sch-k{flex:none;font-size:11.5px;font-weight:700;border-radius:var(--radius-pill);padding:4px 10px;color:var(--cobalt);background:var(--cobalt-soft)}
 .sch-ev .sch-k.dz{color:var(--bad);background:var(--bad-soft)}.sch-ev .sch-k.ok{color:var(--ok);background:var(--ok-soft)}
 .files-h{margin:22px 0 10px;font:700 15px/1.3 var(--font-display)}
+.fitem a.fnm{color:inherit;text-decoration:none}.fitem a.fnm:hover{color:var(--accent);text-decoration:underline}
+#fldrop{margin-bottom:4px}
+
+/* ================= общий слой для всех стилей: движение (Emil Kowalski), браузерные поверхности, раскладка главной ================= */
+::selection{background:var(--marker);color:var(--on-marker)}
+html{scrollbar-color:var(--line-strong) transparent;accent-color:var(--cobalt)}
+input,textarea{caret-color:var(--cobalt)}
+a{text-underline-offset:.2em;text-decoration-thickness:1px}
+:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+h1,h2,h3,.cab-h,.allhead h1{text-wrap:balance}
+.qtext,.p2text,.land-sub,.cab-sub,.gsub{text-wrap:pretty}
+b,.pstat b,.rs-tile b,.cp-d b,.sumline b{font-variant-numeric:tabular-nums}
+.fade{animation:enter var(--dur-enter,.42s) var(--ease-out) both}
+@keyframes enter{from{opacity:0;transform:translateY(8px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+/* нажатие: всё, что нажимается, чуть проседает */
+.btn{transition:transform var(--dur-press) var(--ease-out),box-shadow var(--dur-ui) ease,background-color var(--dur-ui) ease,color var(--dur-ui) ease,border-color var(--dur-ui) ease}
+.btn:active{transform:scale(.97)}
+.btn[disabled],.btn:disabled{opacity:.45;cursor:default;transform:none}
+.linkbtn:active,.etog:active{transform:scale(.97)}
+.acct:active,.theme-tog:active,.burger:active,.ava:active{transform:scale(.94)}
+.logout{transition:transform var(--dur-press) var(--ease-out)}.logout:active{transform:scale(.96)}
+.tcard,.land-card,.dl,.sch-ev,a.fitem{transition:border-color var(--dur-ui) ease,box-shadow var(--dur-ui) ease,background-color var(--dur-ui) ease,transform var(--dur-press) var(--ease-out)}
+.tcard:active,.dl:active,.land-card:active,.sch-ev:active,a.fitem:active{transform:scale(.99)}
+.qn{transition:border-color var(--dur-ui) ease,color var(--dur-ui) ease,background-color var(--dur-ui) ease,box-shadow var(--dur-ui) ease,transform var(--dur-press) var(--ease-out)}
+.qn:active{transform:scale(.92)}
+.side-nav button{transition:background-color var(--dur-ui) ease,color var(--dur-ui) ease,transform var(--dur-press) var(--ease-out)}
+.side-nav button:active{transform:scale(.97)}
+.tgo{transition:transform var(--dur-ui) var(--ease-out),color var(--dur-ui) ease}
+@media (hover:hover) and (pointer:fine){.tcard:hover .tgo{transform:translateX(3px);color:var(--cobalt)}}
+.track>i{transition:width .5s var(--ease-out)}
+.verdict.show{animation:verdictIn .32s var(--ease-out)}
+@keyframes verdictIn{from{opacity:0;transform:translateY(4px) scale(.98)}}
+.dd-pop{transform-origin:top left;animation:ddIn .18s var(--ease-out)}
+.bank-f .dd:last-child .dd-pop{transform-origin:top right}
+@keyframes ddIn{from{opacity:0;transform:scale(.97) translateY(-4px)}}
+/* списки появляются лесенкой (40 мс) — только при открытии экрана */
+.fade :is(.tlist,.dl-list,.cp-list,.flist,.rs-tiles,.pstats,.stable)>*{animation:rise .36s var(--ease-out) both}
+.fade :is(.tlist,.dl-list,.cp-list,.flist,.rs-tiles,.pstats,.stable)>:nth-child(2){animation-delay:40ms}
+.fade :is(.tlist,.dl-list,.cp-list,.flist,.rs-tiles,.pstats,.stable)>:nth-child(3){animation-delay:80ms}
+.fade :is(.tlist,.dl-list,.cp-list,.flist,.rs-tiles,.pstats,.stable)>:nth-child(4){animation-delay:120ms}
+.fade :is(.tlist,.dl-list,.cp-list,.flist,.rs-tiles,.pstats,.stable)>:nth-child(5){animation-delay:160ms}
+.fade :is(.tlist,.dl-list,.cp-list,.flist,.rs-tiles,.pstats,.stable)>:nth-child(n+6){animation-delay:200ms}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}}
+.side{transition:transform .42s var(--ease-drawer)}
+.side-dim{backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.side-foot{margin-top:auto;padding:0 10px;font:700 21px/1.15 var(--font-hand);color:var(--ink-muted);transform:rotate(-3deg);transform-origin:left}
+.toast{transition:transform .45s var(--ease-drawer),opacity .25s ease,visibility .45s}
+/* маркер и рукописные пометки */
+.mv-mark{background:linear-gradient(transparent 12%,var(--marker) 12%,var(--marker) 88%,transparent 88%) no-repeat 0 0/100% 100%;
+  color:var(--on-marker);padding:0 .12em;margin:0 -.06em;border-radius:.12em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.mv-mark.draw{background-size:0 100%;animation:markerDraw .7s var(--ease-out) .25s forwards}
+@keyframes markerDraw{to{background-size:100% 100%}}
+.hand{font-family:var(--font-hand);font-weight:700;letter-spacing:0}
+/* главная: текст слева, Маша справа */
+.land{text-align:left;padding:0;display:grid;gap:var(--space-8);align-items:center}
+.land h1{font-size:clamp(30px,5.4vw,52px);margin:0 0 var(--space-4)}
+.land-sub{margin:0 0 var(--space-8);font-size:16px;max-width:36ch}
+.land-go{width:auto;min-width:240px;padding:0 var(--space-8);height:56px;margin:0}
+.land-hero{margin:0 auto;width:min(100%,420px)}
+.land-hero img{animation:heroIn .8s var(--ease-out) .1s both}
+@keyframes heroIn{from{opacity:0;transform:translateY(16px)}}
+.land-tag{position:absolute;z-index:2;left:-6px;right:auto;top:18%;bottom:auto;background:none;box-shadow:none;padding:0;color:var(--ink);
+  font:700 26px/1 var(--font-hand);text-transform:none;letter-spacing:0;transform:rotate(-7deg);display:flex;flex-direction:column;align-items:flex-start;gap:2px;border-radius:0}
+.land-tag svg{width:58px;height:40px;margin-left:34px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:120;stroke-dashoffset:120;animation:drawLine .7s var(--ease-out) .9s forwards}
+@keyframes drawLine{to{stroke-dashoffset:0}}
+#landextra{grid-column:1/-1;margin-top:0}
+.deco{display:none}
+@media (min-width:1180px){.land{grid-template-columns:1.05fr .95fr;gap:var(--space-12)}.land-hero{margin:0}}
+@media (max-width:1179px){.land-go{width:100%}.land-tag{font-size:22px;left:0}}
+@media(min-width:1000px){.land{max-width:1040px;margin:0 auto}}
+@media (prefers-reduced-motion:reduce){.mv-mark.draw{background-size:100% 100%}.land-tag svg{stroke-dashoffset:0}}
+/* переключатель стилей внизу экрана */
+.sty{position:fixed;z-index:50;right:16px;bottom:16px;display:flex;align-items:center;gap:4px;padding:5px;max-width:calc(100vw - 32px);overflow-x:auto;scrollbar-width:none;
+  background:rgba(20,22,30,.86);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);border-radius:14px;
+  box-shadow:0 12px 32px -8px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.08);font:500 13px/1 "Onest",system-ui,sans-serif}
+.sty::-webkit-scrollbar{display:none}
+.sty span{color:rgba(255,255,255,.55);padding:0 8px 0 6px;white-space:nowrap}
+.sty button{border:0;background:none;color:rgba(255,255,255,.8);font:inherit;padding:9px 12px;border-radius:10px;cursor:pointer;white-space:nowrap;
+  transition:background-color .2s ease,color .2s ease,transform .14s var(--ease-out)}
+@media (hover:hover){.sty button:hover{color:#fff;background:rgba(255,255,255,.08)}}
+.sty button:active{transform:scale(.95)}
+.sty button[aria-pressed="true"]{background:#fff;color:#14161c;font-weight:600}
+@media(max-width:640px){.sty{left:8px;right:8px;bottom:8px}}
 </style>
+<!-- стили оформления: включён один, переключаются панелью внизу экрана -->
+<link rel="stylesheet" href="design/styles/clay2.css" data-sty="clay2" data-t="Клэй 2.0">
+<link rel="stylesheet" href="design/styles/air.css" data-sty="air" data-t="Воздух">
+<script>
+/* выбор стиля: ?style=… или сохранённый в браузере; по умолчанию — «Клэй 2.0» */
+(function(){
+  const DEF='clay2';
+  const links=[...document.querySelectorAll('link[data-sty]')];
+  function apply(k){
+    if(!links.some(l=>l.dataset.sty===k)) k=DEF;
+    links.forEach(l=>{ l.disabled=l.dataset.sty!==k; });
+    document.documentElement.dataset.style=k;
+    try{localStorage.setItem('tr_style',k)}catch(e){}
+    document.querySelectorAll('.sty [data-k]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===k));
+    return k;
+  }
+  const names=links.map(l=>[l.dataset.sty,l.dataset.t]);
+  let k=DEF;
+  try{k=new URLSearchParams(location.search).get('style')||localStorage.getItem('tr_style')||k}catch(e){}
+  apply(k);
+  window.setStyle=k2=>{ const r=apply(k2); const m=document.getElementById('masha'); if(m&&window.mashaSrc) m.src=mashaSrc(); const a=document.getElementById('app'); if(a){a.classList.remove('fade');void a.offsetWidth;a.classList.add('fade')} return r; };
+  document.addEventListener('DOMContentLoaded',()=>{
+    const bar=document.createElement('div'); bar.className='sty'; bar.setAttribute('role','toolbar'); bar.setAttribute('aria-label','Стиль оформления');
+    bar.innerHTML='<span>Стиль</span>'+names.map(([key,t])=>`<button type="button" data-k="${key}" aria-pressed="${key===document.documentElement.dataset.style}">${t}</button>`).join('');
+    bar.addEventListener('click',e=>{const b=e.target.closest('[data-k]'); if(b) setStyle(b.dataset.k)});
+    document.body.appendChild(bar);
+  });
+})();
+</script>
 </head>
 <body>
 <aside class="side" id="side" aria-label="Разделы курса">
-  <div class="side-mark" onclick="goLessons()">ЕГЭ с Машей Вайб</div>
+  <div class="side-mark" onclick="goLessons()">ЕГЭ с Машей <span class="mv-mark">Вайб</span></div>
   <nav class="side-nav">
       <button data-nav="check" onclick="navGo('check')" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.3 12.4l2.5 2.5 4.9-5.3"/></svg>Проверка</button>
       <button data-nav="lessons" onclick="navGo('lessons')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6C6.3 4.8 9.2 4.9 12 6.6c2.8-1.7 5.7-1.8 8.5-.6v12.3c-2.8-1.2-5.7-1.1-8.5.6-2.8-1.7-5.7-1.8-8.5-.6z"/><path d="M12 6.6v12.3"/></svg>Уроки</button>
@@ -573,6 +633,7 @@ body{background:
       <button data-nav="bank" onclick="navGo('bank')"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.2" y="3.8" width="15.6" height="5.4" rx="2"/><rect x="4.2" y="10.6" width="15.6" height="5.4" rx="2"/><path d="M6.5 19.8h11"/></svg>Банк заданий</button>
       <button data-nav="files" onclick="navGo('files')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.8 7.6a2.6 2.6 0 0 1 2.6-2.6h3.7l2.1 2.2h5.4a2.6 2.6 0 0 1 2.6 2.6v6.8a2.6 2.6 0 0 1-2.6 2.6H6.4a2.6 2.6 0 0 1-2.6-2.6z"/></svg>Полезные файлы</button>
   </nav>
+  <div class="side-foot" aria-hidden="true">до сотки —<br>шаг за шагом</div>
 </aside>
 <div class="side-dim" onclick="sideToggle(false)"></div>
 <div class="wrap">
@@ -728,6 +789,8 @@ function sectToggle(el){
   el.open?o.add(k):o.delete(k);
   try{localStorage.setItem('tr_open',JSON.stringify([...o]))}catch(e){}
 }
+/* фото Маши: в «Воздухе» и «Клэй 2.0» — версия после апскейла (img/masha-hd.webp, 1200px) */
+function mashaSrc(){ return ['air','clay2'].includes(document.documentElement.dataset.style) ? 'img/masha-hd.webp' : 'img/masha.webp'; }
 /* главная: приветствие и вход в ДЗ */
 function home(){
   if(window.setNav) setNav('');
@@ -737,14 +800,17 @@ function home(){
   app.className='panel fade';
   app.innerHTML=`
     <div class="land">
-      <h1>Годовой курс Маши Вайб</h1>
-      <p class="land-sub">Котенок, рада тебя приветствовать на своей платформе! Готов идти к заветной сотке?</p>
+      <div class="land-copy">
+        <h1>Годовой курс <span class="mv-mark draw">Маши&nbsp;Вайб</span></h1>
+        <p class="land-sub">Котенок, рада тебя приветствовать на своей платформе! Готов идти к заветной сотке?</p>
+        <button class="btn land-go" onclick="goCourse()">Перейти в курс</button>
+      </div>
       <figure class="land-hero">
         <div class="land-block" aria-hidden="true"></div>
-        <img src="img/masha.webp" width="800" height="800" alt="Маша Вайб" decoding="async" fetchpriority="high">
-        <figcaption class="land-tag">ЕГЭ · обществознание</figcaption>
+        <img id="masha" src="${mashaSrc()}" width="800" height="800" alt="Маша Вайб" decoding="async" fetchpriority="high">
+        <img class="deco d1" src="img/clay/pravo.webp" width="360" height="357" alt="" aria-hidden="true" decoding="async"><img class="deco d2" src="img/clay/ekonomika.webp" width="344" height="360" alt="" aria-hidden="true" decoding="async"><img class="deco d3" src="img/clay/kurs.webp" width="360" height="290" alt="" aria-hidden="true" decoding="async">
+        <figcaption class="land-tag">ЕГЭ по обществу<svg viewBox="0 0 58 40" aria-hidden="true"><path d="M4 4c10 18 26 27 48 28"/><path d="M42 25l10 7-11 5"/></svg></figcaption>
       </figure>
-      <button class="btn land-go" onclick="goCourse()">Перейти в курс</button>
       <div id="landextra"></div>
     </div>`;
   if(window.landExtra) landExtra();
@@ -1028,6 +1094,17 @@ function resultActions(wrong,withAll){
 function afterResult(){
   if(window.renderSendBox) renderSendBox();
   if(window.resultDelta) resultDelta();
+  countUp();
+}
+/* большое число результата набегает от нуля — один «момент» экрана; без анимации при reduced-motion */
+function countUp(){
+  const b=document.querySelector('.rs-big b'); if(!b) return;
+  const to=parseInt(b.textContent,10); if(!(to>0)) return;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const t0=performance.now(), dur=Math.min(900,300+to*40);
+  b.style.minWidth=b.offsetWidth+'px';
+  (function step(t){ const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,4);
+    b.textContent=Math.round(to*e); if(k<1) requestAnimationFrame(step); })(t0);
 }
 
 /* full completion */

@@ -1,0 +1,149 @@
+/* Стиль «Воздух»: минимализм в духе Apple — серый фон, белые карточки без рамок, матовое стекло у панели,
+   синие кнопки-капсулы, много воздуха, Inter Tight / Golos Text. */
+@import url("https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Caveat:wght@700&display=swap");
+
+:root{
+  --paper:#f5f5f7; --surface:#ffffff; --surface-sunk:#ececf0; --line:rgba(0,0,0,.07); --line-strong:rgba(0,0,0,.16);
+  --glass:rgba(255,255,255,.7);
+  --ink:#1d1d1f; --ink-muted:#6e6e73;
+  --cobalt:#0071e3; --cobalt-ink:#0062c4; --on-cobalt:#ffffff; --cobalt-soft:#e6f0fc;
+  --marker:#ffd60a; --on-marker:#1d1d1f;
+  --ok:#1f7f38; --ok-soft:#e5f5ea; --bad:#d70015; --bad-soft:#fde7e9;
+  --font-display:"Inter Tight",-apple-system,system-ui,sans-serif; --font-sans:"Golos Text",-apple-system,system-ui,sans-serif;
+  --radius-cell:10px; --radius-md:14px; --radius-lg:22px;
+  --shadow-soft:0 1px 3px rgba(0,0,0,.06);
+  --shadow-clay:0 2px 6px rgba(0,0,0,.04),0 10px 30px -10px rgba(0,0,0,.1);
+  --shadow-lift:0 20px 60px -20px rgba(0,0,0,.18);
+  --shadow-press:none;
+}
+[data-theme="night"]{
+  --paper:#0b0b0c; --surface:#1c1c1e; --surface-sunk:#2c2c2e; --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.2);
+  --glass:rgba(28,28,30,.66);
+  --ink:#f5f5f7; --ink-muted:#a1a1a6;
+  --cobalt:#2997ff; --cobalt-ink:#0a84ff; --on-cobalt:#ffffff; --cobalt-soft:#0e2a47;
+  --marker:#ffd60a; --on-marker:#1d1d1f;
+  --ok:#30d158; --ok-soft:#10301a; --bad:#ff453a; --bad-soft:#3a1412;
+  --shadow-clay:0 1px 0 rgba(255,255,255,.04) inset;
+}
+[data-theme="night"] .btn:not(.ghost){color:#fff}
+body{background:var(--paper);letter-spacing:-.005em}
+/* панель растворяется: контент лежит прямо на сером фоне */
+.panel{background:transparent;border:0;box-shadow:none;padding-left:0;padding-right:0}
+@media(min-width:1000px){.panel{padding:40px 48px}}
+.land h1,.home h1,.cab-h,.allhead h1{font-family:var(--font-display);font-weight:700;letter-spacing:-.035em;line-height:1.05}
+.cab-h,.allhead h1{font-size:clamp(28px,4vw,40px)}
+.cab-h3,.rs-h,.dl-h,.review h3,.sch-day{font:600 20px/1.2 var(--font-display);letter-spacing:-.02em;text-transform:none;color:var(--ink);margin-top:36px}
+.qnum{font-family:var(--font-display);letter-spacing:0;text-transform:none;font-size:14px;font-weight:600}
+
+/* кнопки-капсулы */
+.btn{background:var(--cobalt);color:var(--on-cobalt);border:0;border-radius:980px;box-shadow:none;font:500 16px/1 var(--font-sans);letter-spacing:-.01em}
+.btn:hover{filter:none}
+@media (hover:hover) and (pointer:fine){.btn:not(.ghost):hover{background:var(--cobalt-ink)}.btn.ghost:hover{background:var(--surface-sunk)}}
+.btn.ghost{background:var(--surface);color:var(--cobalt);border:0;box-shadow:var(--shadow-soft)}
+.acct,.theme-tog,.burger,.ava{background:var(--glass);border:0;box-shadow:var(--shadow-soft);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:var(--ink)}
+.logout{border-radius:980px;border:0}
+
+/* карточки: белые, без рамок, мягкая тень, крупное скругление */
+.tcard,.land-card,.dl,.hwbox,.fitem,.rs-tile,.pstat,.creds,.sch-ev,.cp-ev{background:var(--surface);border:0;box-shadow:var(--shadow-clay);border-radius:var(--radius-lg)}
+.tcard{padding:22px 24px}
+@media (hover:hover) and (pointer:fine){
+  .tcard:hover,.land-card:hover,.dl:hover,a.fitem:hover,.sch-ev:hover{background:var(--surface);box-shadow:var(--shadow-lift);transform:scale(1.01)}
+}
+.tlist{gap:12px}
+.tgo{color:var(--ink-muted)}
+.dl.over{background:var(--bad-soft)}
+.dl-box{border:0;border-radius:var(--radius-lg);background:var(--surface-sunk);box-shadow:none}
+[data-theme="night"] .dl-box{background:#141416}
+.cp-next,.cal{border:0;box-shadow:var(--shadow-clay);border-radius:var(--radius-lg)}
+.vbox,.sent{box-shadow:none;border:0;border-radius:var(--radius-md)}
+.pstat b,.rs-tile b{font-family:var(--font-display);font-weight:700;letter-spacing:-.03em;font-size:30px}
+
+/* поля: серые, без рамок */
+.tin,.essay,.dd-btn{background:var(--surface-sunk);border:1px solid transparent;box-shadow:none;border-radius:var(--radius-md)}
+.tin:focus,.essay:focus,.dd-btn[aria-expanded="true"]{background:var(--surface);border-color:var(--cobalt);box-shadow:0 0 0 4px var(--cobalt-soft)}
+.dd-pop{background:var(--glass);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:0;box-shadow:var(--shadow-lift);border-radius:var(--radius-md)}
+.seg{background:var(--surface-sunk);border:0;box-shadow:none;border-radius:10px;padding:2px}
+.seg button{border-radius:8px;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+
+/* чипы — круглые, как точки страниц */
+.qn{border-radius:50%;border:0;background:var(--surface);box-shadow:var(--shadow-soft);width:36px;min-width:36px;height:36px;padding:0}
+.qn.cur{background:var(--cobalt);color:var(--on-cobalt);box-shadow:none}
+.qn.done{background:var(--cobalt-soft);color:var(--cobalt)}
+.track{height:4px;border-radius:99px;background:var(--surface-sunk);box-shadow:none}
+.track>i{border-radius:99px;background:var(--cobalt)}
+
+/* вкладки — сегментированный контрол */
+.tabs{display:inline-flex;max-width:100%;border:0;background:var(--surface-sunk);border-radius:10px;padding:2px;gap:0}
+.tab{border:0;border-radius:8px;padding:9px 16px;font-weight:500}
+.tab.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.st-ok,.st-wait,.st-draft,.dl .dl-b,.tbadge,.qtype,.sect>summary .sc,.cp-k,.cp-probe,.sch-ev .sch-k{border-radius:99px;font-weight:500}
+
+/* главная: по центру, огромный заголовок, фото в мягкой «витрине» */
+.land{display:flex;flex-direction:column;align-items:center;text-align:center;gap:0}
+.land-copy{display:flex;flex-direction:column;align-items:center}
+.land h1{font-size:clamp(38px,7vw,80px);margin-bottom:18px}
+.mv-mark{background:none;color:var(--cobalt);padding:0;margin:0}
+.land-sub{font-size:19px;max-width:32ch;color:var(--ink-muted);margin-bottom:28px}
+.land-go{min-width:200px;height:50px;padding:0 28px}
+.land-hero{margin:48px auto 0;width:min(100%,460px)}
+.land-block{border:0;border-radius:36px;background:linear-gradient(180deg,var(--surface) 0%,var(--surface-sunk) 100%);box-shadow:var(--shadow-clay)}
+.land-hero img{border-radius:0 0 36px 36px}
+.land-tag{left:16px;top:auto;bottom:16px;transform:none;font:500 13px/1 var(--font-sans);color:var(--ink);background:var(--glass);
+  backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);padding:10px 14px;border-radius:99px;box-shadow:var(--shadow-soft)}
+.land-tag svg{display:none}
+#landextra{width:100%;max-width:640px;margin:36px auto 0;text-align:left}
+
+.rs-big b{font-family:var(--font-display);font-weight:700;font-size:80px;letter-spacing:-.05em}
+
+/* левая панель — матовое стекло */
+.side{background:var(--glass);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);
+  box-shadow:none;border-right:1px solid var(--line);border-radius:0}
+.side-mark{font:700 21px/1.2 var(--font-display);letter-spacing:-.03em}
+.side-mark .mv-mark{color:var(--ink)}
+.side-nav button{font-weight:500;border-radius:10px;padding:10px 12px}
+.side-nav button[aria-current]{background:var(--cobalt);color:#fff;box-shadow:none}
+.side-foot{display:none}
+.toast{border-radius:99px;background:var(--glass);color:var(--ink);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+
+/* главная без прокрутки: заголовок в одну строку, фото подстраивается под высоту окна */
+.land h1{font-size:clamp(34px,4.6vw,64px);margin-bottom:12px}
+@media (min-width:700px){.land h1{white-space:nowrap}}
+.land-sub{font-size:17px;max-width:44ch;margin-bottom:20px}
+.land-hero{margin:-30px auto 0;width:min(100%,clamp(240px,calc(100dvh - 300px),560px))}
+.panel:has(.land){padding-top:16px;padding-bottom:8px}
+.wrap:has(.land){padding-bottom:12px}
+#foot:empty{display:none}
+@media (max-width:699px){
+  .land h1{font-size:clamp(32px,9vw,40px)}
+  .land-sub{font-size:16px}
+  .land-hero{margin-top:-18px;width:min(96%,clamp(220px,calc(100dvh - 450px),380px))}
+}
+
+/* шрифт крупнее по всему сайту */
+body{font-size:17px}
+.land-sub{font-size:19px}
+.qtext,.p2text{font-size:18.5px;line-height:1.65}
+.qtext .opt{margin-top:13px}
+.qtext .hdr{font-size:13.5px}
+.qtext .ins,.epoint,.uans,.essay{font-size:16.5px}
+.tname{font-size:18px}
+.tmeta,.dl .dl-t span,.sch-ev span,.cp-d span,.fitem .fsz,.fitem .fst,.rs-tile span,.pstat span,.resnote,.pnote,.note,.hw-dl{font-size:14.5px}
+.dl .dl-t b,.sch-ev b,.fitem,.cp-t{font-size:16.5px}
+.cab-sub,.allsub,.gsub,.rs-name,.rs-delta,.meta,.fbar,.bank-sum{font-size:16px}
+.cab .lab,.az .lab,.lab{font-size:14.5px}
+.btn{font-size:17px}
+.linkbtn,.etog,.linkfin{font-size:15.5px}
+.side-nav button{font-size:16.5px}
+.side-mark{font-size:23px}
+.acct{font-size:14px}
+.tin,.dd-btn{font-size:17px}
+.dd-o{font-size:15.5px}
+.qn{font-size:14.5px}
+.tab,.seg button{font-size:15.5px}
+.st-ok,.st-wait,.st-draft,.dl .dl-b,.tbadge,.qtype,.sch-ev .sch-k,.cp-k,.cp-probe{font-size:13px}
+.cab-h3,.rs-h,.dl-h,.review h3,.sch-day{font-size:22px}
+.vbox .vhead{font-size:17px}.vbox .vline{font-size:15.5px}
+.rev,.rs-w,.mine,.aans,.cline{font-size:16px}
+.toast{font-size:15px}
+@media (max-width:699px){.land-sub{font-size:17px}.qtext,.p2text{font-size:17.5px}}
