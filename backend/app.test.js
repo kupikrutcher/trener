@@ -108,6 +108,20 @@ function fakeStore() {
 }
 const callS = (db, store, req) => handle(req, db, env, store);
 
+test('урок: номер блока', async () => {
+  const { db, T } = await world();
+  const st = fakeStore();
+  const a = (await callS(db, st, { action: 'lesson_save', token: T, title: 'Биосоциальная сущность', block: 1, published: true })).lesson;
+  assert.equal(a.block, 1);
+  const b = (await callS(db, st, { action: 'lesson_save', token: T, title: 'Без блока', published: true })).lesson;
+  assert.equal(b.block, 0);
+  await callS(db, st, { action: 'lesson_save', token: T, id: a.id, title: a.title, block: '3', published: true });
+  assert.equal((await callS(db, st, { action: 'lesson_get', token: T, id: a.id })).lesson.block, 3);
+  for (const bad of [-1, 100, 1.5, 'два']) await rejects(callS(db, st, { action: 'lesson_save', token: T, title: 'x', block: bad }), 400);
+  const list = (await callS(db, st, { action: 'lessons_list', token: T })).lessons;
+  assert.deepEqual(list.map((l) => l.block).sort(), [0, 3]);
+});
+
 test('видео: YouTube, Rutube, VK, Kinescope', () => {
   assert.equal(videoEmbed('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10'), 'https://www.youtube.com/embed/dQw4w9WgXcQ');
   assert.equal(videoEmbed('https://youtu.be/dQw4w9WgXcQ'), 'https://www.youtube.com/embed/dQw4w9WgXcQ');

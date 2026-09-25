@@ -24,7 +24,7 @@ async function seedDemo() {
     ['Рынок труда', 'Рынок труда, безработица', -10],
   ];
   for (const [i, [title, test_name, days]] of lessons.entries())
-    await db.putLesson({ id: 'demo' + i, title, video: '', test_name, deadline: iso(now + days * D), files: [], published: true,
+    await db.putLesson({ id: 'demo' + i, title, video: '', test_name, deadline: iso(now + days * D), files: [], published: true, block: i < 3 ? 1 : 2,
       created_at: iso(now - (10 - i) * D), updated_at: iso(now) });
   // проверенные работы ученицы — для графика прогресса и «Проверки»
   const past = [['Инфляция', 7, 14, 3, 8], ['Рынок труда, безработица', 9, 15, 5, 8], ['Налоги', 11, 16, 6, 8], ['Выборы', 12, 15, null, 8]];

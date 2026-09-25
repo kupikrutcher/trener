@@ -894,6 +894,20 @@ function videoEmbed(url){
 const videoFrame = src => `<div class="vwrap"><iframe src="${esc(src)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock; gyroscope; accelerometer; clipboard-write" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
 
 let curLesson=null;
+/* уроки по блокам курса: блоки по номеру, внутри — от первого урока к последнему; без номера блока — в конце */
+function byCreated(a,b){ return a.created_at.localeCompare(b.created_at); }
+function blockGroups(lessons){
+  const m=new Map();
+  [...lessons].sort(byCreated).forEach(l=>{ const k=l.block||0; if(!m.has(k)) m.set(k,[]); m.get(k).push(l); });
+  return [...m.entries()].sort((a,b)=>(a[0]||1e3)-(b[0]||1e3));
+}
+function lessonsWord(n){ const a=n%10,b=n%100; return n+' '+(a===1&&b!==11?'урок':(a>=2&&a<=4&&(b<10||b>=20)?'урока':'уроков')); }
+/* какие блоки ученик раскрыл — помним между заходами */
+function openBlocks(){ try{ return JSON.parse(localStorage.getItem('tr_lblocks')||'[]'); }catch(e){ return []; } }
+function blockToggle(el){
+  const o=new Set(openBlocks()), k=+el.dataset.b; el.open?o.add(k):o.delete(k);
+  try{ localStorage.setItem('tr_lblocks',JSON.stringify([...o])); }catch(e){}
+}
 async function lessonsList(){
   setUrl('lessons');
   cabShow(`<div class="cab">
@@ -904,12 +918,20 @@ async function lessonsList(){
   catch(e){ const b=$('#llist'); if(b) b.textContent='Не удалось загрузить: '+e.message; return; }
   const box=$('#llist'); if(!box) return;
   box.className='';
-  box.innerHTML = lessons.length ? `<div class="tlist">${lessons.map(l=>`
+  const open=openBlocks();
+  const row=l=>`
     <div class="tcard" onclick="lessonView('${esc(l.id)}')">
       <div class="tinfo"><div class="tname">${esc(l.title)}</div>
         <div class="tmeta">${fmtDay(l.created_at)}${l.test_name?' · ДЗ: '+esc(l.test_name):''}${l.deadline&&l.test_name?' · до '+fmtDeadline(l.deadline):''}${l.files_n?' · файлов: '+l.files_n:''}</div></div>
       ${lessonDone(l)?'<span class="st-ok">сдано</span>':(l.deadline&&l.test_name&&+new Date(l.deadline)<Date.now()?'<span class="st-wait" style="color:var(--bad);background:var(--bad-soft)">просрочено</span>':'')}<span class="tgo">→</span>
-    </div>`).join('')}</div>` : `<div class="empty">Уроков пока нет.<br>Когда учитель опубликует урок, он появится здесь.</div>`;
+    </div>`;
+  box.innerHTML = lessons.length ? blockGroups(lessons).map(([b,list])=>{
+    const hw=list.filter(l=>l.test_name), done=hw.filter(lessonDone).length;
+    return `<details class="lblock" data-b="${b}" ontoggle="blockToggle(this)"${open.includes(b)?' open':''}>
+      <summary><span class="lb-t">${b?'Уроки '+b+' блока':'Другие уроки'}</span>
+        <span class="lb-m">${lessonsWord(list.length)}${hw.length?' · сдано '+done+' из '+hw.length:''}</span><span class="sa" aria-hidden="true">›</span></summary>
+      <div class="tlist">${list.map(row).join('')}</div></details>`; }).join('')
+    : `<div class="empty">Уроков пока нет.<br>Когда учитель опубликует урок, он появится здесь.</div>`;
   box.innerHTML += `<div class="dl-box">${deadlinesHTML(lessons)}</div>`;
 }
 async function lessonView(id){
@@ -924,7 +946,7 @@ async function lessonView(id){
   cabShow(`<div class="cab">
     <button class="linkbtn back" onclick="${teacher?"cabTeacher('lessons')":'lessonsList()'}">← ${teacher?'К урокам':'Все уроки'}</button>
     <h2 class="cab-h" style="margin-top:10px">${esc(l.title)}</h2>
-    <p class="cab-sub">${fmtDay(l.created_at)}${teacher&&!l.published?' · черновик, ученики не видят':''}</p>
+    <p class="cab-sub">${l.block?'Блок '+l.block+' · ':''}${fmtDay(l.created_at)}${teacher&&!l.published?' · черновик, ученики не видят':''}</p>
     ${l.embed?videoFrame(l.embed):''}
     ${t?`<div class="hwbox"><div class="lab">Домашнее задание</div><div class="tname">${esc(t.name)}</div>
       <div class="tmeta" style="margin:-6px 0 12px">${metaLine(t.questions)}${done?' · уже сдано':''}</div>
@@ -944,23 +966,23 @@ async function teacherLessons(){
   const box=$('#tbody'); if(!box) return;
   box.className='';
   box.innerHTML=`<button class="btn" style="margin-bottom:18px" onclick="lessonEdit(null)">Создать урок</button>
-    ${lessons.length?`<div class="tlist">${lessons.map(l=>`
+    ${lessons.length?`<div class="tlist">${blockGroups(lessons).flatMap(([,list])=>list).map(l=>`
       <div class="tcard" onclick="lessonView('${esc(l.id)}')">
         <div class="tinfo"><div class="tname">${esc(l.title)}</div>
-          <div class="tmeta">${fmtDay(l.created_at)}${l.test_name?' · ДЗ: '+esc(l.test_name):' · без ДЗ'}${l.deadline?' · до '+fmtDeadline(l.deadline):''}${l.embed?' · видео':''}${l.files_n?' · файлов: '+l.files_n:''}</div></div>
+          <div class="tmeta">${l.block?'Блок '+l.block+' · ':'без блока · '}${fmtDay(l.created_at)}${l.test_name?' · ДЗ: '+esc(l.test_name):' · без ДЗ'}${l.deadline?' · до '+fmtDeadline(l.deadline):''}${l.embed?' · видео':''}${l.files_n?' · файлов: '+l.files_n:''}</div></div>
         ${l.published?'<span class="st-ok">опубликован</span>':'<span class="st-draft">черновик</span>'}<span class="tgo">→</span>
       </div>`).join('')}</div>`:`<div class="empty">Уроков пока нет</div>`}`;
 }
 let editL=null;
 async function lessonEdit(id){
   setUrl(id?'lessons/'+encodeURIComponent(id)+'/edit':'lessons/new');
-  editL={ id:null, title:'', video:'', test_name:'', deadline:'', files:[], published:false };
+  editL={ id:null, title:'', video:'', test_name:'', deadline:'', files:[], published:false, block:0 };
   // без списка заданий нельзя: при сохранении выбранное ДЗ потерялось бы
   try{ await loadTests(); }catch(e){ toast(e.message); return cabTeacher('lessons'); }
   if(id){
     cabShow(`<div class="cab-load">Загружаем урок…</div>`);
     try{ const l=(await api('lesson_get',{ id })).lesson; editL={ id:l.id, title:l.title, video:l.video||'', test_name:l.test_name||'',
-      deadline:l.deadline||'', files:l.files.map(f=>({ key:f.key, name:f.name, size:f.size })), published:l.published }; }
+      deadline:l.deadline||'', files:l.files.map(f=>({ key:f.key, name:f.name, size:f.size })), published:l.published, block:l.block||0 }; }
     catch(e){ toast(e.message); return cabTeacher('lessons'); }
   }
   const opts=groupTests().map(([title,list])=>`<optgroup label="${esc(title)}">${list.map(t=>
@@ -970,6 +992,9 @@ async function lessonEdit(id){
     <h2 class="cab-h" style="margin-top:10px">${editL.id?'Урок':'Новый урок'}</h2>
     <label class="lab" for="lt">Название</label>
     <input id="lt" class="tin" maxlength="200" value="${esc(editL.title)}" placeholder="Например: Выборы и избирательные системы">
+    <label class="lab" for="lb">Номер блока</label>
+    <input id="lb" class="tin" type="number" inputmode="numeric" min="1" max="99" step="1" style="max-width:140px" value="${editL.block||''}" placeholder="например, 1">
+    <div class="vnote">У учеников уроки собраны по блокам: «Уроки 1 блока», «Уроки 2 блока»… Без номера урок попадёт в «Другие уроки».</div>
     <label class="lab" for="lv">Видео или трансляция — ссылка Kinescope, Rutube, VK Видео или YouTube</label>
     <input id="lv" class="tin" value="${esc(editL.video)}" placeholder="https://kinescope.io/…" oninput="lessonVideoPreview()">
     <div id="vprev" class="vprev"></div>
@@ -1032,7 +1057,7 @@ async function lessonSave(){
   const btn=$('#lsave'); busy(btn,true,'Сохраняем…');
   try{
     const r=await api('lesson_save',{ id:editL.id||undefined, title:$('#lt').value.trim(), video:$('#lv').value.trim(),
-      test_name:$('#lh').value, published:$('#lp').checked,
+      test_name:$('#lh').value, published:$('#lp').checked, block:$('#lb').value.trim(),
       deadline:$('#ld').value?new Date($('#ld').value).toISOString():'',
       files:editL.files.filter(f=>f.key).map(f=>({ key:f.key, name:f.name, size:f.size })) });
     toast(r.lesson.published?'Урок опубликован':'Урок сохранён как черновик');
