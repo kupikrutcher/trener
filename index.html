@@ -866,7 +866,7 @@ function render(){
     <div class="az">
       <label class="lab" for="inp">Ответ</label>
       <input id="inp" class="tin ans-inp" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off"
-        autocapitalize="off" spellcheck="false" maxlength="12" placeholder="Только цифры" aria-label="Ответ: только цифры, без пробелов">
+        autocapitalize="off" spellcheck="false" maxlength="12" aria-label="Ответ: только цифры, без пробелов">
       <div class="verdict" id="verdict"></div>
       <button class="btn" id="check" onclick="saveP1()">${nextLabel()}</button>
       ${finLink()}
@@ -936,7 +936,7 @@ function renderP2(q){
     <div class="p2text">${fmtLong(q.text)}</div>
     <div class="az">
       <label class="lab" for="essay">Твой развёрнутый ответ</label>
-      <textarea id="essay" class="essay" placeholder="Напиши ответ полностью — так, как написал бы на экзамене"></textarea>
+      <textarea id="essay" class="essay"></textarea>
       <div class="saved" id="saved"></div>
       <button class="btn" id="check" onclick="saveP2()">Сохранить ответ</button>
       ${finLink()}

@@ -220,3 +220,17 @@ body{font-size:17px}
 /* «Выйти» — просто красный текст, как у Apple, а не яркая кнопка */
 .logout{background:none;border:0;color:var(--bad);padding:0;font:500 15px/1.4 var(--font-sans)}
 .logout:hover{filter:none;text-decoration:underline}
+
+/* боковая панель — шрифт крупнее */
+.side-mark{font-size:23px}
+.side-nav button{font-size:18.5px;padding:11px 14px;gap:14px}
+.side-nav svg{width:23px;height:23px}
+
+/* уроки по блокам: «Блок N» — крупная широкая плашка */
+.lblock{margin-bottom:14px;width:100%}
+.lblock>summary{padding:26px 28px;border:0;border-radius:var(--radius-lg);box-shadow:0 0 0 1px var(--line);gap:6px 18px}
+.lblock>summary:hover{box-shadow:0 0 0 1px var(--line-strong)}
+.lblock .lb-t{font:700 28px/1.15 var(--font-display);letter-spacing:-.035em}
+.lblock .lb-m{font-size:16px;color:var(--ink-muted)}
+.lblock .sa{font-size:26px}
+@media (max-width:520px){.lblock>summary{padding:20px}.lblock .lb-t{font-size:24px}}

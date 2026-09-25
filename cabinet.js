@@ -100,9 +100,8 @@ function cabLogin(then){
     <div class="cab login">
       <img class="login-ava" src="img/masha-hd.webp" width="1200" height="1200" alt="" aria-hidden="true">
       <h2 class="cab-h">Вход</h2>
-      <p class="cab-sub">Логин и пароль выдаёт учитель.</p>
       <label class="lab" for="lg">Логин</label>
-      <input id="lg" class="tin" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="например, ivanov.p">
+      <input id="lg" class="tin" autocomplete="username" autocapitalize="off" spellcheck="false">
       <label class="lab" for="pw" style="margin-top:14px">Пароль</label>
       <input id="pw" class="tin" type="password" autocomplete="current-password">
       <div class="cab-err" id="lerr"></div>
@@ -134,7 +133,7 @@ function cabSetup(){
       <p class="cab-sub">Создаётся один раз. Код настройки выдаёт тот, кто разворачивал сервер.</p>
       <label class="lab" for="sc">Код настройки</label><input id="sc" class="tin" autocomplete="off">
       <label class="lab" for="sn" style="margin-top:14px">Имя (увидят ученики)</label><input id="sn" class="tin" value="Маша">
-      <label class="lab" for="sl" style="margin-top:14px">Логин</label><input id="sl" class="tin" autocapitalize="off" spellcheck="false" placeholder="латиницей, например masha">
+      <label class="lab" for="sl" style="margin-top:14px">Логин</label><input id="sl" class="tin" autocapitalize="off" spellcheck="false">
       <label class="lab" for="sp" style="margin-top:14px">Пароль (не короче 8 символов)</label><input id="sp" class="tin" type="password" autocomplete="new-password">
       <div class="cab-err" id="lerr"></div>
       <button class="btn" id="lbtn" onclick="doSetup()">Создать</button>
@@ -361,7 +360,7 @@ async function cabSubmission(id){
           <div class="pts" data-i="${x.i}">${Array.from({length:(x.pts||0)+1},(_,k)=>
             `<button class="qn${gr.score===k?' done cur':''}" onclick="pickPts(this,${k})">${k}</button>`).join('')}</div>
           <span class="pmax">из ${x.pts}</span></div>
-        <textarea class="essay cm" data-i="${x.i}" placeholder="Комментарий к ответу (увидит ученик)">${esc(gr.comment||'')}</textarea>`
+        <textarea class="essay cm" data-i="${x.i}">${esc(gr.comment||'')}</textarea>`
       : (s.checked_at
           ? `<div class="gres">Баллы: <b>${gr.score??0}</b> из ${x.pts}</div>${gr.comment?`<div class="uans-lab">Комментарий учителя</div><div class="uans tc">${esc(gr.comment)}</div>`:''}`
           : `<div class="gres wait">На проверке</div>`);
@@ -387,7 +386,7 @@ async function cabSubmission(id){
       ${teacher&&s.p2.length?`
         <div class="gfoot">
           <div><div class="uans-lab">Общий комментарий</div>
-            <textarea class="essay cm" id="gcm" placeholder="Необязательно">${esc(s.comment||'')}</textarea></div>
+            <textarea class="essay cm" id="gcm">${esc(s.comment||'')}</textarea></div>
           <div><div class="uans-lab">Файлы к проверке</div>
             <div class="flist" id="gfiles"></div>
             <button class="fdrop" id="gdrop" onclick="pickGradeFiles()">+ Прикрепить файл<br><span style="font-weight:400;font-size:12px">или перетащите сюда</span></button></div>
@@ -515,7 +514,7 @@ async function teacherStudents(){
   box.innerHTML=`
     <div class="addst">
       <label class="lab" for="names">Добавить учеников — по одному в строке: «Фамилия Имя»</label>
-      <textarea id="names" class="essay" style="min-height:120px" placeholder="Иванов Пётр&#10;Смирнова Анна"></textarea>
+      <textarea id="names" class="essay" style="min-height:120px"></textarea>
       <button class="btn" id="addbtn" style="margin-top:12px" onclick="addStudents()">Создать логины и пароли</button>
       <div id="creds"></div>
     </div>
@@ -915,7 +914,6 @@ function blockToggle(el){
 async function lessonsList(){
   setUrl('lessons');
   cabShow(`<div class="cab">
-    <h2 class="cab-h" style="margin:0 0 18px">Уроки</h2>
     <div id="llist" class="cab-load">Загружаем уроки…</div></div>`);
   let lessons;
   try{ lessons=(await api('lessons_list')).lessons; }
@@ -933,7 +931,7 @@ async function lessonsList(){
   box.innerHTML = lessons.length ? blockGroups(lessons).map(([b,list])=>{
     const hw=list.filter(l=>l.test_name), done=hw.filter(lessonDone).length;
     return `<details class="lblock" data-b="${b}" ontoggle="blockToggle(this)"${open.includes(b)?' open':''}>
-      <summary><span class="lb-t">${b?'Уроки '+b+' блока':'Другие уроки'}</span>
+      <summary><span class="lb-t">${b?'Блок '+b:'Другие уроки'}</span>
         <span class="lb-m">${lessonsWord(list.length)}${hw.length?' · сдано '+done+' из '+hw.length:''}</span><span class="sa" aria-hidden="true">›</span></summary>
       <div class="tlist">${list.map(row).join('')}</div></details>`; }).join('')
     : `<div class="empty">Уроков пока нет.<br>Когда учитель опубликует урок, он появится здесь.</div>`;
@@ -996,12 +994,12 @@ async function lessonEdit(id){
     <button class="linkbtn back" onclick="cabTeacher('lessons')">← К урокам</button>
     <h2 class="cab-h" style="margin-top:10px">${editL.id?'Урок':'Новый урок'}</h2>
     <label class="lab" for="lt">Название</label>
-    <input id="lt" class="tin" maxlength="200" value="${esc(editL.title)}" placeholder="Например: Выборы и избирательные системы">
+    <input id="lt" class="tin" maxlength="200" value="${esc(editL.title)}">
     <label class="lab" for="lb">Номер блока</label>
-    <input id="lb" class="tin" type="number" inputmode="numeric" min="1" max="99" step="1" style="max-width:140px" value="${editL.block||''}" placeholder="например, 1">
+    <input id="lb" class="tin" type="number" inputmode="numeric" min="1" max="99" step="1" style="max-width:140px" value="${editL.block||''}">
     <div class="vnote">У учеников уроки собраны по блокам: «Уроки 1 блока», «Уроки 2 блока»… Без номера урок попадёт в «Другие уроки».</div>
     <label class="lab" for="lv">Видео или трансляция — ссылка Kinescope, Rutube, VK Видео или YouTube</label>
-    <input id="lv" class="tin" value="${esc(editL.video)}" placeholder="https://kinescope.io/…" oninput="lessonVideoPreview()">
+    <input id="lv" class="tin" value="${esc(editL.video)}" oninput="lessonVideoPreview()">
     <div id="vprev" class="vprev"></div>
     <label class="lab" for="lh">Домашнее задание</label>
     <select id="lh" class="tin"><option value="">— без ДЗ —</option>${opts}</select>
