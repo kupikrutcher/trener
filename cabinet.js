@@ -794,7 +794,7 @@ function bankDraw(){
       ${ddHTML('bf-topic','Тема','Все темы',bankF.topic,topics)}
       ${ddHTML('bf-n','Номер задания','Все номера',bankF.n,nums.map(v=>({ v, label:'Задание '+v, c:cn[v]||0 })))}
     </div>
-    <div class="bank-sum"><span>Найдено: <b>${plural(n)}</b></span>
+    <div class="bank-sum"><span>Всего: <b>${plural(n)}</b></span>
       ${any?`<button class="linkbtn" onclick="bankReset()">Сбросить фильтры</button>`:''}</div>
     ${n?`<button class="btn" onclick="bankRun()">Решать подборку</button>`:`<div class="empty">По этим фильтрам заданий нет.</div>`}`;
 }
