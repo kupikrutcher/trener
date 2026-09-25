@@ -60,6 +60,8 @@ http.createServer(async (req, res) => {
   if (!f.startsWith(ROOT) || !fs.existsSync(f)) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream' });
   if (f.endsWith('index.html')) return res.end(fs.readFileSync(f, 'utf8')
-    .replace('<script src="cabinet.js">', '<script>window.TRENER_API="/api"</script><script src="cabinet.js">'));
+    .replace('<script src="cabinet.js">', '<script>window.TRENER_API="/api"</script><script src="cabinet.js">')
+    // --demo: панель «открыть любой экран без входа» (backend/demo-nav.js), только локально
+    .replace('</body>', process.argv.includes('--demo') ? '<script src="/backend/demo-nav.js"></script></body>' : '</body>'));
   fs.createReadStream(f).pipe(res);
 }).listen(PORT, () => console.log('http://localhost:' + PORT));

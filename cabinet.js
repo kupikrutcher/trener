@@ -97,7 +97,8 @@ function cabLogin(then){
   setUrl('login');
   afterLogin = then || null;
   cabShow(`
-    <div class="cab">
+    <div class="cab login">
+      <img class="login-ava" src="img/masha-hd.webp" width="1200" height="1200" alt="" aria-hidden="true">
       <h2 class="cab-h">Вход</h2>
       <p class="cab-sub">Логин и пароль выдаёт учитель.</p>
       <label class="lab" for="lg">Логин</label>
@@ -869,6 +870,9 @@ function cabGoLessons(){
   if(!me) return home();
   return me.role==='teacher' ? cabTeacher('lessons') : lessonsList();
 }
+/* «листок календаря» с датой урока: месяц сверху, число крупно */
+function dateTile(s){ const d=new Date(s);
+  return `<div class="tdate" aria-hidden="true"><span>${d.toLocaleDateString('ru-RU',{month:'short'}).replace('.','')}</span><b>${d.getDate()}</b></div>`; }
 function fmtDay(s){ return new Date(s).toLocaleDateString('ru-RU',{day:'numeric',month:'long'}); }
 function fmtSize(n){ return n>=1048576?(n/1048576).toFixed(1).replace('.',',')+' МБ':Math.max(1,Math.round(n/1024))+' КБ'; }
 function fileExt(n){ const m=/\.([a-z0-9]{1,5})$/i.exec(n||''); return m?m[1].toUpperCase():'ФАЙЛ'; }
@@ -906,8 +910,9 @@ async function lessonsList(){
   box.className='';
   box.innerHTML = lessons.length ? `<div class="tlist">${lessons.map(l=>`
     <div class="tcard" onclick="lessonView('${esc(l.id)}')">
+      ${dateTile(l.created_at)}
       <div class="tinfo"><div class="tname">${esc(l.title)}</div>
-        <div class="tmeta">${fmtDay(l.created_at)}${l.test_name?' · ДЗ: '+esc(l.test_name):''}${l.deadline&&l.test_name?' · до '+fmtDeadline(l.deadline):''}${l.files_n?' · файлов: '+l.files_n:''}</div></div>
+        <div class="tmeta">${[l.test_name&&'ДЗ: '+esc(l.test_name), l.deadline&&l.test_name&&'до '+fmtDeadline(l.deadline), l.files_n&&'файлов: '+l.files_n].filter(Boolean).join(' · ')||fmtDay(l.created_at)}</div></div>
       ${lessonDone(l)?'<span class="st-ok">сдано</span>':(l.deadline&&l.test_name&&+new Date(l.deadline)<Date.now()?'<span class="st-wait" style="color:var(--bad);background:var(--bad-soft)">просрочено</span>':'')}<span class="tgo">→</span>
     </div>`).join('')}</div>` : `<div class="empty">Уроков пока нет.<br>Когда учитель опубликует урок, он появится здесь.</div>`;
   box.innerHTML += `<div class="dl-box">${deadlinesHTML(lessons)}</div>`;

@@ -146,3 +146,77 @@ body{font-size:17px}
 .rev,.rs-w,.mine,.aans,.cline{font-size:16px}
 .toast{font-size:15px}
 @media (max-width:699px){.land-sub{font-size:17px}.qtext,.p2text{font-size:17.5px}}
+
+/* ================= Воздух 2: дорого и сдержанно, как у Apple =================
+   Палитра — белый, графит, серый; цвет только у действия (синий) и у верно/ошибка.
+   Выразительность — от типографики, воздуха и тонких линий, а не от цветных пятен. */
+
+/* типографика: крупные заголовки с плотным трекингом, спокойный серый для второстепенного */
+.cab-h,.allhead h1{font-size:clamp(34px,4.4vw,48px);letter-spacing:-.04em;margin-bottom:6px}
+.cab-sub{color:var(--ink-muted)}
+.cab-h3,.rs-h,.dl-h,.review h3,.sch-day{font-size:24px;letter-spacing:-.03em;margin:44px 0 14px}
+.mv-mark{color:inherit}
+
+/* боковая панель: монохромные иконки, выбранный раздел — тихая серая подложка */
+.side-nav{gap:2px}
+.side-nav button{padding:9px 12px;color:var(--ink-muted);font-weight:500}
+.side-nav svg{width:20px;height:20px;stroke-width:1.6;opacity:.85}
+.side-nav button:hover{background:rgba(120,120,128,.1);color:var(--ink)}
+.side-nav button[aria-current]{background:rgba(120,120,128,.16);color:var(--ink);font-weight:600}
+.side-nav button[aria-current] svg{opacity:1}
+
+/* списки — сгруппированные, как в iOS: одна плашка, тонкие разделители, шеврон › */
+.tlist{gap:0;background:var(--surface);border-radius:var(--radius-lg);box-shadow:0 0 0 1px var(--line);overflow:hidden}
+.tlist>.tcard{border-radius:0;box-shadow:none;padding:16px 20px;position:relative}
+.tlist>.tcard+.tcard::before{content:"";position:absolute;top:0;right:0;left:84px;height:1px;background:var(--line)}
+.tlist>.tcard:not(:has(.tdate))+.tcard::before{left:20px}
+@media (hover:hover) and (pointer:fine){.tlist>.tcard:hover{transform:none;box-shadow:none;background:rgba(120,120,128,.06)}}
+.tlist>.tcard:active{transform:none;background:rgba(120,120,128,.12)}
+.tgo{font-size:0;color:var(--ink-muted);opacity:.5}
+.tgo::after{content:"›";font-size:28px;font-weight:300;line-height:1}
+/* дата урока — монохромный «листок календаря» */
+.tdate{flex:none;width:48px;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px;
+  background:var(--surface-sunk)}
+.tdate span{font:600 10.5px/1 var(--font-sans);text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted)}
+.tdate b{font:600 21px/1.05 var(--font-display);letter-spacing:-.02em;margin-top:3px}
+/* статус — тихий текст с символом, без цветной «таблетки» */
+.st-ok{background:none;color:var(--ok);padding:0}
+.st-ok::before{content:"✓ "}
+.tname{letter-spacing:-.01em}
+
+/* дедлайны и занятия — такие же сгруппированные плашки */
+.dl-box{background:transparent;padding:0}
+.dl-list,.cp-list{gap:0;background:var(--surface);border-radius:var(--radius-lg);box-shadow:0 0 0 1px var(--line);overflow:hidden}
+.dl-list>.dl,.cp-list>.cp-ev{border-radius:0;box-shadow:none;background:transparent;position:relative}
+.dl-list>.dl+.dl::before{content:"";position:absolute;top:0;left:20px;right:0;height:1px;background:var(--line)}
+.cp-list>.cp-ev+.cp-ev::before{content:"";position:absolute;top:0;left:88px;right:0;height:1px;background:var(--line)}
+.dl-list>.dl.over{background:var(--bad-soft)}
+.cp-list>.cp-ev.now{background:var(--surface-sunk);box-shadow:none}
+@media (hover:hover) and (pointer:fine){.dl-list>.dl:hover{transform:none;box-shadow:none;background:rgba(120,120,128,.06)}}
+
+/* карточки: белые, волосяная рамка вместо тени — чище и дороже */
+.hwbox,.cp-next,.pstat,.rs-tile,.fitem,.creds,.cal{box-shadow:0 0 0 1px var(--line);border:0}
+.hwbox,.cp-next{border-radius:24px;padding:26px 28px}
+.hwbox .tname,.cp-next-d{font:600 26px/1.2 var(--font-display);letter-spacing:-.03em}
+.cp-next-h{color:var(--ink-muted)}
+.pstat b,.rs-tile b{font-size:34px;letter-spacing:-.04em}
+
+/* задание и результат — на белом листе */
+.panel:has(.qtext,.rs,.allitem){background:var(--surface);border-radius:28px;box-shadow:0 0 0 1px var(--line);padding:28px 22px}
+@media(min-width:680px){.panel:has(.qtext,.rs,.allitem){padding:44px 52px}}
+
+/* вход — карточка по центру с Машей */
+.cab.login{max-width:420px;margin:5vh auto 0;background:var(--surface);border-radius:28px;padding:38px 32px 28px;
+  box-shadow:0 0 0 1px var(--line),0 30px 60px -30px rgba(0,0,0,.18);text-align:center}
+.login-ava{display:block;width:88px;height:88px;margin:0 auto 16px;border-radius:50%;object-fit:cover;object-position:50% 14%;background:var(--surface-sunk)}
+.cab.login .cab-h{font-size:32px}
+.cab.login .cab-sub{margin-bottom:24px}
+.cab.login .lab,.cab.login .cab-err{text-align:left}
+.cab.login .btn{margin-top:6px}
+
+/* главная: нейтральная «студийная» подложка под фото */
+.land-block{background:linear-gradient(180deg,#fbfbfd 0%,#e8e8ed 100%);box-shadow:0 0 0 1px var(--line)}
+[data-theme="night"] .land-block{background:linear-gradient(180deg,#2c2c2e 0%,#1c1c1e 100%)}
+/* «Выйти» — просто красный текст, как у Apple, а не яркая кнопка */
+.logout{background:none;border:0;color:var(--bad);padding:0;font:500 15px/1.4 var(--font-sans)}
+.logout:hover{filter:none;text-decoration:underline}
