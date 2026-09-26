@@ -238,3 +238,33 @@ body{font-size:17px}
 /* низ боковой панели: подпись крупно */
 .side-foot{display:block;margin:auto 0 0;padding:0 12px 6px;text-align:center;transform:none;font:700 24px/1.2 var(--font-display);letter-spacing:-.03em;color:var(--ink)}
 @media (max-height:560px){.side-foot{display:none}}
+
+/* иконки боковой панели оживают при наведении — у каждой свой жест по смыслу
+   (пружина с лёгким перелётом; уход — быстрый и без перелёта; при «уменьшить движение» — ничего) */
+.side-nav svg *{transform-box:fill-box;transform-origin:center;
+  transition:transform .22s cubic-bezier(.23,1,.32,1),stroke-dashoffset .22s ease-out}
+@media (hover:hover) and (pointer:fine){
+  .side-nav button:hover svg *{transition:transform .5s cubic-bezier(.34,1.56,.64,1),stroke-dashoffset .45s cubic-bezier(.23,1,.32,1)}
+  /* Уроки: книга на миг прикрывается и снова раскрывается */
+  .side-nav [data-nav="lessons"]:hover svg path:first-child{animation:icBook .6s cubic-bezier(.23,1,.32,1)}
+  .side-nav [data-nav="lessons"]:hover svg path:last-child{animation:icSpine .6s cubic-bezier(.23,1,.32,1)}
+  /* Расписание: кольца календаря подпрыгивают, точки дней вспыхивают по очереди */
+  .side-nav [data-nav="schedule"]:hover .ic-rings{transform:translateY(-2px)}
+  .side-nav [data-nav="schedule"]:hover svg circle{animation:icDot .5s ease-out both}
+  .side-nav [data-nav="schedule"]:hover svg circle:last-of-type{animation-delay:.12s}
+  /* Банк заданий: верхняя карточка приподнимается и поворачивается, как будто её вытягивают из стопки */
+  .side-nav [data-nav="bank"]:hover svg rect:first-of-type{transform:translate(1px,-2.5px) rotate(-7deg)}
+  .side-nav [data-nav="bank"]:hover svg rect:last-of-type{transform:translateY(-1px)}
+  .side-nav [data-nav="bank"]:hover svg path{transform:scaleX(.7)}
+  /* Полезные файлы: папка приоткрывается */
+  .side-nav [data-nav="files"]:hover svg path{transform-origin:50% 100%;transform:skewX(-9deg) scaleY(.9)}
+  /* Проверка: галочка заново «ставится» */
+  .side-nav [data-nav="check"] svg path{stroke-dasharray:12;stroke-dashoffset:0}
+  .side-nav [data-nav="check"]:hover svg path{animation:icTick .5s cubic-bezier(.23,1,.32,1)}
+  .side-nav [data-nav="check"]:hover svg circle{transform:scale(1.08)}
+}
+@keyframes icBook{40%{transform:scaleX(.78)}}
+@keyframes icSpine{40%{transform:scaleY(.86)}}
+@keyframes icDot{50%{transform:scale(2.6)}}
+@keyframes icTick{from{stroke-dashoffset:12}}
+@media (prefers-reduced-motion:reduce){.side-nav svg *{transition:none!important;animation:none!important;transform:none!important}}
