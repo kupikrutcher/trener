@@ -22,8 +22,10 @@ function checkPassword(pass, stored) {
   return got.length === want.length && crypto.timingSafeEqual(got, want);
 }
 const b64u = (s) => Buffer.from(s).toString('base64url');
-function signToken(secret, login, days = 90) {
-  const body = b64u(JSON.stringify({ l: login, e: Date.now() + days * 864e5 }));
+/* ключ входа бессрочный: отключить его — удалить пользователя. В ключе дата создания аккаунта (c), чтобы ключ удалённого
+   ученика не подошёл к новому аккаунту с тем же логином. Старые ключи без c (выданные на 90 дней) тоже принимаются — срок больше не проверяем */
+function signToken(secret, u) {
+  const body = b64u(JSON.stringify({ l: u.login, c: u.created_at }));
   const sig = crypto.createHmac('sha256', secret).update(body).digest('base64url');
   return body + '.' + sig;
 }
@@ -34,7 +36,7 @@ function readToken(secret, token) {
   if (sig.length !== want.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(want))) return null;
   try {
     const p = JSON.parse(Buffer.from(body, 'base64url').toString());
-    return p.e > Date.now() ? p.l : null;
+    return typeof p.l === 'string' ? p : null;
   } catch { return null; }
 }
 
@@ -123,7 +125,7 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
     const pass = str(req.password, 200, 'password');
     const u = await db.getUser(login);
     if (!u || !checkPassword(pass, u.pass)) fail(401, 'Неверный логин или пароль');
-    return { token: signToken(secret, u.login), me: { ...pub(u), avatar: await db.getAvatar(u.login) } };
+    return { token: signToken(secret, u), me: { ...pub(u), avatar: await db.getAvatar(u.login) } };
   }
   if (action === 'setup') {
     // первый вход учителя: только с кодом из настроек функции и пока учителя нет
@@ -136,13 +138,13 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
     const full_name = str(req.full_name || 'Учитель', 100, 'full_name').trim() || 'Учитель';
     const u = { login, full_name, role: 'teacher', pass: hashPassword(pass), created_at: new Date().toISOString() };
     await db.putUser(u);
-    return { token: signToken(secret, login), me: { ...pub(u), avatar: null } };
+    return { token: signToken(secret, u), me: { ...pub(u), avatar: null } };
   }
 
   // дальше — только с входом
-  const login = readToken(secret, req.token);
-  const me = login && await db.getUser(login);
-  if (!me) fail(401, 'Нужно войти');
+  const t = readToken(secret, req.token);
+  const me = t && await db.getUser(t.l);
+  if (!me || (t.c && t.c !== me.created_at)) fail(401, 'Нужно войти');
   const teacher = me.role === 'teacher';
   const onlyTeacher = () => { if (!teacher) fail(403, 'Только для учителя'); };
 

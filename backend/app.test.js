@@ -99,6 +99,24 @@ test('смена пароля', async () => {
   await call(db, { action: 'login', login: 'masha', password: 'newpassword' });
 });
 
+test('ключ входа: бессрочный, но умирает вместе с учеником', async () => {
+  const crypto = require('crypto');
+  const { db, T } = await world();
+  const { created } = await call(db, { action: 'students_create', token: T, names: ['Петров Иван'] });
+  const S = (await call(db, { action: 'login', login: created[0].login, password: created[0].password })).token;
+  // старый ключ «на 90 дней» с истёкшим сроком всё ещё действует
+  const body = Buffer.from(JSON.stringify({ l: created[0].login, e: 1 })).toString('base64url');
+  const old = body + '.' + crypto.createHmac('sha256', env.SECRET).update(body).digest('base64url');
+  await call(db, { action: 'me', token: old });
+  await call(db, { action: 'student_delete', token: T, login: created[0].login });
+  await rejects(call(db, { action: 'me', token: S }), 401);
+  // тот же логин заново — ключ удалённого ученика к нему не подходит
+  await new Promise((r) => setTimeout(r, 5));
+  const again = await call(db, { action: 'students_create', token: T, names: ['Петров Иван'] });
+  assert.equal(again.created[0].login, created[0].login);
+  await rejects(call(db, { action: 'me', token: S }), 401);
+});
+
 /* ---------- уроки ---------- */
 const { videoEmbed } = require('./app');
 function fakeStore() {
