@@ -111,7 +111,7 @@ const isoOrEmpty = (v) => {
   return d.toISOString();
 };
 const safeName = (n) => String(n).replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').slice(0, 120) || 'file';
-const pubLesson = (l) => ({ id: l.id, title: l.title, video: l.video, embed: videoEmbed(l.video), test_name: l.test_name, deadline: l.deadline || '', block: l.block || 0,
+const pubLesson = (l) => ({ id: l.id, title: l.title, video: l.video, embed: videoEmbed(l.video), test_name: l.test_name, deadline: l.deadline || '', block: l.block || 0, descr: l.descr || '',
   published: !!l.published, created_at: l.created_at, updated_at: l.updated_at, files_n: (l.files || []).length });
 
 /* ---------- действия ---------- */
@@ -302,6 +302,7 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       onlyTeacher();
       const title = str(req.title, 200, 'title').trim();
       if (!title) fail(400, 'Нужно название урока');
+      const descr = req.descr ? str(req.descr, 5000, 'descr').trim() : '';   // описание урока — простой текст
       const video = req.video ? str(req.video, 500, 'video').trim() : '';
       if (video && !videoEmbed(video)) fail(400, 'Не понимаю ссылку на видео: нужна ссылка YouTube, Rutube, VK Видео или Kinescope');
       const test_name = req.test_name ? str(req.test_name, 300, 'test_name') : '';
@@ -313,7 +314,7 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       const now = new Date().toISOString();
       const old = req.id ? await db.getLesson(str(req.id, 40, 'id')) : null;
       if (req.id && !old) fail(404, 'Урок не найден');
-      const lesson = { id: old ? old.id : newId(), title, video, test_name, deadline, files, published: !!req.published, block,
+      const lesson = { id: old ? old.id : newId(), title, video, test_name, deadline, files, published: !!req.published, block, descr,
         created_at: old ? old.created_at : now, updated_at: now };
       await db.putLesson(lesson);
       if (old) await dropRemoved(store, old.files, files);

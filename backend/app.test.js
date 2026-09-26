@@ -126,6 +126,15 @@ function fakeStore() {
 }
 const callS = (db, store, req) => handle(req, db, env, store);
 
+test('урок: описание', async () => {
+  const { db, T } = await world(); const st = fakeStore();
+  const a = (await callS(db, st, { action: 'lesson_save', token: T, title: 'Налоги', descr: '  Читаем §12.\nКонспект — в файлах  ', published: true })).lesson;
+  assert.equal(a.descr, 'Читаем §12.\nКонспект — в файлах');
+  assert.equal((await callS(db, st, { action: 'lesson_get', token: T, id: a.id })).lesson.descr, 'Читаем §12.\nКонспект — в файлах');
+  assert.equal((await callS(db, st, { action: 'lesson_save', token: T, title: 'Без описания' })).lesson.descr, '');
+  await rejects(callS(db, st, { action: 'lesson_save', token: T, title: 'x', descr: 'я'.repeat(5001) }), 400);
+});
+
 test('урок: номер блока', async () => {
   const { db, T } = await world();
   const st = fakeStore();

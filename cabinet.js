@@ -961,6 +961,7 @@ async function lessonView(id){
     <button class="linkbtn back" onclick="${teacher?"cabTeacher('lessons')":'lessonsList()'}">← ${teacher?'К урокам':'Все уроки'}</button>
     <h2 class="cab-h" style="margin-top:10px">${esc(l.title)}</h2>
     <p class="cab-sub">${l.block?'Блок '+l.block+' · ':''}${fmtDay(l.created_at)}${teacher&&!l.published?' · черновик, ученики не видят':''}</p>
+    ${l.descr?`<div class="ldescr">${esc(l.descr)}</div>`:''}
     ${l.embed?videoFrame(l.embed):''}
     ${t?`<div class="hwbox"><div class="lab">Домашнее задание</div><div class="tname">${esc(t.name)}</div>
       <div class="tmeta" style="margin:-6px 0 12px">${metaLine(t.questions)}${done?' · уже сдано':''}</div>
@@ -990,13 +991,13 @@ async function teacherLessons(){
 let editL=null;
 async function lessonEdit(id){
   setUrl(id?'lessons/'+encodeURIComponent(id)+'/edit':'lessons/new');
-  editL={ id:null, title:'', video:'', test_name:'', deadline:'', files:[], published:false, block:0 };
+  editL={ id:null, title:'', descr:'', video:'', test_name:'', deadline:'', files:[], published:false, block:0 };
   // без списка заданий нельзя: при сохранении выбранное ДЗ потерялось бы
   try{ await loadTests(); }catch(e){ toast(e.message); return cabTeacher('lessons'); }
   if(id){
     cabShow(`<div class="cab-load">Загружаем урок…</div>`);
     try{ const l=(await api('lesson_get',{ id })).lesson; editL={ id:l.id, title:l.title, video:l.video||'', test_name:l.test_name||'',
-      deadline:l.deadline||'', files:l.files.map(f=>({ key:f.key, name:f.name, size:f.size })), published:l.published, block:l.block||0 }; }
+      deadline:l.deadline||'', files:l.files.map(f=>({ key:f.key, name:f.name, size:f.size })), published:l.published, block:l.block||0, descr:l.descr||'' }; }
     catch(e){ toast(e.message); return cabTeacher('lessons'); }
   }
   const opts=groupTests().map(([title,list])=>`<optgroup label="${esc(title)}">${list.map(t=>
@@ -1009,6 +1010,8 @@ async function lessonEdit(id){
     <label class="lab" for="lb">Номер блока</label>
     <input id="lb" class="tin" type="number" inputmode="numeric" min="1" max="99" step="1" style="max-width:140px" value="${editL.block||''}">
     <div class="vnote">У учеников уроки собраны по блокам: «Уроки 1 блока», «Уроки 2 блока»… Без номера урок попадёт в «Другие уроки».</div>
+    <label class="lab" for="ldsc">Описание</label>
+    <textarea id="ldsc" class="essay" style="min-height:110px" maxlength="5000" placeholder="О чём урок, что повторить, что взять с собой — ученики увидят это над видео">${esc(editL.descr)}</textarea>
     <label class="lab" for="lv">Видео или трансляция — ссылка Kinescope, Rutube, VK Видео или YouTube</label>
     <input id="lv" class="tin" value="${esc(editL.video)}" oninput="lessonVideoPreview()">
     <div id="vprev" class="vprev"></div>
@@ -1070,7 +1073,7 @@ async function lessonSave(){
   if(editL.files.some(f=>f.status==='загружается…')){ toast('Подождите, файлы ещё загружаются'); return; }
   const btn=$('#lsave'); busy(btn,true,'Сохраняем…');
   try{
-    const r=await api('lesson_save',{ id:editL.id||undefined, title:$('#lt').value.trim(), video:$('#lv').value.trim(),
+    const r=await api('lesson_save',{ id:editL.id||undefined, title:$('#lt').value.trim(), descr:$('#ldsc').value.trim(), video:$('#lv').value.trim(),
       test_name:$('#lh').value, published:$('#lp').checked, block:$('#lb').value.trim(),
       deadline:$('#ld').value?new Date($('#ld').value).toISOString():'',
       files:editL.files.filter(f=>f.key).map(f=>({ key:f.key, name:f.name, size:f.size })) });
