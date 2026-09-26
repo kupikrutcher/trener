@@ -8,6 +8,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#eef0f3">
 <title>ЕГЭ с Машей Вайб</title>
+<script>
+/* Яндекс Метрика: YM_ID — номер счётчика (0 — выключена). Считаем только на mashavibe.ru.
+   Вебвизор выключен: он записывал бы ответы и пароли учеников. Переходы по экранам шлёт setUrl → ymHit. */
+const YM_ID=0;
+const YM_ON=YM_ID>0 && /(^|\.)mashavibe\.ru$/.test(location.hostname);
+let ymLast='';
+function ymHit(){ if(!YM_ON || location.href===ymLast) return; const ref=ymLast||document.referrer; ymLast=location.href; ym(YM_ID,'hit',ymLast,{referer:ref}); }
+function ymRole(r){ if(YM_ON) ym(YM_ID,'userParams',{role:r||'guest'}); }   // только роль — логины и имена в Метрику не шлём
+if(YM_ON){
+  (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();
+    k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+    (window,document,'script','https://mc.yandex.ru/metrika/tag.js','ym');
+  ym(YM_ID,'init',{defer:true,clickmap:true,trackLinks:true,accurateTrackBounce:true,webvisor:false});
+  /* ошибки JS у учеников → отчёт «Параметры визитов» → js_error (не больше 5 за визит) */
+  let ymErr=0;
+  const ymError=(msg,src)=>{ if(ymErr++<5) ym(YM_ID,'params',{js_error:{[String(msg).slice(0,200)]:src||location.pathname}}); };
+  addEventListener('error',e=>ymError(e.message,(e.filename||'').split('/').pop()+':'+e.lineno));
+  addEventListener('unhandledrejection',e=>ymError('promise: '+((e.reason&&e.reason.message)||e.reason)));
+}
+</script>
 <link rel="icon" type="image/png" sizes="32x32" href="img/icon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
@@ -873,7 +893,7 @@ function home(){
 const BASE=location.hostname.endsWith('github.io')?'/trener/':'/';
 let routing=false;   // пока открываем экран по адресу — адрес заменяем, а не добавляем в историю
 function appPath(){ let p=location.pathname; if(p.startsWith(BASE)) p=p.slice(BASE.length); return p.replace(/^\/+|\/+$/g,''); }
-function setUrl(p){ const full=BASE+p; if(location.pathname===full) return; history[routing?'replaceState':'pushState'](null,'',full); }
+function setUrl(p){ const full=BASE+p; if(location.pathname!==full) history[routing?'replaceState':'pushState'](null,'',full); ymHit(); }
 function route(p){ routing=true; try{ return dispatch(p==null?appPath():p); } finally{ routing=false; } }
 function dispatch(p){
   const s=p.split('/'), a=s[0]||'', id=s[1]?decodeURIComponent(s[1]):'';

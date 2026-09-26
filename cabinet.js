@@ -61,6 +61,7 @@ const AVA_DEFAULT=`<svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" 
   <circle cx="20" cy="15.5" r="7.2" style="fill:var(--line-strong)"/><path d="M5 40c0-8.6 6.7-14.5 15-14.5S35 31.4 35 40z" style="fill:var(--line-strong)"/></svg>`;
 function avaInner(u){ return u&&u.avatar ? `<img src="${u.avatar.replace(/"/g,'')}" alt="">` : AVA_DEFAULT; }
 function paintAcct(){
+  ymRole(me&&me.role);
   const b=cabEl(); if(!b) return;
   b.style.display='';
   if(me && me.role!=='teacher'){
