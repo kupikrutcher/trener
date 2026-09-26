@@ -513,6 +513,7 @@ input[type=file]{display:none}
 .side-stage{display:grid;align-items:end}
 .side-stage>*{grid-area:1/1}
 .fbz:not([hidden])+.side-stage{min-height:190px}
+@media(min-width:1000px){.fbz:not([hidden])+.side-stage{min-height:236px}}   /* на компьютере поле выше: подсказка влезает без полосы прокрутки */
 .fb-pop{align-self:stretch;display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--surface);
   border-radius:var(--radius-lg);box-shadow:var(--shadow-soft);
   clip-path:inset(0 0 100% 0 round var(--radius-lg));opacity:0;visibility:hidden;
