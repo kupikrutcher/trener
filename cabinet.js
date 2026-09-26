@@ -32,10 +32,15 @@ function getToken(){ try{ return localStorage.getItem('tr_token')||''; }catch(e)
 function setToken(t){ try{ t?localStorage.setItem('tr_token',t):localStorage.removeItem('tr_token'); }catch(e){} }
 async function api(action, data){
   let r;
-  try{
-    r=await fetch(API_URL,{ method:'POST', headers:{'Content-Type':'text/plain;charset=UTF-8'},
-      body:JSON.stringify({ action, token:getToken(), ...(data||{}) }) });
-  }catch(e){ throw new Error('Нет связи с сервером. Проверь интернет.'); }
+  // 429 — облако не успело взять запрос (все копии функции заняты); запрос не выполнялся, поэтому повторять безопасно
+  for(let i=0;;i++){
+    try{
+      r=await fetch(API_URL,{ method:'POST', headers:{'Content-Type':'text/plain;charset=UTF-8'},
+        body:JSON.stringify({ action, token:getToken(), ...(data||{}) }) });
+    }catch(e){ throw new Error('Нет связи с сервером. Проверь интернет.'); }
+    if(r.status!==429 || i===3) break;
+    await new Promise(ok=>setTimeout(ok, 400*2**i + Math.random()*300));
+  }
   let j={}; try{ j=await r.json(); }catch(e){}
   if(r.status===401 && action!=='login'){ setToken(''); me=null; paintAcct(); }
   if(!r.ok) throw new Error(j.error||('Ошибка сервера ('+r.status+')'));
