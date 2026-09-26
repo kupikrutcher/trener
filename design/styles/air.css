@@ -256,8 +256,9 @@ body{font-size:17px}
   .side-nav [data-nav="bank"]:hover svg rect:first-of-type{transform:translate(1px,-2.5px) rotate(-7deg)}
   .side-nav [data-nav="bank"]:hover svg rect:last-of-type{transform:translateY(-1px)}
   .side-nav [data-nav="bank"]:hover svg path{transform:scaleX(.7)}
-  /* Полезные файлы: папка подпрыгивает — приседает, подскакивает, мягко приземляется */
-  .side-nav [data-nav="files"]:hover svg path{transform-origin:50% 100%;animation:icHop .6s cubic-bezier(.33,0,.2,1)}
+  /* Полезные файлы: передняя крышка папки откидывается вперёд, изнутри выглядывает листок */
+  .side-nav [data-nav="files"]:hover .ic-flap{transform:skewX(-14deg) scaleY(.74)}
+  .side-nav [data-nav="files"]:hover .ic-paper{opacity:1;transform:translateY(-1.6px)}
   /* Проверка: галочка заново «ставится» */
   .side-nav [data-nav="check"] svg path{stroke-dasharray:12;stroke-dashoffset:0}
   .side-nav [data-nav="check"]:hover svg path{animation:icTick .5s cubic-bezier(.23,1,.32,1)}
@@ -267,5 +268,13 @@ body{font-size:17px}
 @keyframes icSpine{40%{transform:scaleY(.86)}}
 @keyframes icDot{50%{transform:scale(2.6)}}
 @keyframes icTick{from{stroke-dashoffset:12}}
-@keyframes icHop{15%{transform:scale(1.08,.88)}45%{transform:translateY(-3.5px) scale(.94,1.08)}75%{transform:scale(1.06,.92)}}
+/* папка: крышка залита цветом фона, чтобы закрывать заднюю стенку; листок спрятан, пока папка закрыта */
+.side-nav .ic-flap{fill:#fbfbfc;transform-origin:50% 100%;transition:transform .22s cubic-bezier(.23,1,.32,1),fill .2s ease}
+.side-nav button:hover .ic-flap{fill:#ececef}
+.side-nav button[aria-current] .ic-flap{fill:#e4e4e7}
+[data-theme="night"] .side-nav .ic-flap{fill:#161618}
+[data-theme="night"] .side-nav button:hover .ic-flap{fill:#222225}
+[data-theme="night"] .side-nav button[aria-current] .ic-flap{fill:#2a2a2d}
+.side-nav .ic-paper{opacity:0;transform:translateY(2px);transition:transform .22s cubic-bezier(.23,1,.32,1),opacity .15s ease}
+@media (hover:hover) and (pointer:fine){.side-nav [data-nav="files"]:hover .ic-paper{transition:transform .45s cubic-bezier(.34,1.56,.64,1) .05s,opacity .2s ease .05s}}
 @media (prefers-reduced-motion:reduce){.side-nav svg *{transition:none!important;animation:none!important;transform:none!important}}
