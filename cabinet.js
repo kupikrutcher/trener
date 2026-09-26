@@ -70,6 +70,7 @@ function paintAcct(){
   }
   b.onclick = ()=>{ setNav(''); me ? openCabinet() : cabLogin(); };
   const chk=document.querySelector('.side-nav [data-nav="check"]'); if(chk) chk.hidden=!(me&&me.role==='teacher');
+  const fz=$('#fbz'); if(fz){ fz.hidden=!(me&&me.role!=='teacher'); if(fz.hidden) fbToggle(false); }   // обратная связь — ученикам
 }
 function pickAvatar(){
   const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
@@ -507,8 +508,10 @@ function teacherProfile(){
   cabShow(`<div class="cab"><div class="cab-top"><h2 class="cab-h">Личный кабинет</h2>
     <div class="sact"><button class="linkbtn back" onclick="changePass()">Сменить пароль</button><button class="logout" onclick="doLogout()">Выйти</button></div></div>
     <p class="cab-sub">${esc(me.full_name||'')} · учитель</p>
+    <div id="tfb"></div>
     <div id="tbody" class="cab-load">Загружаем…</div>
     <button class="btn ghost" style="margin-top:22px" onclick="cabTeacher('check')">Перейти в курс</button></div>`);
+  teacherFeedback();
   return teacherStudents();
 }
 async function teacherStudents(){
@@ -534,6 +537,36 @@ async function teacherStudents(){
           <button class="linkbtn danger" onclick="delStudent('${esc(p.login)}')">Удалить</button>
         </div>
       </div>`).join('')}</div>`:`<div class="empty">Учеников пока нет</div>`}`;
+}
+/* обратная связь из левой панели: ученик пишет, учитель читает в личном кабинете */
+function fbToggle(open){
+  const end=$('#sidend'), btn=$('#fbb'), pop=$('#fbp'); if(!end) return;
+  open=open==null?!end.classList.contains('open'):open;
+  end.classList.toggle('open',open); btn.setAttribute('aria-expanded',open); btn.textContent=open?'Свернуть':'Обратная связь';
+  pop.inert=!open; if(open) setTimeout(()=>$('#fbt').focus({ preventScroll:true }),60);
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$('#sidend')&&$('#sidend').classList.contains('open')&&$('#sidend').contains(document.activeElement)){ fbToggle(false); $('#fbb').focus(); } });
+async function fbSend(){
+  const ta=$('#fbt'), text=ta.value.trim(), btn=$('#fbs');
+  if(!text){ ta.focus(); toast('Напиши сообщение'); return; }
+  busy(btn,true,'Отправляем…');
+  try{ await api('feedback_send',{ text }); }
+  catch(e){ busy(btn,false,'Отправить'); toast('Не отправилось: '+e.message); return; }
+  busy(btn,false,'Отправить'); ta.value=''; fbToggle(false); toast('Спасибо, сообщение у Маши');
+}
+async function teacherFeedback(){
+  const box=$('#tfb'); if(!box) return;
+  let list; try{ list=(await api('feedback_list')).feedback; }catch(e){ box.innerHTML=''; return; }   // сервер ещё без обратной связи — молча
+  if(!$('#tfb')) return;
+  box.innerHTML=`<h3 class="cab-h3">Обратная связь · ${list.length}</h3>`+(list.length?`<div class="fbl">${list.map(f=>`
+    <div class="fbi"><div class="fbi-h"><b>${esc(f.name)}</b><span>${fmtDay(f.created_at)}</span></div>
+      <div class="fbi-x">${esc(f.text)}</div>
+      <button class="linkbtn danger" style="margin-top:6px" onclick="fbDelete('${esc(f.id)}')">Удалить</button></div>`).join('')}</div>`
+    :`<div class="empty">Сообщений пока нет</div>`);
+}
+async function fbDelete(id){
+  if(!await askConfirm({ title:'Удалить сообщение?', ok:'Удалить' })) return;
+  try{ await api('feedback_delete',{ id }); teacherFeedback(); }catch(e){ toast(e.message); }
 }
 let lastCreds=[];
 async function addStudents(){

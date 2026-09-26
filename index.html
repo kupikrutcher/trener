@@ -504,6 +504,33 @@ input[type=file]{display:none}
   background:var(--surface);box-shadow:var(--shadow-lift);border-radius:0 var(--radius-lg) var(--radius-lg) 0;
   transform:translateX(-110%);transition:transform .42s var(--ease-drawer)}
 .side.open{transform:none}
+/* низ панели: обратная связь над подписью; поле выезжает вниз поверх подписи, до низа панели не доходит */
+.side-end{margin-top:auto;display:flex;flex-direction:column;gap:14px}
+.side-end .side-foot{margin:0;align-self:end}
+.fbz{padding:0 6px}
+.fb-q{margin:0 0 10px;font-size:14px;line-height:1.4;color:var(--ink-muted)}
+.fb-btn{min-height:40px;padding:0 16px;font-size:15px}
+.side-stage{display:grid;align-items:end}
+.side-stage>*{grid-area:1/1}
+.fbz:not([hidden])+.side-stage{min-height:190px}
+.fb-pop{align-self:stretch;display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--surface);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow-soft);
+  clip-path:inset(0 0 100% 0 round var(--radius-lg));opacity:0;visibility:hidden;
+  transition:clip-path var(--dur-enter) var(--ease-drawer),opacity var(--dur-ui) ease,visibility 0s linear var(--dur-enter)}
+.fb-pop .lab{margin:0}
+.fb-t{flex:1;min-height:80px;width:100%;resize:none;border:0;border-radius:var(--radius-md);padding:10px 12px;
+  background:var(--surface-sunk);color:var(--ink);font:15px/1.45 var(--font-sans)}
+.fb-t:focus{outline:2px solid var(--focus-ring);outline-offset:0}
+.fb-send{min-height:42px;font-size:15px}
+.side-foot{transition:opacity var(--dur-ui) ease}
+.side-end.open .fb-pop{clip-path:inset(0 0 0 0 round var(--radius-lg));opacity:1;visibility:visible;transition-delay:0s}
+.side-end.open .side-foot{opacity:0}
+#tfb:not(:empty){margin-bottom:30px}
+.fbl{display:grid;gap:10px}
+.fbi{background:var(--surface);border-radius:var(--radius-lg);box-shadow:0 0 0 1px var(--line);padding:14px 16px}
+.fbi-h{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-size:13px;color:var(--ink-muted)}
+.fbi-h b{color:var(--ink);font-size:15px}
+.fbi-x{margin-top:6px;white-space:pre-wrap;line-height:1.5}
 .side-dim{position:fixed;inset:0;z-index:29;background:rgba(20,15,60,.35);opacity:0;pointer-events:none;transition:opacity .3s}
 .side.open+.side-dim{opacity:1;pointer-events:auto}
 .side-mark{font:700 27px/1.12 var(--font-display);letter-spacing:-.02em;padding:2px 10px;cursor:pointer;color:var(--ink)}
@@ -615,7 +642,20 @@ b,.pstat b,.rs-tile b,.cp-d b,.sumline b{font-variant-numeric:tabular-nums}
       <button data-nav="bank" onclick="navGo('bank')"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.2" y="3.8" width="15.6" height="5.4" rx="2"/><rect x="4.2" y="10.6" width="15.6" height="5.4" rx="2"/><path d="M6.5 19.8h11"/></svg>Банк заданий</button>
       <button data-nav="files" onclick="navGo('files')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.8 7.6a2.6 2.6 0 0 1 2.6-2.6h3.7l2.1 2.2h5.4a2.6 2.6 0 0 1 2.6 2.6v6.8a2.6 2.6 0 0 1-2.6 2.6H6.4a2.6 2.6 0 0 1-2.6-2.6z"/><path class="ic-paper" d="M8 15V10.4h8V15"/><path class="ic-flap" d="M3.8 10.6h16.4v6.4a2.6 2.6 0 0 1-2.6 2.6H6.4a2.6 2.6 0 0 1-2.6-2.6z"/></svg>Полезные файлы</button>
   </nav>
-  <div class="side-foot">Шаг за шагом<br>–<br>к сотке!</div>
+  <div class="side-end" id="sidend">
+    <div class="fbz" id="fbz" hidden>
+      <p class="fb-q" id="fbq">Что-то не нравится или есть предложения?</p>
+      <button class="btn ghost fb-btn" id="fbb" aria-expanded="false" aria-controls="fbp" onclick="fbToggle()">Обратная связь</button>
+    </div>
+    <div class="side-stage">
+      <div class="side-foot">Шаг за шагом<br>–<br>к сотке!</div>
+      <div class="fb-pop" id="fbp" role="group" aria-labelledby="fbq" inert>
+        <label class="lab" for="fbt">Твоё сообщение</label>
+        <textarea id="fbt" class="fb-t" maxlength="3000" placeholder="Что поправить или добавить — Маша прочитает"></textarea>
+        <button class="btn fb-send" id="fbs" onclick="fbSend()">Отправить</button>
+      </div>
+    </div>
+  </div>
 </aside>
 <div class="side-dim" onclick="sideToggle(false)"></div>
 <div class="wrap">

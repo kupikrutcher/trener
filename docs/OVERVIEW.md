@@ -102,8 +102,8 @@
 
 `handle()` в `app.js`: сначала `login`, `setup` (первый учитель по SETUP_CODE), дальше только с токеном. Токен = `base64url({l: login, c: created_at}).HMAC(SECRET)`; сервер берёт пользователя из базы и сверяет `created_at` (ключ удалённого ученика не подходит к новому аккаунту с тем же логином). Роль — из базы, `onlyTeacher()` на всех учительских действиях.
 
-Действия: `me, set_avatar, change_password, submit, my_subs, sub_get, grade, subs_list, todo_count, students_list, students_create, student_reset, student_delete, lessons_list, lesson_get, lesson_save, lesson_delete, hw_list, hw_save, hw_delete, file_upload_url`.
-Таблицы YDB: `users, avatars, subs (сводка работы), sub_body (ответы, оценки, файлы проверки), lessons, hws`.
+Действия: `me, set_avatar, change_password, submit, my_subs, sub_get, grade, subs_list, todo_count, students_list, students_create, student_reset, student_delete, lessons_list, lesson_get, lesson_save, lesson_delete, hw_list, hw_save, hw_delete, feedback_send, feedback_list, feedback_delete, file_upload_url`.
+Таблицы YDB: `users, avatars, subs (сводка работы), sub_body (ответы, оценки, файлы проверки), lessons, hws, feedback` (обратная связь: ученик пишет из левой панели, учитель читает в личном кабинете).
 Файлы уроков/проверки — в бакете через подписанные ссылки (`file_upload_url`, скачивание — `downloadUrl`).
 Нагрузка: функция 256 МБ, 1 запрос на копию, квота облака — 10 одновременных вызовов; при 100–300 одновременных запросах с повтором на сайте всё проходит, ожидание в пике 1–4 с (замер 26.09). Параметр `--concurrency 8` пробовали — выигрыша нет.
 

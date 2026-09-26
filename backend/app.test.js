@@ -242,3 +242,18 @@ test('ДЗ из банка: учитель собирает и удаляет, �
   await call(db, { action: 'hw_delete', token: T, id: t.id });
   assert.equal((await call(db, { action: 'hw_list', token: S1 })).tests.length, 0);
 });
+
+test('обратная связь: пишет ученик, читает и удаляет учитель', async () => {
+  const { db, T, S1 } = await world();
+  await rejects(call(db, { action: 'feedback_send', token: S1, text: '   ' }), 400);
+  await rejects(call(db, { action: 'feedback_send', text: 'без входа' }), 401);
+  await call(db, { action: 'feedback_send', token: S1, text: '  Хочу больше заданий 25  ' });
+  await rejects(call(db, { action: 'feedback_list', token: S1 }), 403);
+  const { feedback } = await call(db, { action: 'feedback_list', token: T });
+  assert.equal(feedback.length, 1);
+  assert.equal(feedback[0].text, 'Хочу больше заданий 25');
+  assert.equal(feedback[0].name, 'Иванов Пётр');
+  await rejects(call(db, { action: 'feedback_delete', token: S1, id: feedback[0].id }), 403);
+  await call(db, { action: 'feedback_delete', token: T, id: feedback[0].id });
+  assert.equal((await call(db, { action: 'feedback_list', token: T })).feedback.length, 0);
+});

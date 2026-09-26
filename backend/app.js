@@ -359,6 +359,25 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       return { ok: true };
     }
 
+    // обратная связь из левой панели: пишут ученики, читает учитель
+    case 'feedback_send': {
+      const text = str(req.text, 3000, 'text').trim();
+      if (!text) fail(400, 'Напиши, что не так или что добавить');
+      const day = new Date(Date.now() - 864e5).toISOString();
+      if ((await db.listFeedback()).filter((f) => f.login === me.login && f.created_at > day).length >= 20) fail(429, 'Слишком много сообщений за сутки');
+      await db.putFeedback({ id: newId(), login: me.login, name: me.full_name || me.login, text, created_at: new Date().toISOString() });
+      return { ok: true };
+    }
+
+    case 'feedback_list':
+      onlyTeacher();
+      return { feedback: (await db.listFeedback()).sort((a, b) => b.created_at.localeCompare(a.created_at)) };
+
+    case 'feedback_delete':
+      onlyTeacher();
+      await db.deleteFeedback(str(req.id, 40, 'id'));
+      return { ok: true };
+
     case 'file_upload_url': {
       onlyTeacher();
       if (!store.ok) fail(503, 'Хранилище файлов не настроено');

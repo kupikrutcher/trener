@@ -64,6 +64,7 @@ const TABLES = {
   lessons: { cols: { id: 'Utf8', title: 'Utf8', video: 'Utf8', test_name: 'Utf8', deadline: 'Utf8', files: 'Utf8', published: 'Bool',
     created_at: 'Utf8', updated_at: 'Utf8', block: 'Int32', descr: 'Utf8' }, pk: 'id' },
   hws: { cols: { id: 'Utf8', name: 'Utf8', folder: 'Utf8', questions: 'Utf8', created_at: 'Utf8' }, pk: 'id' },
+  feedback: { cols: { id: 'Utf8', login: 'Utf8', name: 'Utf8', text: 'Utf8', created_at: 'Utf8' }, pk: 'id' },
 };
 // колонки существующей таблицы или null, если таблицы нет
 async function tableColumns(name) {
@@ -208,6 +209,19 @@ const db = {
   },
   async deleteHw(id) {
     await query(`DECLARE $id AS Utf8; DELETE FROM hws WHERE id = $id;`, { $id: V.utf8(id) });
+  },
+  async listFeedback() {
+    const [rows] = await query(`SELECT id, login, name, text, created_at FROM feedback LIMIT 1000;`);
+    return rows;
+  },
+  async putFeedback(f) {
+    await query(`DECLARE $id AS Utf8; DECLARE $login AS Utf8; DECLARE $name AS Utf8; DECLARE $text AS Utf8; DECLARE $created_at AS Utf8;
+      UPSERT INTO feedback (id, login, name, text, created_at) VALUES ($id, $login, $name, $text, $created_at);`, {
+      $id: V.utf8(f.id), $login: V.utf8(f.login), $name: V.utf8(f.name), $text: V.utf8(f.text), $created_at: V.utf8(f.created_at),
+    });
+  },
+  async deleteFeedback(id) {
+    await query(`DECLARE $id AS Utf8; DELETE FROM feedback WHERE id = $id;`, { $id: V.utf8(id) });
   },
   async deleteStudent(login) {
     const ids = (await this.listSubsOfStudent(login)).map((s) => s.id);
