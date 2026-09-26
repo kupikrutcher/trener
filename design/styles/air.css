@@ -256,8 +256,8 @@ body{font-size:17px}
   .side-nav [data-nav="bank"]:hover svg rect:first-of-type{transform:translate(1px,-2.5px) rotate(-7deg)}
   .side-nav [data-nav="bank"]:hover svg rect:last-of-type{transform:translateY(-1px)}
   .side-nav [data-nav="bank"]:hover svg path{transform:scaleX(.7)}
-  /* Полезные файлы: папка приоткрывается */
-  .side-nav [data-nav="files"]:hover svg path{transform-origin:50% 100%;transform:skewX(-9deg) scaleY(.9)}
+  /* Полезные файлы: папка подпрыгивает — приседает, подскакивает, мягко приземляется */
+  .side-nav [data-nav="files"]:hover svg path{transform-origin:50% 100%;animation:icHop .6s cubic-bezier(.33,0,.2,1)}
   /* Проверка: галочка заново «ставится» */
   .side-nav [data-nav="check"] svg path{stroke-dasharray:12;stroke-dashoffset:0}
   .side-nav [data-nav="check"]:hover svg path{animation:icTick .5s cubic-bezier(.23,1,.32,1)}
@@ -267,4 +267,5 @@ body{font-size:17px}
 @keyframes icSpine{40%{transform:scaleY(.86)}}
 @keyframes icDot{50%{transform:scale(2.6)}}
 @keyframes icTick{from{stroke-dashoffset:12}}
+@keyframes icHop{15%{transform:scale(1.08,.88)}45%{transform:translateY(-3.5px) scale(.94,1.08)}75%{transform:scale(1.06,.92)}}
 @media (prefers-reduced-motion:reduce){.side-nav svg *{transition:none!important;animation:none!important;transform:none!important}}
