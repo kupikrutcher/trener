@@ -63,6 +63,7 @@ const TABLES = {
   sub_body: { cols: { id: 'Utf8', p1: 'Utf8', p2: 'Utf8', grades: 'Utf8', comment: 'Utf8', files: 'Utf8' }, pk: 'id' },
   lessons: { cols: { id: 'Utf8', title: 'Utf8', video: 'Utf8', test_name: 'Utf8', deadline: 'Utf8', files: 'Utf8', published: 'Bool',
     created_at: 'Utf8', updated_at: 'Utf8', block: 'Int32', descr: 'Utf8' }, pk: 'id' },
+  hws: { cols: { id: 'Utf8', name: 'Utf8', folder: 'Utf8', questions: 'Utf8', created_at: 'Utf8' }, pk: 'id' },
 };
 // колонки существующей таблицы или null, если таблицы нет
 async function tableColumns(name) {
@@ -193,6 +194,20 @@ const db = {
   },
   async deleteLesson(id) {
     await query(`DECLARE $id AS Utf8; DELETE FROM lessons WHERE id = $id;`, { $id: V.utf8(id) });
+  },
+  async listHws() {
+    const [rows] = await query(`SELECT id, name, folder, questions, created_at FROM hws LIMIT 1000;`);
+    return rows.map((r) => ({ ...r, questions: parse(r.questions) || [] }));
+  },
+  async putHw(t) {
+    await query(`DECLARE $id AS Utf8; DECLARE $name AS Utf8; DECLARE $folder AS Utf8; DECLARE $questions AS Utf8; DECLARE $created_at AS Utf8;
+      UPSERT INTO hws (id, name, folder, questions, created_at) VALUES ($id, $name, $folder, $questions, $created_at);`, {
+      $id: V.utf8(t.id), $name: V.utf8(t.name), $folder: V.utf8(t.folder), $questions: V.utf8(JSON.stringify(t.questions)),
+      $created_at: V.utf8(t.created_at),
+    });
+  },
+  async deleteHw(id) {
+    await query(`DECLARE $id AS Utf8; DELETE FROM hws WHERE id = $id;`, { $id: V.utf8(id) });
   },
   async deleteStudent(login) {
     const ids = (await this.listSubsOfStudent(login)).map((s) => s.id);

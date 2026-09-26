@@ -226,3 +226,19 @@ test('файлы к проверке: учитель прикрепляет, у�
   await callS(db, st, { action: 'student_delete', token: T, login: 'ivanov.p' });           // ученик удалён — файл тоже
   assert.deepEqual(st.removed, [up.key, up2.key]);
 });
+
+test('ДЗ из банка: учитель собирает и удаляет, ученик видит', async () => {
+  const { db, T, S1 } = await world();
+  const q = { n: '5', text: 'Выберите верные суждения', answer: '135', explanation: 'потому что' };
+  await rejects(call(db, { action: 'hw_save', token: S1, name: 'x', folder: 'y', questions: [q] }), 403);
+  await rejects(call(db, { action: 'hw_save', token: T, name: 'x', folder: 'y', questions: [] }), 400);
+  await rejects(call(db, { action: 'hw_save', token: T, name: '', folder: 'y', questions: [q] }), 400);
+  const { test: t } = await call(db, { action: 'hw_save', token: T, name: 'Экономика', folder: '1 блок', questions: [q, { ...q, evil: 1 }] });
+  await rejects(call(db, { action: 'hw_save', token: T, name: 'Экономика', folder: 'z', questions: [q] }), 409);
+  const seen = (await call(db, { action: 'hw_list', token: S1 })).tests;
+  assert.deepEqual(seen.map((x) => [x.name, x.folder, x.questions.length]), [['Экономика', '1 блок', 2]]);
+  assert.equal(seen[0].questions[1].evil, undefined);
+  await rejects(call(db, { action: 'hw_delete', token: S1, id: t.id }), 403);
+  await call(db, { action: 'hw_delete', token: T, id: t.id });
+  assert.equal((await call(db, { action: 'hw_list', token: S1 })).tests.length, 0);
+});

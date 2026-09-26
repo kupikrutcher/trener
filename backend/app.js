@@ -330,6 +330,35 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       return { ok: true };
     }
 
+    /* ---------- ДЗ, собранные учителем из банка заданий ---------- */
+    case 'hw_list':
+      return { tests: (await db.listHws()).sort((a, b) => a.created_at.localeCompare(b.created_at)) };
+
+    case 'hw_save': {
+      onlyTeacher();
+      const name = str(req.name, 200, 'name').trim();
+      const folder = str(req.folder, 100, 'folder').trim();
+      if (!name) fail(400, 'Нужно название ДЗ');
+      if (!folder) fail(400, 'Нужна папка');
+      if (!Array.isArray(req.questions) || !req.questions.length) fail(400, 'В ДЗ нет заданий');
+      if (req.questions.length > 100) fail(400, 'Больше 100 заданий в одном ДЗ');
+      const questions = req.questions.map((q) => ({
+        ...(q.part === 2 ? { part: 2, pts: str(String(q.pts || ''), 10, 'pts') } : {}),
+        n: str(String(q.n), 5, 'n'), text: str(q.text, 20000, 'text'),
+        answer: str(q.answer || '', 2000, 'answer'), explanation: str(q.explanation || '', 20000, 'explanation'),
+      }));
+      if ((await db.listHws()).some((t) => t.name === name)) fail(409, 'ДЗ с таким названием уже есть');
+      const hw = { id: newId(), name, folder, questions, created_at: new Date().toISOString() };
+      await db.putHw(hw);
+      return { test: hw };
+    }
+
+    case 'hw_delete': {
+      onlyTeacher();
+      await db.deleteHw(str(req.id, 40, 'id'));
+      return { ok: true };
+    }
+
     case 'file_upload_url': {
       onlyTeacher();
       if (!store.ok) fail(503, 'Хранилище файлов не настроено');

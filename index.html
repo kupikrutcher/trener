@@ -221,6 +221,24 @@ body{
 .bank-f{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:var(--space-3)}
 .bank-sum{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);margin:var(--space-4) 0 var(--space-3);font-size:14px;color:var(--muted)}
 .bank-sum b{color:var(--ink)}
+/* банк у учителя: задания с галочкой «Добавить в ДЗ» и панель «Новое ДЗ» */
+.bq-list{display:flex;flex-direction:column;gap:var(--space-3);margin-top:var(--space-4)}
+.bq{padding:var(--space-4);border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface)}
+.bq.on{border-color:var(--accent)}
+.bq-h{display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-2);font-size:13px;color:var(--muted)}
+.bq-h .bq-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bq-h .chk{margin:0;font-size:13.5px;color:var(--ink);white-space:nowrap}
+.bq-x{font-size:15px;line-height:1.55}
+.bq-x .opt,.bq-x .hdr,.bq-x .ins{display:block}
+.bq-a{margin-top:var(--space-2);font-size:13px;color:var(--muted)}.bq-a b{font:600 14px var(--font-mono);color:var(--ink)}
+.nhw{position:sticky;bottom:var(--space-3);z-index:5;margin-top:var(--space-4);padding:var(--space-4);border:1px solid var(--accent);
+  border-radius:var(--radius-md);background:var(--surface);box-shadow:var(--shadow-lift);max-height:75vh;overflow:auto}
+.nhw-h{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3)}
+.nhw-h b{font:700 16px/1.3 var(--font-display)}
+.nhw-s{margin:var(--space-2) 0 0;font-size:13.5px;color:var(--muted);line-height:1.6}.nhw-s b{color:var(--ink);font-weight:600}
+.nhw-f{display:grid;grid-template-columns:1.4fr 1fr auto;gap:var(--space-2);align-items:end;margin-top:var(--space-3)}
+.nhw-f .btn{width:auto}
+@media (max-width:640px){.nhw{max-height:42vh}.nhw-f{grid-template-columns:1fr}.nhw-f .btn{width:100%}}
 /* выпадающий список в стиле сайта: «вдавленное» поле + выпуклая панель */
 .dd{position:relative;min-width:0}
 .dd-btn{width:100%;min-height:48px;display:flex;align-items:center;gap:var(--space-2);padding:12px 14px;text-align:left;font:500 14.5px/1.3 var(--font-sans);color:var(--ink);
@@ -407,6 +425,7 @@ a.fitem:hover{border-color:var(--accent);background:var(--accent-soft)}
 .st-draft{flex:none;font-size:11.5px;font-weight:600;border-radius:var(--radius-cell);padding:3px 9px;color:var(--muted);background:var(--line)}
 .lform .lab{margin-top:16px}
 .lform select.tin{appearance:auto}
+.lform .dd-pop{width:100%;max-width:none}
 .chk{display:flex;align-items:center;gap:10px;margin:20px 0 4px;font-size:14.5px;cursor:pointer}
 .chk input{width:18px;height:18px;accent-color:var(--accent)}
 .vprev{margin-top:10px}
@@ -634,11 +653,15 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');
 
 /* ---- tests storage ---- */
 /* задания всех ДЗ — tests.json (≈3 МБ): грузятся в фоне при открытии сайта, экраны с ДЗ ждут loadTests() */
-let testsP=null;
+/* + ДЗ, которые учитель собрал из банка (сервер, hw_list): у них есть folder и custom — id на сервере */
+let testsP=null, hwP=null, fileTests=[];
 function loadTests(){
-  return testsP||(testsP=fetch('tests.json').then(r=>{ if(!r.ok) throw 0; return r.json(); })
-    .then(list=>{ tests=list.map((t,i)=>({id:'b'+i,name:t.name,questions:t.questions})); })
-    .catch(()=>{ testsP=null; throw new Error('Не удалось загрузить задания. Проверь интернет.'); }));
+  testsP=testsP||fetch('tests.json').then(r=>{ if(!r.ok) throw 0; return r.json(); })
+    .then(list=>{ fileTests=list.map((t,i)=>({id:'b'+i,name:t.name,questions:t.questions})); })
+    .catch(()=>{ testsP=null; throw new Error('Не удалось загрузить задания. Проверь интернет.'); });
+  hwP=hwP||(typeof api==='function'&&getToken() ? api('hw_list').then(r=>r.tests).catch(()=>{ hwP=null; return []; }) : Promise.resolve([]));
+  return Promise.all([testsP,hwP]).then(([,hw])=>{
+    tests=[...fileTests, ...hw.map(t=>({id:'c'+t.id,name:t.name,questions:t.questions,folder:t.folder,custom:t.id}))]; });
 }
 
 /* ---- helpers ---- */
@@ -735,6 +758,8 @@ function groupTests(){
     list.forEach(t=>used.add(t.id));
     if(list.length) out.push([title,list]);
   });
+  tests.filter(t=>t.custom).forEach(t=>{ used.add(t.id);
+    let g=out.find(([title])=>title===t.folder); if(!g) out.push(g=[t.folder,[]]); g[1].push(t); });
   const rest=tests.filter(t=>!used.has(t.id));
   if(rest.length) out.push(['Другое',rest]);
   return out;
@@ -791,6 +816,7 @@ function testsListHTML(){
         <div class="tname">${esc(t.name)}</div>
         <div class="tmeta">${metaLine(t.questions)}</div>
       </div>
+      ${t.custom&&me&&me.role==='teacher'?`<button class="trm" title="Удалить ДЗ" aria-label="Удалить ДЗ ${esc(t.name)}" onclick="event.stopPropagation();hwDelete('${t.custom}')">✕</button>`:''}
       <span class="tgo">→</span>
     </div>`;
   const open=openSects();

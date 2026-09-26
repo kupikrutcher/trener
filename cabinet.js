@@ -52,6 +52,7 @@ function busy(btn,on,text){ if(!btn)return; btn.disabled=on; if(text) btn.textCo
 async function loadMe(){
   me=null;
   if(getToken()){ try{ me=(await api('me')).me; }catch(e){} }
+  hwP=null;   // ДЗ учителя из банка видны только после входа
   await loadSubmitted();
   paintAcct();
 }
@@ -764,6 +765,7 @@ async function bankView(){
     bankData.topicName=Object.fromEntries(bankData.topics.map(t=>[t.code,t.name]));
   }
   bankDraw();
+  if(me&&me.role==='teacher') loadTests().then(hwPaint,()=>{});   // папки из «Готовых ДЗ» — в подсказки панели «Новое ДЗ»
 }
 function bankMatch(q,skip){
   return (skip==='block'||!bankF.block||q.block===bankF.block)
@@ -795,10 +797,72 @@ function bankDraw(){
     </div>
     <div class="bank-sum"><span>Всего: <b>${plural(n)}</b></span>
       ${any?`<button class="linkbtn" onclick="bankReset()">Сбросить фильтры</button>`:''}</div>
-    ${n?`<button class="btn" onclick="bankRun()">Решать подборку</button>`:`<div class="empty">По этим фильтрам заданий нет.</div>`}`;
+    ${n?`<button class="btn" onclick="bankRun()">Решать подборку</button>`:`<div class="empty">По этим фильтрам заданий нет.</div>`}
+    ${me&&me.role==='teacher'&&n?`<div class="bq-list" id="bql">${bankItemsHTML()}</div>`:''}
+    <div id="nhw"></div>`;
+  hwPaint();
+}
+/* учитель собирает ДЗ из банка: отмечает задания, в панели «Новое ДЗ» — сводка, название и папка */
+let hwSel=[], bankShown=20, hwName='', hwFolder='';
+function bankItemsHTML(){
+  const list=bankList(), Q=bankData.questions;
+  return list.slice(0,bankShown).map(q=>{ const i=Q.indexOf(q), on=hwSel.includes(q);
+    return `<div class="bq${on?' on':''}"><div class="bq-h"><span class="qnum">Задание ${esc(q.n)}</span>
+      <span class="bq-t" title="${esc(q.topic+' '+(bankData.topicName[q.topic]||''))}">${esc(q.topic+' '+(bankData.topicName[q.topic]||''))}</span>
+      <label class="chk"><input type="checkbox"${on?' checked':''} onchange="hwToggle(${i},this.checked)"> Добавить в ДЗ</label></div>
+      <div class="bq-x">${fmtQ(q.text,q)}</div>${q.answer?`<div class="bq-a">Ответ: <b>${esc(q.answer)}</b></div>`:''}</div>`; }).join('')
+    + (list.length>bankShown?`<button class="btn ghost" onclick="bankShown+=20;bankDraw()">Показать ещё · осталось ${list.length-bankShown}</button>`:'');
+}
+function hwToggle(i,on){
+  const q=bankData.questions[i];
+  hwSel=hwSel.filter(x=>x!==q); if(on) hwSel.push(q);
+  document.querySelectorAll('.bq input').forEach(c=>c.closest('.bq').classList.toggle('on',c.checked));
+  hwPaint();
+}
+function hwFolders(){ return [...new Set([...SECTIONS.map(x=>x[0]), ...tests.filter(t=>t.custom).map(t=>t.folder)])]; }
+function hwPaint(){
+  const box=$('#nhw'); if(!box) return;
+  if(!hwSel.length){ box.className=''; box.innerHTML=''; return; }
+  const cnt=key=>{ const c={}; hwSel.forEach(q=>{ const k=key(q); c[k]=(c[k]||0)+1; }); return Object.entries(c); };
+  const p2=hwSel.filter(isP2).length;
+  const nums=cnt(q=>q.n).sort((a,b)=>a[0]-b[0]).map(([k,v])=>`№${esc(k)}${v>1?' × '+v:''}`).join(', ');
+  const tops=cnt(q=>q.topic).sort((a,b)=>a[0].localeCompare(b[0],'ru',{numeric:true}))
+    .map(([k,v])=>`<span title="${esc(bankData.topicName[k]||'')}">${esc(k)}${v>1?' × '+v:''}</span>`).join(', ');
+  box.className='nhw'; box.setAttribute('role','region'); box.setAttribute('aria-label','Новое ДЗ');
+  box.innerHTML=`<div class="nhw-h"><b>Новое ДЗ · ${plural(hwSel.length)}</b><button class="linkbtn danger" onclick="hwClear()">Очистить</button></div>
+    <div class="nhw-s">Часть 1: <b>${hwSel.length-p2}</b> · часть 2: <b>${p2}</b><br>Типы: <b>${nums}</b><br>Темы: <b>${tops}</b></div>
+    <div class="nhw-f">
+      <div><label class="lab" for="hwn">Название</label><input id="hwn" class="tin" maxlength="200" placeholder="Например: Экономика, задания 5–7" value="${esc(hwName)}" oninput="hwName=this.value"></div>
+      <div><label class="lab" for="hwf">Папка</label><input id="hwf" class="tin" maxlength="100" list="hwfl" placeholder="Выберите или впишите новую" value="${esc(hwFolder)}" oninput="hwFolder=this.value">
+        <datalist id="hwfl">${hwFolders().map(f=>`<option value="${esc(f)}">`).join('')}</datalist></div>
+      <button class="btn" id="hws" onclick="hwSave()">Добавить в папку</button>
+    </div><div class="cab-err" id="hwe"></div>`;
+}
+function hwClear(){ hwSel=[]; bankDraw(); }
+async function hwSave(){
+  const name=$('#hwn').value.trim(), folder=$('#hwf').value.trim(), err=$('#hwe');
+  if(!name){ err.textContent='Дайте ДЗ название'; return $('#hwn').focus(); }
+  if(!folder){ err.textContent='Выберите папку или впишите новую'; return $('#hwf').focus(); }
+  const btn=$('#hws'); busy(btn,true,'Сохраняем…');
+  try{
+    await loadTests();
+    if(tests.some(t=>t.name===name)) throw new Error('ДЗ с таким названием уже есть — выберите другое');
+    await api('hw_save',{ name, folder, questions:hwSel.map(q=>({ n:q.n, text:q.text, answer:q.answer, explanation:q.explanation||'' })) });
+  }catch(e){ busy(btn,false,'Добавить в папку'); err.textContent=e.message; return; }
+  hwSel=[]; hwName=''; hwP=null;
+  const o=new Set(openSects()); o.add(folder); try{ localStorage.setItem('tr_open',JSON.stringify([...o])); }catch(e){}
+  toast('ДЗ «'+name+'» в папке «'+folder+'»');
+  cabTeacher('tests');
+}
+async function hwDelete(id){
+  const t=tests.find(x=>x.custom===id);
+  if(!t||!confirm('Удалить ДЗ «'+t.name+'»? Уроки с этим ДЗ останутся без заданий.')) return;
+  try{ await api('hw_delete',{ id }); hwP=null; toast('ДЗ удалено'); cabTeacher('tests'); }
+  catch(e){ toast(e.message); }
 }
 /* выпадающий список в стиле сайта вместо системного select: кнопка + listbox, клавиши ↑ ↓ Enter Esc.
-   id вида «bf-<ключ фильтра>»; пункт с c===0 недоступен, { group } — подзаголовок */
+   id «bf-<ключ фильтра>» — фильтр банка, остальные — обработчик в ddOn[id]; пункт с c===0 недоступен, { group } — подзаголовок */
+const ddOn={ lh:v=>{ editL.test_name=v; } };   // ДЗ урока в редакторе
 function ddHTML(id,label,ph,cur,items){
   const sel=items.find(i=>i.v===cur);
   const opts=[{ v:'', label:ph }, ...items].map((it,k)=>it.group!=null
@@ -829,8 +893,12 @@ function ddToggle(id){
 }
 function ddPick(id,o){
   if(o.getAttribute('aria-disabled')) return;
-  ddClose(id); bankSet(id.slice(3),o.dataset.v);
-  const e=ddEls(id); if(e) e.btn.focus();
+  ddClose(id);
+  const e=ddEls(id);
+  if(ddOn[id]){ ddOn[id](o.dataset.v); e.pop.querySelectorAll('.dd-o').forEach(x=>x.setAttribute('aria-selected',x===o));
+    $('#'+id+'-v').textContent=o.title; }
+  else bankSet(id.slice(3),o.dataset.v);
+  if(e) e.btn.focus();
 }
 function ddKey(ev,id){
   const e=ddEls(id), open=!e.pop.hidden, list=ddOpts(e.pop), i=list.indexOf(e.pop.querySelector('.dd-o.act'));
@@ -844,6 +912,7 @@ function ddKey(ev,id){
 document.addEventListener('click',ev=>{ document.querySelectorAll('.dd').forEach(d=>{ if(!d.contains(ev.target)) ddClose(d.id); }); });
 function bankSet(k,v){
   bankF[k]=v;
+  bankShown=20;
   if(k==='block'&&bankF.topic&&!(v&&bankData.topics.some(t=>t.code===bankF.topic&&t.block===v))) bankF.topic='';
   if(k==='topic'&&v) bankF.block=bankData.topics.find(t=>t.code===v).block;
   try{ localStorage.setItem('tr_bankf',JSON.stringify(bankF)); }catch(e){}
@@ -1000,8 +1069,6 @@ async function lessonEdit(id){
       deadline:l.deadline||'', files:l.files.map(f=>({ key:f.key, name:f.name, size:f.size })), published:l.published, block:l.block||0, descr:l.descr||'' }; }
     catch(e){ toast(e.message); return cabTeacher('lessons'); }
   }
-  const opts=groupTests().map(([title,list])=>`<optgroup label="${esc(title)}">${list.map(t=>
-    `<option value="${esc(t.name)}"${t.name===editL.test_name?' selected':''}>${esc(t.name)}</option>`).join('')}</optgroup>`).join('');
   cabShow(`<div class="cab lform">
     <button class="linkbtn back" onclick="cabTeacher('lessons')">← К урокам</button>
     <h2 class="cab-h" style="margin-top:10px">${editL.id?'Урок':'Новый урок'}</h2>
@@ -1015,8 +1082,7 @@ async function lessonEdit(id){
     <label class="lab" for="lv">Видео или трансляция — ссылка Kinescope, Rutube, VK Видео или YouTube</label>
     <input id="lv" class="tin" value="${esc(editL.video)}" oninput="lessonVideoPreview()">
     <div id="vprev" class="vprev"></div>
-    <label class="lab" for="lh">Домашнее задание</label>
-    <select id="lh" class="tin"><option value="">— без ДЗ —</option>${opts}</select>
+    ${ddHTML('lh','Домашнее задание','— без ДЗ —',editL.test_name,groupTests().flatMap(([title,list])=>[{ group:title }, ...list.map(t=>({ v:t.name, label:t.name }))]))}
     <label class="lab" for="ld">Дедлайн ДЗ</label>
     <input id="ld" class="tin" type="datetime-local" value="${toLocalInput(editL.deadline)}">
     <div class="vnote">Можно оставить пустым. Урок попадёт в «Дедлайны» ученика, пока он не отправит это ДЗ.</div>
@@ -1074,7 +1140,7 @@ async function lessonSave(){
   const btn=$('#lsave'); busy(btn,true,'Сохраняем…');
   try{
     const r=await api('lesson_save',{ id:editL.id||undefined, title:$('#lt').value.trim(), descr:$('#ldsc').value.trim(), video:$('#lv').value.trim(),
-      test_name:$('#lh').value, published:$('#lp').checked, block:$('#lb').value.trim(),
+      test_name:editL.test_name, published:$('#lp').checked, block:$('#lb').value.trim(),
       deadline:$('#ld').value?new Date($('#ld').value).toISOString():'',
       files:editL.files.filter(f=>f.key).map(f=>({ key:f.key, name:f.name, size:f.size })) });
     toast(r.lesson.published?'Урок опубликован':'Урок сохранён как черновик');

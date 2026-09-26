@@ -3,7 +3,7 @@
 const clone = (x) => (x == null ? x : JSON.parse(JSON.stringify(x)));
 
 function memoryDb() {
-  const users = new Map(), avatars = new Map(), meta = new Map(), body = new Map(), lessons = new Map();
+  const users = new Map(), avatars = new Map(), meta = new Map(), body = new Map(), lessons = new Map(), hws = new Map();
   return {
     async getUser(login) { return clone(users.get(login)) || null; },
     async listUsers() { return [...users.values()].map(clone); },
@@ -21,6 +21,9 @@ function memoryDb() {
     async getLesson(id) { return clone(lessons.get(id)) || null; },
     async putLesson(l) { lessons.set(l.id, clone(l)); },
     async deleteLesson(id) { lessons.delete(id); },
+    async listHws() { return [...hws.values()].map(clone); },
+    async putHw(t) { hws.set(t.id, clone(t)); },
+    async deleteHw(id) { hws.delete(id); },
     async deleteStudent(login) {
       for (const [id, m] of meta) if (m.student === login) { meta.delete(id); body.delete(id); }
       users.delete(login); avatars.delete(login);
