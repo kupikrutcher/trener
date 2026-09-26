@@ -484,6 +484,18 @@ input[type=file]{display:none}
   z-index:9;transition:transform .45s var(--ease-drawer),opacity .25s ease,visibility .45s;max-width:88vw;
   opacity:0;visibility:hidden;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1;visibility:visible}
+.dlg-wrap{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:16px;background:rgba(20,15,60,.35);
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);opacity:0;transition:opacity var(--dur-ui) ease}
+.dlg{width:100%;max-width:400px;background:var(--surface);color:var(--ink);border-radius:var(--radius-lg);box-shadow:var(--shadow-lift);
+  padding:26px 24px 22px;transform:translateY(12px) scale(.97);transition:transform var(--dur-enter) var(--ease-drawer)}
+.dlg-wrap.show{opacity:1}.dlg-wrap.show .dlg{transform:none}
+.dlg-t{margin:0;font:700 20px/1.25 var(--font-display);letter-spacing:-.02em}
+.dlg-x{margin:10px 0 0;color:var(--ink-muted);font-size:15px;line-height:1.5}
+.dlg-b{display:flex;gap:10px;margin-top:22px}.dlg-b .btn{flex:1;width:auto}
+.btn.danger{background:var(--bad);color:var(--surface)}
+@media (hover:hover) and (pointer:fine){.btn.danger:not(.ghost):hover{background:var(--bad);filter:brightness(.92)}}
+.dlg .btn.ghost{background:var(--surface-sunk);color:var(--ink);box-shadow:none;border:0}
+@media(max-width:420px){.dlg-b{flex-direction:column-reverse}}
 @media(min-width:680px){.panel{padding:42px 44px}.qtext{font-size:16.5px}}
 @media(max-width:380px){.panel{padding:28px 22px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
@@ -649,6 +661,27 @@ function setTheme(t){
 }
 (function(){let t='paper';try{t=localStorage.getItem('tr_theme')||'paper'}catch(e){}setTheme(t)})();
 
+/* подтверждение в стиле сайта вместо системного confirm(): askConfirm({title,text,ok}) → Promise<boolean>.
+   Esc и клик мимо — «Отмена»; фокус сначала на «Отмена», чтобы Enter случайно не удалил */
+function askConfirm({ title, text='', ok='Удалить', cancel='Отмена', danger=true }){
+  return new Promise(res=>{
+    const back=document.activeElement, d=document.createElement('div');
+    d.className='dlg-wrap';
+    d.innerHTML=`<div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="dlg-t" aria-describedby="dlg-x">
+      <h2 class="dlg-t" id="dlg-t">${esc(title)}</h2>${text?`<p class="dlg-x" id="dlg-x">${esc(text)}</p>`:''}
+      <div class="dlg-b"><button class="btn ghost" data-v="0">${esc(cancel)}</button>
+        <button class="btn${danger?' danger':''}" data-v="1">${esc(ok)}</button></div></div>`;
+    const done=v=>{ d.classList.remove('show'); document.removeEventListener('keydown',key,true);
+      setTimeout(()=>d.remove(),220); if(back&&back.focus) back.focus(); res(v); };
+    const key=e=>{ if(e.key==='Escape'){ e.preventDefault(); done(false); }
+      else if(e.key==='Tab'){ const b=[...d.querySelectorAll('button')], i=b.indexOf(document.activeElement);   // фокус не уходит из окна
+        e.preventDefault(); b[(i+(e.shiftKey?b.length-1:1))%b.length].focus(); } };
+    d.addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) done(b.dataset.v==='1'); else if(e.target===d) done(false); });
+    document.addEventListener('keydown',key,true);
+    document.body.appendChild(d); void d.offsetWidth; d.classList.add('show');
+    d.querySelector('[data-v="0"]').focus();
+  });
+}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');
   clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600)}
 
@@ -1074,18 +1107,8 @@ function countUp(){
     b.textContent=Math.round(to*e); if(k<1) requestAnimationFrame(step); })(t0);
 }
 
-/* full completion */
-function finish(){
-  idx=bank.length; bars(); $('#cur').textContent=bank.length;
-  const total=countP1(bank), correct=score, wrong=results.filter(r=>!r.p2&&!r.ok).length;
-  lastWrong=results.filter(r=>!r.p2&&!r.ok).map(r=>r.q);
-  app.className='panel fade';
-  app.innerHTML=`
-    ${total?resultSummary(correct,wrong,total):`<div class="rs"><div class="rs-kicker">Результат ДЗ</div>
-      <div class="rs-name">${esc(curName)}</div><p class="gsub">Ответы второй части сохранены.</p></div>`}
-    ${resultActions(wrong,true)}`;
-  afterResult();
-}
+/* «Завершить» на последнем задании — тот же экран, что «Завершить тест»: итог и все задания с ответами */
+function finish(){ idx=bank.length; finishEarly(); }
 /* restart current base test from scratch */
 function openTest2(){ const t=tests.find(x=>x.name===curBase); if(t) bank=testBank(t); else if(window.bankSel) bank=bankSel.slice(); curName=curBase; begin(); }
 

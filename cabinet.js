@@ -1161,7 +1161,7 @@ async function lessonSave(){
   }catch(e){ busy(btn,false,'Сохранить'); $('#lerr').textContent=e.message; }
 }
 async function lessonDelete(){
-  if(!confirm('Удалить урок «'+editL.title+'» вместе с файлами? Работы учеников останутся.')) return;
+  if(!await askConfirm({ title:'Удалить урок «'+editL.title+'»?', text:'Файлы урока удалятся вместе с ним. Работы учеников останутся.', ok:'Удалить урок' })) return;
   try{ await api('lesson_delete',{ id:editL.id }); toast('Урок удалён'); cabTeacher('lessons'); }
   catch(e){ toast(e.message); }
 }
