@@ -916,6 +916,11 @@ function blockToggle(el){
   const o=new Set(openBlocks()), k=+el.dataset.b; el.open?o.add(k):o.delete(k);
   try{ localStorage.setItem('tr_lblocks',JSON.stringify([...o])); }catch(e){}
 }
+/* «15 тестовых · 4 развёрнутых» — сколько заданий в ДЗ урока (1 тестовое, 21 развёрнутое) */
+function hwCount(qs){
+  const w=(n,one,many)=>n+' '+(n%10===1&&n%100!==11?one:many), p2=qs.length-countP1(qs);
+  return [w(countP1(qs),'тестовое','тестовых'), p2&&w(p2,'развёрнутое','развёрнутых')].filter(Boolean).join(' · ');
+}
 async function lessonsList(){
   setUrl('lessons');
   cabShow(`<div class="cab">
@@ -931,7 +936,7 @@ async function lessonsList(){
     <div class="tcard" onclick="lessonView('${esc(l.id)}')">
       ${dateTile(l.created_at)}
       <div class="tinfo"><div class="tname">${esc(l.title)}</div>
-        <div class="tmeta">${(t=>t?metaLine(t.questions):'')(l.test_name&&findTest(l.test_name))}</div></div>
+        <div class="tmeta">${(t=>t?hwCount(t.questions):'')(l.test_name&&findTest(l.test_name))}</div></div>
       ${lessonDone(l)?'<span class="st-ok">сдано</span>':(l.deadline&&l.test_name&&+new Date(l.deadline)<Date.now()?'<span class="st-wait" style="color:var(--bad);background:var(--bad-soft)">просрочено</span>':'')}<span class="tgo">→</span>
     </div>`;
   box.innerHTML = lessons.length ? blockGroups(lessons).map(([b,list])=>{
