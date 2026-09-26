@@ -231,6 +231,7 @@ body{
 .bq-x{font-size:15px;line-height:1.55}
 .bq-x .opt,.bq-x .hdr,.bq-x .ins{display:block}
 .bq-a{margin-top:var(--space-2);font-size:13px;color:var(--muted)}.bq-a b{font:600 14px var(--font-mono);color:var(--ink)}
+.bq-a summary{cursor:pointer;width:max-content}.bq-a .uans{font-size:14px}
 .nhw{position:sticky;bottom:var(--space-3);z-index:5;margin-top:var(--space-4);padding:var(--space-4);border:1px solid var(--accent);
   border-radius:var(--radius-md);background:var(--surface);box-shadow:var(--shadow-lift);max-height:75vh;overflow:auto}
 .nhw-h{display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3)}
@@ -707,7 +708,9 @@ function fmtLong(t,q){
 }
 /* развёрнутые ответы ученика — хранятся в браузере для каждого теста */
 /* черновик по названию ДЗ, не по номеру в tests.json: удаление или добавление тестов не перепутает черновики */
-function ansKey(q){const t=tests.find(x=>x.name===curBase);const i=t?t.questions.indexOf(q):-1;return 'tr_ans_'+curBase+'_'+(i>=0?i:(q.n||''))}
+/* в подборке из банка номера повторяются — ключ по тексту задания */
+function ansKey(q){if(window.bankSel)return 'tr_ans_bank_'+hashStr(q.text);const t=tests.find(x=>x.name===curBase);const i=t?t.questions.indexOf(q):-1;return 'tr_ans_'+curBase+'_'+(i>=0?i:(q.n||''))}
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
 function getAns(q){try{return localStorage.getItem(ansKey(q))||''}catch(e){return ''}}
 function setAns(q,v){try{v?localStorage.setItem(ansKey(q),v):localStorage.removeItem(ansKey(q))}catch(e){}}
 function countP1(qs){return qs.filter(q=>!isP2(q)).length}
@@ -861,8 +864,8 @@ function qnav(){
     if(r) c.push(r.p2||!review?'done':(r.ok?'ok':'bad'));   // верно/ошибка — только в разборе, при решении просто «отвечено»
     if(i===idx) c.push('cur');
     let pre='';
-    if(isP2(q)&&!sep&&i>0){sep=true;pre='<span class="qsep">Часть 2</span>';}
-    const lab=isP2(q)&&q.n?q.n:(i+1);
+    if(isP2(q)&&!sep){sep=true;if(i>0)pre='<span class="qsep">Часть 2</span>';}   // метка — только между частями
+    const lab=isP2(q)&&q.n&&!window.bankSel?q.n:(i+1);   // в подборке из банка номера ЕГЭ повторяются
     const st=r?(r.p2||!review?'ответ сохранён':(r.ok?'верно':'ошибка')):(i===idx?'текущий':'');
     return pre+`<button class="${c.join(' ')}" onclick="go(${i})" aria-label="Вопрос ${esc(String(lab))}${st?', '+st:''}">${esc(String(lab))}</button>`;
   }).join('');
@@ -1048,7 +1051,7 @@ function resultActions(wrong,withAll){
   return `
     ${wrong>0?`<button class="btn" id="fixbtn" onclick="startMistakes()">Исправить ${wrong} ${ru(wrong,'ошибку','ошибки','ошибок')}</button>`:''}
     <div id="sendbox"></div>
-    ${p2n?`<div class="resnote">Часть 2 проверит учитель. Баллы появятся в профиле после проверки.</div>`:''}
+    ${p2n?`<div class="resnote">${window.bankSel?'Часть 2 автоматически не проверяется — сверь с образцом ответа.':'Часть 2 проверит учитель. Баллы появятся в профиле после проверки.'}</div>`:''}
     <div class="rs-links">
       <button class="linkbtn" onclick="openTest2()">Решать заново</button>
       ${window.bankSel?`<button class="linkbtn" onclick="navGo('bank')">К банку заданий</button>`:`<button class="linkbtn" onclick="goHW()">К ДЗ</button>`}

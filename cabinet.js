@@ -751,7 +751,7 @@ async function lessonsSchedule(){
   box.innerHTML = (up.length?group(up):`<div class="empty">Впереди ничего не запланировано</div>`)
     + (past.length?`<details class="qfold" style="margin-top:22px"><summary>Прошедшее · ${past.length}</summary>${group(past)}</details>`:'');
 }
-/* банк заданий части 1 (bank.json, собирается tools/xlsx_to_bank.py): фильтры по блоку, теме и номеру,
+/* банк заданий частей 1 и 2 (bank.json, собирается tools/xlsx_to_bank.py): фильтры по блоку, теме и номеру,
    подборка решается как обычный тест, но учителю не отправляется и ответы открыты сразу */
 /* фильтры — списки: можно выбрать несколько блоков, тем и номеров; пустой список — «все» */
 let bankData=null, bankF={ block:[], topic:[], n:[] };
@@ -759,7 +759,7 @@ try{ const f=JSON.parse(localStorage.getItem('tr_bankf')||'{}');   // раньш
   for(const k in bankF) if(f[k]) bankF[k]=[].concat(f[k]); }catch(e){}
 async function bankView(){
   setUrl('bank');
-  cabShow(`<div class="cab"><h2 class="cab-h">Банк заданий</h2><p class="cab-sub">Часть 1 · задания с ответами и пояснениями</p>
+  cabShow(`<div class="cab"><h2 class="cab-h">Банк заданий</h2>
     <div id="bnk" class="cab-load">Загружаем…</div></div>`);
   if(!bankData){
     try{ const r=await fetch('bank.json'); if(!r.ok) throw 0; bankData=await r.json(); }
@@ -790,12 +790,14 @@ function bankDraw(){
     ...(shownBlocks.length>1?[{ group:b }]:[]),
     ...D.topics.filter(t=>t.block===b).map(t=>({ v:t.code, code:t.code, label:t.name, c:ct[t.code]||0 }))]);
   const nums=[...new Set(D.questions.map(q=>q.n))].sort((a,b)=>a-b);
+  const numItems=[1,2].flatMap(p=>{ const l=nums.filter(v=>(+v>=17?2:1)===p);   // номера 17–25 — часть 2
+    return l.length?[{ group:'Часть '+p }, ...l.map(v=>({ v, label:'Задание '+v, c:cn[v]||0 }))]:[]; });
   const any=bankF.block.length||bankF.topic.length||bankF.n.length;
   box.innerHTML=`
     <div class="bank-f">
       ${ddHTML('bf-block','Блок','Все блоки',bankF.block,D.blocks.map(b=>({ v:b, label:b, c:cb[b]||0 })),true)}
       ${ddHTML('bf-topic','Тема','Все темы',bankF.topic,topics,true)}
-      ${ddHTML('bf-n','Номер задания','Все номера',bankF.n,nums.map(v=>({ v, label:'Задание '+v, c:cn[v]||0 })),true)}
+      ${ddHTML('bf-n','Номер задания','Все номера',bankF.n,numItems,true)}
     </div>
     <div class="bank-sum"><span>Всего: <b>${plural(n)}</b></span>
       ${any?`<button class="linkbtn" onclick="bankReset()">Сбросить фильтры</button>`:''}</div>
@@ -812,7 +814,8 @@ function bankItemsHTML(){
     return `<div class="bq${on?' on':''}"><div class="bq-h"><span class="qnum">Задание ${esc(q.n)}</span>
       <span class="bq-t" title="${esc(q.topic+' '+(bankData.topicName[q.topic]||''))}">${esc(q.topic+' '+(bankData.topicName[q.topic]||''))}</span>
       <label class="chk"><input type="checkbox"${on?' checked':''} onchange="hwToggle(${i},this.checked)"> Добавить в ДЗ</label></div>
-      <div class="bq-x">${fmtQ(q.text,q)}</div>${q.answer?`<div class="bq-a">Ответ: <b>${esc(q.answer)}</b></div>`:''}</div>`; }).join('')
+      ${isP2(q)?`<div class="bq-x p2text">${fmtLong(q.text,q)}</div>${q.answer?`<details class="bq-a"><summary>Образец ответа</summary><div class="uans">${esc(q.answer)}</div></details>`:''}`
+        :`<div class="bq-x">${fmtQ(q.text,q)}</div>${q.answer?`<div class="bq-a">Ответ: <b>${esc(q.answer)}</b></div>`:''}`}</div>`; }).join('')
     + (list.length>bankShown?`<button class="btn ghost" onclick="bankShown+=20;bankDraw()">Показать ещё · осталось ${list.length-bankShown}</button>`:'');
 }
 function hwToggle(i,on){
@@ -849,7 +852,7 @@ async function hwSave(){
   try{
     await loadTests();
     if(tests.some(t=>t.name===name)) throw new Error('ДЗ с таким названием уже есть — выберите другое');
-    await api('hw_save',{ name, folder, questions:hwSel.map(q=>({ n:q.n, text:q.text, answer:q.answer, explanation:q.explanation||'' })) });
+    await api('hw_save',{ name, folder, questions:hwSel.map(q=>({ ...(isP2(q)?{ part:2, pts:q.pts }:{}), n:q.n, text:q.text, answer:q.answer, explanation:q.explanation||'' })) });
   }catch(e){ busy(btn,false,'Добавить в папку'); err.textContent=e.message; return; }
   hwSel=[]; hwName=''; hwP=null;
   const o=new Set(openSects()); o.add(folder); try{ localStorage.setItem('tr_open',JSON.stringify([...o])); }catch(e){}

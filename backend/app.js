@@ -345,7 +345,7 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       const questions = req.questions.map((q) => ({
         ...(q.part === 2 ? { part: 2, pts: str(String(q.pts || ''), 10, 'pts') } : {}),
         n: str(String(q.n), 5, 'n'), text: str(q.text, 20000, 'text'),
-        answer: str(q.answer || '', 2000, 'answer'), explanation: str(q.explanation || '', 20000, 'explanation'),
+        answer: str(q.answer || '', 20000, 'answer'), explanation: str(q.explanation || '', 20000, 'explanation'),
       }));
       if ((await db.listHws()).some((t) => t.name === name)) fail(409, 'ДЗ с таким названием уже есть');
       const hw = { id: newId(), name, folder, questions, created_at: new Date().toISOString() };
