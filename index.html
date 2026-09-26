@@ -646,7 +646,7 @@ function ru(n,one,few,many){const a=n%10,b=n%100;return a===1&&b!==11?one:(a>=2&
 function plural(n){return n+' '+ru(n,'задание','задания','заданий')}
 
 function qType(t){
-  if(/соответстви/i.test(t)) return 'Соответствие';
+  if(/установите\s+соответствие/i.test(t)) return 'Соответствие';   // не просто «соответстви»: «в соответствии с кодексом» — это выбор суждений
   if(/выберите верные суждения/i.test(t)) return 'Выбор суждений';
   if(/найдите|какие|что из|перечн/i.test(t)) return 'Несколько ответов';
   return 'Краткий ответ';
@@ -671,7 +671,8 @@ function fmtLong(t){
     .map(p=>'<p>'+p.trim().replace(/([.?!:;»)])[ \t]*\n\s*(?=[А-ЯЁA-Z0-9«(])/g,'$1<br>').replace(/\s*\n\s*/g,' ')+'</p>').join('');
 }
 /* развёрнутые ответы ученика — хранятся в браузере для каждого теста */
-function ansKey(q){const t=tests.find(x=>x.id===curId);const i=t?t.questions.indexOf(q):-1;return 'tr_ans_'+curId+'_'+(i>=0?i:(q.n||''))}
+/* черновик по названию ДЗ, не по номеру в tests.json: удаление или добавление тестов не перепутает черновики */
+function ansKey(q){const t=tests.find(x=>x.name===curBase);const i=t?t.questions.indexOf(q):-1;return 'tr_ans_'+curBase+'_'+(i>=0?i:(q.n||''))}
 function getAns(q){try{return localStorage.getItem(ansKey(q))||''}catch(e){return ''}}
 function setAns(q,v){try{v?localStorage.setItem(ansKey(q),v):localStorage.removeItem(ansKey(q))}catch(e){}}
 function countP1(qs){return qs.filter(q=>!isP2(q)).length}
@@ -712,8 +713,7 @@ const SECTIONS=[
     'Гражданское право, гражданское процессуальное право, арбитражный процесс','Семейное право','Трудовое право',
     'Административное право, экологическое право, уголовное право, уголовное процессуальное право',
     'Юридическая ответственность, Правоохранительные органы','Воинская обязанность, АГС']],
-  ['Повторение и пробники',['Повторение','Повторение и закрепление','Повторение и закрепление (2)','Повторение и закрепление (3)',
-    'Обобщение и повторение','пробник 1','пробник №2']]
+  ['Пробники',['Пробник №1']]
 ];
 function groupTests(){
   const used=new Set(), out=[];
