@@ -371,7 +371,7 @@ async function cabSubmission(id){
           : `<div class="gres wait">На проверке</div>`);
     return `<div class="allitem">
       <div class="qhead"><span class="qnum">Задание ${esc(x.n)} · часть 2</span><span class="qtype">до ${x.pts} б.</span></div>
-      ${q?`<details class="qfold"><summary>Текст задания</summary><div class="p2text">${fmtLong(q.text)}</div></details>`:''}
+      ${q?`<details class="qfold"><summary>Текст задания</summary><div class="p2text">${fmtLong(q.text,q)}</div></details>`:''}
       <div class="uans-lab">${teacher?'Ответ ученика':'Твой ответ'}</div>
       <div class="uans${x.text?'':' none'}">${x.text?esc(x.text):'Ответ не написан'}</div>
       ${scoreCtl}
