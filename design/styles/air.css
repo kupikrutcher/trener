@@ -257,8 +257,8 @@ body{font-size:17px}
   .side-nav [data-nav="bank"]:hover svg rect:last-of-type{transform:translateY(-1px)}
   .side-nav [data-nav="bank"]:hover svg path{transform:scaleX(.7)}
   /* Полезные файлы: передняя крышка папки откидывается вперёд, изнутри выглядывает листок */
-  .side-nav [data-nav="files"]:hover .ic-flap{transform:skewX(-14deg) scaleY(.74)}
-  .side-nav [data-nav="files"]:hover .ic-paper{opacity:1;transform:translateY(-1.6px)}
+  .side-nav [data-nav="files"]:hover .ic-flap{transform:skewX(-6deg) scale(.93,.74)}
+  .side-nav [data-nav="files"]:hover .ic-paper{opacity:1;transform:translateY(-1.2px)}
   /* Проверка: галочка заново «ставится» */
   .side-nav [data-nav="check"] svg path{stroke-dasharray:12;stroke-dashoffset:0}
   .side-nav [data-nav="check"]:hover svg path{animation:icTick .5s cubic-bezier(.23,1,.32,1)}
