@@ -13,7 +13,12 @@
 пояснение становится «Образцом ответа», комментарий «Ключи…» — критериями.
 Берутся только задания с пояснением; пропускаются строки без номера,
 без ответа (часть 1) и задания с источником «Устаревшее».
+Задания части 1 без пояснения собираются из пояснений к тем же вариантам
+в других заданиях (банк + tests.json), см. fill_explanations; не нашлось
+ко всем вариантам — задание не берём.
 """
+import collections
+import difflib
 import json
 import re
 import sys
@@ -21,7 +26,8 @@ from pathlib import Path
 
 import openpyxl
 
-OUT = Path(__file__).resolve().parent.parent / "bank.json"
+ROOT = Path(__file__).resolve().parent.parent
+OUT = ROOT / "bank.json"
 BLOCKS = {  # имя листа -> название блока на сайте
     "ЧиО": "Человек и общество",
     "Экономика": "Экономика",
@@ -69,7 +75,7 @@ def read_sheet(ws, topics, questions, skipped):
             continue
         if not text and not ans and not expl:
             continue
-        if n is None or not text or not topic or src == "Устаревшее" or not expl or (not part2 and not ans):
+        if n is None or not text or not topic or src == "Устаревшее" or (part2 and not expl) or (not part2 and not ans):
             skipped.append(f"{ws.title.strip()}:{r}")
             continue
         n = clean(n)
@@ -79,8 +85,136 @@ def read_sheet(ws, topics, questions, skipped):
             if keys:
                 q["explanation"] = "\n\n".join(keys)
         else:
-            q = {"n": n, "text": text, "answer": re.sub(r"\D", "", ans), "block": block, "topic": topic, "explanation": expl}
+            q = {"n": n, "text": text, "answer": re.sub(r"\D", "", ans), "block": block, "topic": topic}
+            if expl:
+                q["explanation"] = expl
         questions.append(q)
+
+
+# ---- пояснения части 1 из других заданий ----
+# Вариант берём, только если он дословно совпал (без регистра, кавычек, ё/е) в задании с тем же номером ЕГЭ
+# и с тем же Да/Нет (для соответствия — с тем же элементом второго столбца). Короткий вариант («местный рынок»)
+# зависит от условия — его берём только из задания с почти тем же условием.
+
+def norm(s):
+    s = s.lower().replace("ё", "е").replace("\xa0", " ")
+    s = re.sub(r"[«»\"“”„]", "", s)
+    s = re.sub(r"[–—−]", "-", s)
+    return re.sub(r"\s+", " ", s).strip(" .;,")
+
+
+def is_match(t):
+    return "установите соответствие" in t.lower()
+
+
+def options(t):
+    """варианты задания: буквы А–Д и цифры -> нормализованный текст"""
+    t = re.sub(r"Запишите[^\n]*$", "", t.strip())
+    end = r"(?=\s*(?:;\s*)?(?:{}|\n[А-ЯЁ ,()\-]{{6,}}\n|\n\n|$))"
+    let = {m.group(1): norm(m.group(2)) for m in re.finditer(
+        r"(?:^|\n|;\s*|\s)([А-Д])\)\s*(.+?)" + end.format(r"[А-Д]\)|\d{1,2}\)"), t, re.S)}
+    num = {m.group(1): norm(m.group(2)) for m in re.finditer(
+        r"(?:^|\n|;\s*|\s)(\d{1,2})\)\s*(.+?)" + end.format(r"\d{1,2}\)"), t, re.S)}
+    return let, num
+
+
+def segs(e, letters):
+    """пояснение по пунктам: «1. Да. …» / «А. … — 2. …»"""
+    key = r"([А-Д])" if letters else r"(\d{1,2})"
+    ms = list(re.finditer(r"(?:^|\n|(?<=[.;:!?)])\s)" + key + r"[.)]\s", e))
+    out = {}
+    for i, m in enumerate(ms):
+        out.setdefault(m.group(1), e[m.start(1):ms[i + 1].start(1) if i + 1 < len(ms) else len(e)].strip())
+    return out
+
+
+def verdict(seg):
+    s = re.sub(r"^\S+\s*", "", seg).lower()
+    if re.match(r"(да|верно|правильно)\b", s):
+        return True
+    if re.match(r"(нет|неверно|не верно|неправильно)\b", s):
+        return False
+    return None
+
+
+def stem(t):
+    m = re.search(r"(?:^|\n|\s)1\)", t)
+    return norm(t[:m.start()] if m else t)
+
+
+def words(s):
+    return {w[:5] for w in re.findall(r"[а-яa-z]{4,}", norm(s))}
+
+
+def good(frag, opt):
+    """один пункт (не склейка) и говорит о том же варианте"""
+    if re.search(r"\n\s*(\d{1,2}|[А-Д])\s*[.)]", frag):
+        return False
+    w = words(opt)
+    return not w or len(w & words(frag)) / len(w) >= 0.5
+
+
+def renum(s, key):
+    return re.sub(r"^\S+?[.)]", key + ".", s, 1)
+
+
+def fill_explanations(questions, extra):
+    """задания без пояснения: собрать из пунктов других заданий или выбросить. extra — задания из tests.json"""
+    src = [q for q in questions + extra if not q.get("part") and q.get("explanation") and q.get("answer")]
+    idx = collections.defaultdict(list)
+    for q in src:
+        let, num = options(q["text"])
+        a, st = re.sub(r"\D", "", q["answer"]), stem(q["text"])
+        if is_match(q["text"]):
+            if len(a) != len(let):
+                continue
+            sg = segs(q["explanation"], True)
+            for i, L in enumerate(sorted(let)):
+                tgt, s = num.get(a[i]), sg.get(L)
+                if tgt and s and tgt[:25] in norm(s):  # пункт называет тот же элемент второго столбца
+                    idx[(q["n"], "m", let[L], tgt)].append((s, st))
+        else:
+            sg = segs(q["explanation"], False)
+            for k, txt in num.items():
+                s = sg.get(k)
+                v = verdict(s) if s else None
+                if v is not None and v == (k in a):  # пункт, спорящий с ключом своего задания, не берём
+                    idx[(q["n"], "c", txt, v)].append((s, st))
+
+    out, filled, dropped = [], 0, 0
+    for q in questions:
+        if q.get("part") or q.get("explanation"):
+            out.append(q)
+            continue
+        let, num = options(q["text"])
+        a, st, parts = re.sub(r"\D", "", q["answer"]), stem(q["text"]), []
+        if is_match(q["text"]):
+            ok = bool(let) and len(a) == len(let)
+            for i, L in enumerate(sorted(let) if ok else []):
+                tgt = num.get(a[i])
+                c = [re.sub(r"([–—-]\s*)\d{1,2}\s*[.)]", lambda m: m.group(1) + a[i] + ".", renum(f, L), 1)
+                     for f, _ in idx.get((q["n"], "m", let[L], tgt), []) if good(f, let[L])]
+                c = [f for f in c if tgt and re.search(a[i] + r"[.)]\s*" + re.escape(tgt[:15]), norm(f))]  # номер столбца — этого задания
+                if not c:
+                    ok = False
+                    break
+                parts.append(c[0])
+        else:
+            ok = len(num) >= 3
+            for k in sorted(num, key=int) if ok else []:
+                c = [f for f, fs in idx.get((q["n"], "c", num[k], k in a), []) if good(f, num[k])
+                     and (len(num[k]) >= 60 or difflib.SequenceMatcher(None, st, fs).ratio() >= 0.85)]
+                if not c:
+                    ok = False
+                    break
+                parts.append(renum(c[0], k))
+        if ok:
+            out.append({**q, "explanation": "\n\n".join(parts)})
+            filled += 1
+        else:
+            dropped += 1
+    print(f"Часть 1 без пояснения: собрано из других заданий {filled}, убрано {dropped}")
+    return out
 
 
 def build(paths):
@@ -89,6 +223,8 @@ def build(paths):
         wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
         for ws in wb.worksheets:
             read_sheet(ws, topics, questions, skipped)
+    tests = json.loads((ROOT / "tests.json").read_text(encoding="utf-8"))
+    questions = fill_explanations(questions, [q for t in tests for q in t["questions"]])
     used = {q["topic"] for q in questions}
     topics = [t for t in topics if t["code"] in used]
     topics.sort(key=lambda t: [int(x) for x in t["code"].split(".")])
@@ -105,7 +241,7 @@ def save(data):
 def main(paths):
     data, skipped = build(paths)
     save(data)
-    print(f"Пропущено строк (нет номера, ответа или пояснения): {len(skipped)}")
+    print(f"Пропущено строк (нет номера, ответа, пояснения части 2): {len(skipped)}")
 
 
 if __name__ == "__main__":
