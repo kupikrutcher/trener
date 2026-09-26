@@ -278,3 +278,7 @@ body{font-size:17px}
 .side-nav .ic-paper{opacity:0;transform:translateY(2px);transition:transform .22s cubic-bezier(.23,1,.32,1),opacity .15s ease}
 @media (hover:hover) and (pointer:fine){.side-nav [data-nav="files"]:hover .ic-paper{transition:transform .45s cubic-bezier(.34,1.56,.64,1) .05s,opacity .2s ease .05s}}
 @media (prefers-reduced-motion:reduce){.side-nav svg *{transition:none!important;animation:none!important;transform:none!important}}
+
+/* главная: фото поднято под кнопку (отрицательный отступ) — оно не должно перехватывать клики по «Перейти в курс» */
+.land-hero{pointer-events:none}
+.land-go{position:relative;z-index:2}
