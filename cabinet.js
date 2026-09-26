@@ -921,7 +921,8 @@ async function lessonsList(){
   cabShow(`<div class="cab">
     <div id="llist" class="cab-load">Загружаем уроки…</div></div>`);
   let lessons;
-  try{ lessons=(await api('lessons_list')).lessons; }
+  // задания нужны для строки «15 заданий · часть 2: 4»; не загрузились — строка просто пустая
+  try{ [lessons]=await Promise.all([api('lessons_list').then(r=>r.lessons), loadTests().catch(()=>{})]); }
   catch(e){ const b=$('#llist'); if(b) b.textContent='Не удалось загрузить: '+e.message; return; }
   const box=$('#llist'); if(!box) return;
   box.className='';
@@ -930,7 +931,7 @@ async function lessonsList(){
     <div class="tcard" onclick="lessonView('${esc(l.id)}')">
       ${dateTile(l.created_at)}
       <div class="tinfo"><div class="tname">${esc(l.title)}</div>
-        <div class="tmeta">${[l.test_name&&'ДЗ: '+esc(l.test_name), l.deadline&&l.test_name&&'до '+fmtDeadline(l.deadline), l.files_n&&'файлов: '+l.files_n].filter(Boolean).join(' · ')||fmtDay(l.created_at)}</div></div>
+        <div class="tmeta">${(t=>t?metaLine(t.questions):'')(l.test_name&&findTest(l.test_name))}</div></div>
       ${lessonDone(l)?'<span class="st-ok">сдано</span>':(l.deadline&&l.test_name&&+new Date(l.deadline)<Date.now()?'<span class="st-wait" style="color:var(--bad);background:var(--bad-soft)">просрочено</span>':'')}<span class="tgo">→</span>
     </div>`;
   box.innerHTML = lessons.length ? blockGroups(lessons).map(([b,list])=>{
