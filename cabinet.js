@@ -753,8 +753,10 @@ async function lessonsSchedule(){
 }
 /* банк заданий части 1 (bank.json, собирается tools/xlsx_to_bank.py): фильтры по блоку, теме и номеру,
    подборка решается как обычный тест, но учителю не отправляется и ответы открыты сразу */
-let bankData=null, bankF={ block:'', topic:'', n:'' };
-try{ Object.assign(bankF, JSON.parse(localStorage.getItem('tr_bankf')||'{}')); }catch(e){}
+/* фильтры — списки: можно выбрать несколько блоков, тем и номеров; пустой список — «все» */
+let bankData=null, bankF={ block:[], topic:[], n:[] };
+try{ const f=JSON.parse(localStorage.getItem('tr_bankf')||'{}');   // раньше хранилось одно значение строкой
+  for(const k in bankF) if(f[k]) bankF[k]=[].concat(f[k]); }catch(e){}
 async function bankView(){
   setUrl('bank');
   cabShow(`<div class="cab"><h2 class="cab-h">Банк заданий</h2><p class="cab-sub">Часть 1 · задания с ответами и пояснениями</p>
@@ -768,32 +770,32 @@ async function bankView(){
   if(me&&me.role==='teacher') loadTests().then(hwPaint,()=>{});   // папки из «Готовых ДЗ» — в подсказки панели «Новое ДЗ»
 }
 function bankMatch(q,skip){
-  return (skip==='block'||!bankF.block||q.block===bankF.block)
-    && (skip==='topic'||!bankF.topic||q.topic===bankF.topic)
-    && (skip==='n'||!bankF.n||q.n===bankF.n);
+  return ['block','topic','n'].every(k=>k===skip||!bankF[k].length||bankF[k].includes(q[k]));
 }
 function bankList(){ return bankData.questions.filter(q=>bankMatch(q)); }
 function bankCount(key){   // сколько заданий даст каждое значение фильтра при остальных выбранных
   const c={}; bankData.questions.forEach(q=>{ if(bankMatch(q,key)) c[q[key]]=(c[q[key]]||0)+1; }); return c;
 }
 function bankLabel(){
-  const p=[]; if(bankF.n) p.push('Задание '+bankF.n);
-  if(bankF.topic) p.push(bankF.topic+' '+bankData.topicName[bankF.topic]); else if(bankF.block) p.push(bankF.block);
+  const p=[], f=bankF; if(f.n.length) p.push((f.n.length>1?'Задания ':'Задание ')+f.n.join(', '));
+  if(f.topic.length) p.push(f.topic.length>1?'Темы '+f.topic.join(', '):f.topic[0]+' '+bankData.topicName[f.topic[0]]);
+  else if(f.block.length) p.push(f.block.join(', '));
   return p.join(' · ')||'Все задания';
 }
 function bankDraw(){
   const box=$('#bnk'); if(!box||!bankData) return; box.className='';
   const D=bankData, cb=bankCount('block'), ct=bankCount('topic'), cn=bankCount('n'), n=bankList().length;
-  const topics=D.blocks.filter(b=>!bankF.block||b===bankF.block).flatMap(b=>[
-    ...(bankF.block?[]:[{ group:b }]),
+  const shownBlocks=D.blocks.filter(b=>!bankF.block.length||bankF.block.includes(b));
+  const topics=shownBlocks.flatMap(b=>[
+    ...(shownBlocks.length>1?[{ group:b }]:[]),
     ...D.topics.filter(t=>t.block===b).map(t=>({ v:t.code, code:t.code, label:t.name, c:ct[t.code]||0 }))]);
   const nums=[...new Set(D.questions.map(q=>q.n))].sort((a,b)=>a-b);
-  const any=bankF.block||bankF.topic||bankF.n;
+  const any=bankF.block.length||bankF.topic.length||bankF.n.length;
   box.innerHTML=`
     <div class="bank-f">
-      ${ddHTML('bf-block','Блок','Все блоки',bankF.block,D.blocks.map(b=>({ v:b, label:b, c:cb[b]||0 })))}
-      ${ddHTML('bf-topic','Тема','Все темы',bankF.topic,topics)}
-      ${ddHTML('bf-n','Номер задания','Все номера',bankF.n,nums.map(v=>({ v, label:'Задание '+v, c:cn[v]||0 })))}
+      ${ddHTML('bf-block','Блок','Все блоки',bankF.block,D.blocks.map(b=>({ v:b, label:b, c:cb[b]||0 })),true)}
+      ${ddHTML('bf-topic','Тема','Все темы',bankF.topic,topics,true)}
+      ${ddHTML('bf-n','Номер задания','Все номера',bankF.n,nums.map(v=>({ v, label:'Задание '+v, c:cn[v]||0 })),true)}
     </div>
     <div class="bank-sum"><span>Всего: <b>${plural(n)}</b></span>
       ${any?`<button class="linkbtn" onclick="bankReset()">Сбросить фильтры</button>`:''}</div>
@@ -863,16 +865,17 @@ async function hwDelete(id){
 /* выпадающий список в стиле сайта вместо системного select: кнопка + listbox, клавиши ↑ ↓ Enter Esc.
    id «bf-<ключ фильтра>» — фильтр банка, остальные — обработчик в ddOn[id]; пункт с c===0 недоступен, { group } — подзаголовок */
 const ddOn={ lh:v=>{ editL.test_name=v; } };   // ДЗ урока в редакторе
-function ddHTML(id,label,ph,cur,items){
-  const sel=items.find(i=>i.v===cur);
+function ddHTML(id,label,ph,cur,items,multi){
+  const on=v=>multi?(v===''?!cur.length:cur.includes(v)):v===cur, sel=items.filter(i=>i.v!==''&&i.group==null&&on(i.v));
+  const text=!sel.length?ph:sel.length>1?'Выбрано: '+sel.length:(sel[0].code?sel[0].code+' ':'')+sel[0].label;
   const opts=[{ v:'', label:ph }, ...items].map((it,k)=>it.group!=null
     ? `<div class="dd-g" role="presentation">${esc(it.group)}</div>`
-    : `<div class="dd-o" role="option" id="${id}-o${k}" data-v="${esc(it.v)}" aria-selected="${it.v===cur}"${it.c===0?' aria-disabled="true"':''}
+    : `<div class="dd-o" role="option" id="${id}-o${k}" data-v="${esc(it.v)}" aria-selected="${on(it.v)}"${it.c===0?' aria-disabled="true"':''}
         onclick="ddPick('${id}',this)" title="${esc((it.code?it.code+' ':'')+it.label)}"><span class="dd-l">${it.code?`<b class="dd-code">${esc(it.code)}</b> `:''}${esc(it.label)}</span>${it.c?`<span class="dd-c">${it.c}</span>`:''}</div>`).join('');
   return `<div class="dd" id="${id}"><span class="lab" id="${id}-l">${label}</span>
     <button type="button" class="dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="${id}-l ${id}-v"
-      onclick="ddToggle('${id}')" onkeydown="ddKey(event,'${id}')"><span class="dd-v" id="${id}-v">${esc(sel?(sel.code?sel.code+' ':'')+sel.label:ph)}</span><span class="dd-ch" aria-hidden="true">›</span></button>
-    <div class="dd-pop" role="listbox" aria-labelledby="${id}-l" hidden>${opts}</div></div>`;
+      onclick="ddToggle('${id}')" onkeydown="ddKey(event,'${id}')"><span class="dd-v" id="${id}-v">${esc(text)}</span><span class="dd-ch" aria-hidden="true">›</span></button>
+    <div class="dd-pop" role="listbox" aria-labelledby="${id}-l"${multi?' aria-multiselectable="true"':''} hidden>${opts}</div></div>`;
 }
 function ddEls(id){ const r=document.getElementById(id); return r&&{ btn:r.querySelector('.dd-btn'), pop:r.querySelector('.dd-pop') }; }
 function ddOpts(pop){ return [...pop.querySelectorAll('.dd-o:not([aria-disabled])')]; }
@@ -893,8 +896,14 @@ function ddToggle(id){
 }
 function ddPick(id,o){
   if(o.getAttribute('aria-disabled')) return;
+  let e=ddEls(id);
+  if(e.pop.getAttribute('aria-multiselectable')){   // несколько значений: список не закрывается, банк перерисован — открываем снова
+    const v=o.dataset.v, top=e.pop.scrollTop;
+    bankSet(id.slice(3),v); e=ddEls(id); if(!e) return;
+    e.pop.hidden=false; e.btn.setAttribute('aria-expanded','true'); e.pop.scrollTop=top;
+    ddActive(id, ddOpts(e.pop).find(x=>x.dataset.v===v)); e.btn.focus(); return;
+  }
   ddClose(id);
-  const e=ddEls(id);
   if(ddOn[id]){ ddOn[id](o.dataset.v); e.pop.querySelectorAll('.dd-o').forEach(x=>x.setAttribute('aria-selected',x===o));
     $('#'+id+'-v').textContent=o.title; }
   else bankSet(id.slice(3),o.dataset.v);
@@ -909,16 +918,17 @@ function ddKey(ev,id){
   else if(ev.key==='Escape'&&open){ ev.preventDefault(); ddClose(id); }
   else if(ev.key==='Tab') ddClose(id);
 }
-document.addEventListener('click',ev=>{ document.querySelectorAll('.dd').forEach(d=>{ if(!d.contains(ev.target)) ddClose(d.id); }); });
+document.addEventListener('click',ev=>{ if(!ev.target.isConnected) return;   // пункт уже перерисован — клик был внутри списка
+  document.querySelectorAll('.dd').forEach(d=>{ if(!d.contains(ev.target)) ddClose(d.id); }); });
 function bankSet(k,v){
-  bankF[k]=v;
+  const cur=bankF[k]; bankF[k]=v===''?[]:cur.includes(v)?cur.filter(x=>x!==v):[...cur,v];   // «Все …» — сброс, иначе переключаем
   bankShown=20;
-  if(k==='block'&&bankF.topic&&!(v&&bankData.topics.some(t=>t.code===bankF.topic&&t.block===v))) bankF.topic='';
-  if(k==='topic'&&v) bankF.block=bankData.topics.find(t=>t.code===v).block;
+  if(k==='block'&&bankF.block.length)   // темы вне выбранных блоков убираем
+    bankF.topic=bankF.topic.filter(c=>bankF.block.includes((bankData.topics.find(t=>t.code===c)||{}).block));
   try{ localStorage.setItem('tr_bankf',JSON.stringify(bankF)); }catch(e){}
   bankDraw();
 }
-function bankReset(){ bankF={ block:'', topic:'', n:'' }; bankSet('n',''); }
+function bankReset(){ bankF={ block:[], topic:[], n:[] }; bankSet('n',''); }
 /* подборка решается движком тестов; window.bankSel отличает её от ДЗ (ответы открыты, «К банку заданий») */
 function bankRun(){
   const list=bankList(); if(!list.length) return;
