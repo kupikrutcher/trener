@@ -11,7 +11,7 @@
 <script>
 /* Яндекс Метрика: YM_ID — номер счётчика (0 — выключена). Считаем только на mashavibe.ru.
    Вебвизор выключен: он записывал бы ответы и пароли учеников. Переходы по экранам шлёт setUrl → ymHit. */
-const YM_ID=0;
+const YM_ID=113089379;
 const YM_ON=YM_ID>0 && /(^|\.)mashavibe\.ru$/.test(location.hostname);
 let ymLast='';
 function ymHit(){ if(!YM_ON || location.href===ymLast) return; const ref=ymLast||document.referrer; ymLast=location.href; ym(YM_ID,'hit',ymLast,{referer:ref}); }
