@@ -353,7 +353,8 @@ async function cabSubmission(id){
   let s;
   try{ s=(await api('sub_get',{ id })).sub; }
   catch(e){ cabShow(`<div class="empty">${esc(e.message)}</div><button class="btn ghost" onclick="openCabinet()">Назад</button>`); return; }
-  await loadTests().catch(()=>{});   // без заданий работа всё равно видна — только без текстов и разбора
+  await Promise.all([loadTests().catch(()=>{}),   // без заданий работа всё равно видна — только без текстов и разбора
+    me.role==='teacher'&&s.p2.length?bankLoad().catch(()=>{}):0]);   // банк — за образцами ответов к части 2
   const who = me.role==='teacher' && s.student_name ? `${esc(s.student_name)} · ` : '';
   curSub=s;
   const t=findTest(s.test_name), qs=t?t.questions:[];
@@ -362,7 +363,7 @@ async function cabSubmission(id){
   const p1rows=s.p1.map(x=>{ const q=qs[x.i];
     return `<div class="rev"><span class="rn">${esc(String(x.n))}</span>
       <span class="rd">${x.ok?`<span class="g">${esc(x.user)}</span>`:`<span class="y">${esc(x.user||'—')}</span><span class="g">${q?esc(q.answer):''}</span>`}</span></div>`; }).join('');
-  const p2items=s.p2.map(x=>{ const q=qs[x.i], gr=g[x.i]||{};
+  const p2items=s.p2.map(x=>{ const q=qs[x.i], gr=g[x.i]||{}, h=teacher?p2Help(q):{};
     const scoreCtl = teacher
       ? `<div class="grade"><span class="uans-lab" style="margin:0">Баллы</span>
           <div class="pts" data-i="${x.i}">${Array.from({length:(x.pts||0)+1},(_,k)=>
@@ -375,6 +376,8 @@ async function cabSubmission(id){
     return `<div class="allitem">
       <div class="qhead"><span class="qnum">Задание ${esc(x.n)} · часть 2</span><span class="qtype">до ${x.pts} б.</span></div>
       ${q?`<details class="qfold"><summary>Текст задания</summary><div class="p2text">${fmtLong(q.text,q)}</div></details>`:''}
+      ${h.answer?`<details class="qfold"><summary>Образец ответа</summary><div class="p2text">${fmtLong(h.answer)}</div></details>`:''}
+      ${h.explanation?`<details class="qfold"><summary>Пояснение</summary><div class="p2text">${fmtLong(h.explanation)}</div></details>`:''}
       <div class="uans-lab">${teacher?'Ответ ученика':'Твой ответ'}</div>
       <div class="uans${x.text?'':' none'}">${x.text?esc(x.text):'Ответ не написан'}</div>
       ${scoreCtl}
@@ -791,15 +794,29 @@ async function lessonsSchedule(){
 let bankData=null, bankF={ block:[], topic:[], n:[] };
 try{ const f=JSON.parse(localStorage.getItem('tr_bankf')||'{}');   // раньше хранилось одно значение строкой
   for(const k in bankF) if(f[k]) bankF[k]=[].concat(f[k]); }catch(e){}
+async function bankLoad(){
+  if(bankData) return bankData;
+  const r=await fetch('bank.json'); if(!r.ok) throw new Error('bank.json: '+r.status);
+  const d=await r.json(); d.topicName=Object.fromEntries(d.topics.map(t=>[t.code,t.name]));
+  return bankData=d;
+}
+/* образец ответа и пояснение к заданию части 2 для проверки: из самого ДЗ, а если там пусто —
+   из банка, только при дословном совпадении текста (у №24 начало одинаковое — похожие не берём) */
+const p2Key=t=>(t||'').toLowerCase().replace(/ё/g,'е').replace(/[^0-9a-zа-я]+/g,'');
+function p2Help(q){
+  if(!q) return {};
+  if(q.answer||q.explanation) return { answer:q.answer||'', explanation:q.explanation||'' };
+  if(!bankData) return {};
+  if(!bankData.p2ByText){ bankData.p2ByText=new Map(); bankData.questions.forEach(b=>{ if(isP2(b)) bankData.p2ByText.set(p2Key(b.text),b); }); }
+  const b=bankData.p2ByText.get(p2Key(q.text));
+  return b ? { answer:b.answer||'', explanation:b.explanation||'' } : {};
+}
 async function bankView(){
   setUrl('bank');
   cabShow(`<div class="cab"><h2 class="cab-h">Банк заданий</h2>
     <div id="bnk" class="cab-load">Загружаем…</div></div>`);
-  if(!bankData){
-    try{ const r=await fetch('bank.json'); if(!r.ok) throw 0; bankData=await r.json(); }
-    catch(e){ const b=$('#bnk'); if(b) b.textContent='Не удалось загрузить банк заданий. Проверь интернет.'; return; }
-    bankData.topicName=Object.fromEntries(bankData.topics.map(t=>[t.code,t.name]));
-  }
+  try{ await bankLoad(); }
+  catch(e){ const b=$('#bnk'); if(b) b.textContent='Не удалось загрузить банк заданий. Проверь интернет.'; return; }
   bankDraw();
   if(me&&me.role==='teacher') loadTests().then(hwPaint,()=>{});   // папки из «Готовых ДЗ» — в подсказки панели «Новое ДЗ»
 }
