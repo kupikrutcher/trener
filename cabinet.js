@@ -194,6 +194,27 @@ function deadlinesHTML(lessons){
       <div class="dl-list" style="margin-top:8px" hidden>${rest.map(row).join('')}</div>`:''}`;
 }
 
+/* ---------- отправка работы ---------- */
+/* ученик завершил ДЗ, но ещё не отправил: итог не показываем, сначала — «Отправить на проверку» */
+function mustSendFirst(){
+  const t=findTest(curBase);
+  return !!(me && me.role!=='teacher' && !review && t && bank===t.questions && sentFor!==results);
+}
+function confirmSend(){
+  app.className='panel fade';
+  const left=bank.filter((q,i)=>!results[i]).length;
+  app.innerHTML=`
+    <div class="rs">
+      <div class="rs-kicker">ДЗ завершено</div>
+      <div class="rs-name">${esc(curName)}</div>
+    </div>
+    <h2 class="sendq">Твои ответы сохранены. Отправляем на проверку?</h2>
+    ${left?`<div class="resnote" style="text-align:left;margin:0 0 14px">Без ответа: ${left} из ${bank.length}. Их тоже можно отправить пустыми.</div>`:''}
+    <button class="btn" id="sendbtn" onclick="sendWork()">Отправить на проверку</button>
+    <button class="linkfin" onclick="go(Math.max(0,bank.findIndex((q,i)=>!results[i])))">← Вернуться к заданиям</button>`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
 /* ---------- отправка работы (на экране результата) ---------- */
 function renderSendBox(){
   const box=document.getElementById('sendbox'); if(!box) return;
@@ -214,7 +235,7 @@ function renderSendBox(){
     ${left?`<div class="resnote">Без ответа: ${left} из ${bank.length}. Их тоже можно отправить пустыми.</div>`:''}`;
 }
 async function sendWork(){
-  const btn=$('#sendbtn'); busy(btn,true,'Отправляем…');
+  const btn=$('#sendbtn'), label=btn.textContent; busy(btn,true,'Отправляем…');
   const p1=[], p2=[];
   bank.forEach((q,i)=>{
     const r=results[i];
@@ -222,7 +243,7 @@ async function sendWork(){
     else p1.push({ i, n:q.n||String(i+1), user:(r&&r.user)||'', ok:!!(r&&r.ok) });
   });
   try{ await api('submit',{ test_name:curBase, p1, p2 }); }
-  catch(e){ busy(btn,false,'Отправить работу учителю'); toast('Не отправилось: '+e.message); return; }
+  catch(e){ busy(btn,false,label); toast('Не отправилось: '+e.message); return; }
   sentFor=results; submitted.add(curBase); toast('Работа отправлена — ответы и пояснения открыты');
   finishEarly();
 }
@@ -279,7 +300,7 @@ async function cabStudent(){
           <div class="tmeta">${fmtDate(s.created_at)} · ${statusLine(s)}</div></div>
         ${subBadge(s)}<span class="tgo">→</span>
       </div>`).join('')}</div>`
-    : `<div class="empty">Отправленных работ пока нет.<br>Реши ДЗ и нажми «Отправить работу учителю» на экране результата.</div>`);
+    : `<div class="empty">Отправленных работ пока нет.<br>Реши ДЗ, нажми «Завершить ДЗ», затем «Отправить на проверку».</div>`);
   box.innerHTML += `<button class="btn ghost" onclick="goHW()">К ДЗ</button>`;
   drawProgress($('#prog'), data);
 }
