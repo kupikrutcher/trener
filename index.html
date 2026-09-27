@@ -182,6 +182,7 @@ body{
 .mine.ok span{color:var(--ok)}.mine.bad span{color:var(--bad)}
 /* ---- результат ---- */
 .resnote{text-align:center;font-size:12.5px;color:var(--muted);margin-top:10px}
+.sendq{font-family:var(--font-display);font-weight:600;font-size:22px;line-height:1.25;letter-spacing:-.01em;color:var(--ink);margin:14px 0 8px;text-wrap:balance}
 .gsub{text-align:center;color:var(--muted);font-size:13.5px;line-height:1.6;margin:0 auto 22px;max-width:38ch}
 .rrow{display:flex;gap:12px}
 .rrow .btn{flex:1}
@@ -985,7 +986,7 @@ function reviewGrade(q){
 
 function finLink(){return review
   ?`<button class="linkfin" onclick="cabSubmission('${review.sub.id}')">← Вернуться к проверенной работе</button>`
-  :`<button class="linkfin" onclick="finishEarly()">Завершить тест</button>`}
+  :`<button class="linkfin" onclick="finishEarly()">Завершить ДЗ</button>`}
 function render(){
   if(idx>=bank.length) return finish();
   answered=false;
@@ -1168,7 +1169,7 @@ function countUp(){
     b.textContent=Math.round(to*e); if(k<1) requestAnimationFrame(step); })(t0);
 }
 
-/* «Завершить» на последнем задании — тот же экран, что «Завершить тест»: итог и все задания с ответами */
+/* «Завершить» на последнем задании — тот же экран, что «Завершить ДЗ»: итог и все задания с ответами */
 function finish(){ idx=bank.length; finishEarly(); }
 /* restart current base test from scratch */
 function openTest2(){ const t=tests.find(x=>x.name===curBase); if(t) bank=testBank(t); else if(window.bankSel) bank=bankSel.slice(); curName=curBase; begin(); }
@@ -1176,6 +1177,7 @@ function openTest2(){ const t=tests.find(x=>x.name===curBase); if(t) bank=testBa
 /* early finish: chart + all questions + answers + explanation toggles */
 function finishEarly(){
   $('#bars').style.display='none';
+  if(mustSendFirst()) return confirmSend();   // ученик: сначала отправка, итог — после (cabinet.js)
   const total=countP1(bank), correct=results.filter(r=>!r.p2&&r.ok).length, wrong=results.filter(r=>!r.p2&&!r.ok).length;
   lastWrong=results.filter(r=>!r.p2&&!r.ok).map(r=>r.q);
   app.className='panel fade';
