@@ -223,7 +223,7 @@ function renderSendBox(){
     box.innerHTML=`<div class="resnote">Работа уже сдана. Это повторное решение первой части — учителю оно не отправляется.</div>`; return; }
   if(review || !t || bank!==t.questions || (me&&me.role==='teacher')){ box.innerHTML=''; return; }
   if(sentFor===results){ box.innerHTML=`<div class="sent">✓ Работа отправлена учителю</div>`; return; }
-  // одна главная кнопка на экран: если есть «Исправить N ошибок», отправка — второстепенная
+  // одна главная кнопка на экран: если есть «Работа над ошибками», отправка — второстепенная
   const kind=document.getElementById('fixbtn')?'btn ghost':'btn';
   if(!me){
     box.innerHTML=`<button class="btn ghost" onclick="cabLogin(()=>finishEarly())">Войти, чтобы отправить работу учителю</button>`;

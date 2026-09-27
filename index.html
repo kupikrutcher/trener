@@ -1140,11 +1140,11 @@ function resultSummary(correct,wrong,total){
       ${whereErrors(lastWrong)}
     </div>`;
 }
-/* кнопки под результатом: одна главная — «Исправить N ошибок», если есть ошибки */
+/* кнопки под результатом: одна главная — «Работа над ошибками», если есть ошибки */
 function resultActions(wrong,withAll){
   const p2n=bank.length-countP1(bank);
   return `
-    ${wrong>0?`<button class="btn" id="fixbtn" onclick="startMistakes()">Исправить ${wrong} ${ru(wrong,'ошибку','ошибки','ошибок')}</button>`:''}
+    ${wrong>0?`<button class="btn" id="fixbtn" onclick="startMistakes()">Работа над ошибками</button>`:''}
     <div id="sendbox"></div>
     ${p2n?`<div class="resnote">${window.bankSel?'Часть 2 автоматически не проверяется — сверь с образцом ответа.':'Часть 2 проверит учитель. Баллы появятся в профиле после проверки.'}</div>`:''}
     <div class="rs-links">
