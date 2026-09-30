@@ -935,6 +935,9 @@ function openTest(id){
   const t=tests.find(x=>x.id===id); if(!t)return;
   setUrl('tests/'+encodeURIComponent(id));
   window.bankSel=null; bank=testBank(t); curId=t.id; curName=t.name; curBase=t.name; begin();
+  /* ответы части 1, введённые раньше, возвращаются из черновиков — как тексты части 2 */
+  bank.forEach((q,i)=>{const u=!isP2(q)&&norm(getAns(q));if(u)results[i]={q,n:q.n,user:u,answer:norm(q.answer),ok:isRight(q,u)}});
+  score=results.filter(r=>r&&r.ok).length; render();
 }
 function startMistakes(){
   if(!lastWrong.length){toast('Ошибок нет');return}
@@ -942,6 +945,8 @@ function startMistakes(){
 }
 
 function begin(){review=null;idx=0;score=0;results=[];render()}
+/* черновик части 1 — только в самом ДЗ: не в банке, не в работе над ошибками и не в разборе */
+function p1Draft(){return !review&&!window.bankSel&&curName===curBase}
 
 function bars(){
   $('#bars').style.display='block';
@@ -1011,10 +1016,10 @@ function render(){
       ${finLink()}
     </div>`;
   const inp=$('#inp');
-  inp.addEventListener('input',()=>{ const c=inp.value.replace(/\D/g,''); if(c!==inp.value) inp.value=c; });
+  inp.addEventListener('input',()=>{ const c=inp.value.replace(/\D/g,''); if(c!==inp.value) inp.value=c; if(p1Draft()) setAns(q,c); });
   inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();review?next():saveP1()}});
   if(review){answered=true;const r=results[idx]||{q,user:'',ok:false};inp.value=r.user;if(!r.user)inp.placeholder='Нет ответа';showP1(r)}
-  else{ if(results[idx]) inp.value=results[idx].user; inp.focus(); }
+  else{ inp.value=results[idx]?results[idx].user:p1Draft()?getAns(q):''; inp.focus(); }
 }
 
 /* соответствие: ответ — ровно по числу букв задания */

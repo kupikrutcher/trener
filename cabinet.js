@@ -244,6 +244,7 @@ async function sendWork(){
   });
   try{ await api('submit',{ test_name:curBase, p1, p2 }); }
   catch(e){ busy(btn,false,label); toast('Не отправилось: '+e.message); return; }
+  bank.forEach(q=>{ if(!isP2(q)) setAns(q,''); });   // черновики части 1 отправлены — повтор начинается с чистого листа
   sentFor=results; submitted.add(curBase); toast('Работа отправлена — ответы и пояснения открыты');
   finishEarly();
 }
