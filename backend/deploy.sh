@@ -5,8 +5,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 DB=trener-db
-# адреса сайта, с которых разрешена загрузка файлов в хранилище
-SITE_ORIGINS="'https://mashavibe.ru','https://www.mashavibe.ru','https://kupikrutcher.github.io','http://localhost:8770'"
+# адреса сайта, с которых разрешены загрузка файлов и просмотр вебинаров; localhost:* — локальные демки на любом порту
+SITE_ORIGINS="'https://mashavibe.ru','https://www.mashavibe.ru','https://kupikrutcher.github.io','http://localhost:*'"
 SA=trener-fn
 FN=trener-api
 FOLDER_ID=$(yc config get folder-id)

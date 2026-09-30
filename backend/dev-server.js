@@ -12,6 +12,8 @@ const db = memoryDb(), handler = makeHandler(() => db, () => store);
 const ROOT = path.join(__dirname, '..'), PORT = +process.env.PORT || 8770;
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json; charset=utf-8', '.webp': 'image/webp', '.png': 'image/png' };
 /* --demo: примерные данные, чтобы посмотреть сайт целиком (вход: demo / demo1234, учитель: masha / teacherpass) */
+// настоящий вебинар в хранилище (HLS, tools/webinar.sh) — проверить плеер сайта
+const DEMO_WEBINAR = 'https://storage.yandexcloud.net/trener-files-b1g3dnesag6ss8revj0l/webinars-test/2bbdc2c2dc4f43f5/index.m3u8';
 async function seedDemo() {
   const { hashPassword } = require('./app');
   const now = Date.now(), D = 864e5, iso = (t) => new Date(t).toISOString();
@@ -24,7 +26,7 @@ async function seedDemo() {
     ['Рынок труда', 'Рынок труда, безработица', -10],
   ];
   for (const [i, [title, test_name, days]] of lessons.entries())
-    await db.putLesson({ id: 'demo' + i, title, video: '', test_name, deadline: iso(now + days * D), files: [], published: true, block: i < 3 ? 1 : 2,
+    await db.putLesson({ id: 'demo' + i, title, video: i ? '' : DEMO_WEBINAR, test_name, deadline: iso(now + days * D), files: [], published: true, block: i < 3 ? 1 : 2,
       created_at: iso(now - (10 - i) * D), updated_at: iso(now) });
   // проверенные работы ученицы — для графика прогресса и «Проверки»
   const past = [['Инфляция', 7, 14, 3, 8], ['Рынок труда, безработица', 9, 15, 5, 8], ['Налоги', 11, 16, 6, 8], ['Выборы', 12, 15, null, 8]];

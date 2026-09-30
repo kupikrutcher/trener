@@ -20,6 +20,8 @@
 | `design/tokens.css`, `design/styles/air.css` | переменные и текущий стиль «Воздух» (Apple-минимализм, Inter Tight / Golos Text). Прежний «Клэй 2.0» — `design/archive/clay2/` |
 | `design/README.md`, `PLAN.md`, `screens/*.html` | дизайн-система, этапы, макеты-референсы (не код) |
 | `img/` | `masha-hd.webp` (фото на главной), иконки сайта, `img/tasks/*` — картинки к заданиям |
+| `vendor/hls.light.min.js` | плеер вебинаров hls.js (1.7.3), грузится только на уроке с вебинаром |
+| `tools/webinar.sh` | вебинар → HLS (720p+360p, 1080p если запись в 1080) → бакет `trener-files-…/webinars/<случайный id>/` (публичное чтение) → печатает ссылку для поля «Видео» урока. Нужны ffmpeg и yc |
 | `backend/app.js` | вся логика сервера: `handle(req, db, env, store)` — один switch по `action` |
 | `backend/index.js` | вход Cloud Function (CORS, JSON, ошибки) |
 | `backend/db-ydb.js` / `db-memory.js` | хранилище: YDB (прод) / в памяти (тесты, локально). Схема — `TABLES` в `db-ydb.js` |
@@ -79,7 +81,7 @@
 - Отправка — `sendWork` (действие `submit`): часть 1 (ответы, верно/нет, баллы), часть 2 (тексты). Экран результата: плитки, «Где ошибки», «Работа над ошибками» (`startMistakes`), изменение к прошлой попытке.
 - Картинки к заданиям: поле `img` (+ `alt`) у задания, встаёт на место `[рисунок]` в тексте (`qImg` внутри `fmtQ`/`fmtLong`), по нажатию открывается в полный размер.
 
-**Уроки** (`cabinet.js`): поля `title, block (номер блока), descr (описание), video (Kinescope/Rutube/VK/YouTube → embed, функция videoEmbed есть и в app.js, и в cabinet.js — менять обе), test_name (ДЗ по НАЗВАНИЮ теста), deadline, files, published`. Ученику — «Блок N» раскрывающимися группами, внутри от первого урока к последнему; в карточке «15 тестовых · 4 развёрнутых» (`hwCount`), без ДЗ — пусто. Дедлайны — отдельным боксом.
+**Уроки** (`cabinet.js`): поля `title, block (номер блока), descr (описание), video (Kinescope/Rutube/VK/YouTube → embed; ссылка `https://storage.yandexcloud.net/…/index.m3u8` — наш вебинар, играет свой плеер `hlsMount` с кнопками «Авто/720p/360p», на старых iPhone — встроенный плеер со сменой адреса; функция videoEmbed есть и в app.js, и в cabinet.js — менять обе), test_name (ДЗ по НАЗВАНИЮ теста), deadline, files, published`. Ученику — «Блок N» раскрывающимися группами, внутри от первого урока к последнему; в карточке «15 тестовых · 4 развёрнутых» (`hwCount`), без ДЗ — пусто. Дедлайны — отдельным боксом.
 
 **Сеть**: `api(action, data)` — POST `text/plain` с `{action, token, …}`; при ответе 429 (облако занято) до 4 повторов с паузами. Токен входа в `localStorage.tr_token` — **бессрочный** (отключается только удалением пользователя).
 

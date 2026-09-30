@@ -90,6 +90,8 @@ function videoEmbed(url) {
     if ((m = (u.pathname + u.search).match(/video(-?\d+)_(\d+)/))) return `https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2`;
     if (u.pathname === '/video_ext.php') return u.toString();
   }
+  // наши вебинары: HLS в Object Storage (tools/webinar.sh) — играет плеер сайта
+  if (h === 'storage.yandexcloud.net' && u.protocol === 'https:' && u.pathname.endsWith('.m3u8')) return u.origin + u.pathname;
   return null;
 }
 /* список файлов из запроса: только ключи нашего хранилища с нужным префиксом */
@@ -304,7 +306,7 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       if (!title) fail(400, 'Нужно название урока');
       const descr = req.descr ? str(req.descr, 5000, 'descr').trim() : '';   // описание урока — простой текст
       const video = req.video ? str(req.video, 500, 'video').trim() : '';
-      if (video && !videoEmbed(video)) fail(400, 'Не понимаю ссылку на видео: нужна ссылка YouTube, Rutube, VK Видео или Kinescope');
+      if (video && !videoEmbed(video)) fail(400, 'Не понимаю ссылку на видео: нужна ссылка YouTube, Rutube, VK Видео, Kinescope или вебинара из хранилища');
       const test_name = req.test_name ? str(req.test_name, 300, 'test_name') : '';
       const files = fileList(req.files, 'lessons');
       const deadline = isoOrEmpty(req.deadline);

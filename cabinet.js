@@ -1051,9 +1051,46 @@ function videoEmbed(url){
     return 'https://kinescope.io/embed/'+m[1];
   if((h==='vk.com'||h==='vkvideo.ru'||h==='vk.ru') && (m=(u.pathname+u.search).match(/video(-?\d+)_(\d+)/)))
     return `https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2`;
+  if(h==='storage.yandexcloud.net' && u.protocol==='https:' && u.pathname.endsWith('.m3u8')) return u.origin+u.pathname;
   return null;
 }
-const videoFrame = src => `<div class="vwrap"><iframe src="${esc(src)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock; gyroscope; accelerometer; clipboard-write" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
+const videoFrame = src => /\.m3u8$/.test(src)
+  ? `<div class="vwrap"><video data-hls="${esc(src)}" controls playsinline preload="metadata"></video></div><div class="seg vq" hidden></div>`
+  : `<div class="vwrap"><iframe src="${esc(src)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock; gyroscope; accelerometer; clipboard-write" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
+/* наши вебинары (HLS): hls.js сам подбирает качество под интернет, кнопки — выбрать вручную.
+   Где hls.js не работает (старые iPhone), играет встроенный плеер, а качество меняем сменой адреса */
+let hlsLib=null;
+const loadHls=()=>hlsLib||(hlsLib=new Promise((ok,no)=>{ const s=document.createElement('script');
+  s.src='vendor/hls.light.min.js'; s.onload=()=>ok(window.Hls); s.onerror=()=>{ hlsLib=null; no(); }; document.head.append(s); }));
+async function hlsMount(){
+  for(const v of document.querySelectorAll('video[data-hls]:not([data-on])')){
+    v.dataset.on='1';
+    const src=v.dataset.hls, seg=v.parentNode.nextElementSibling;
+    const Hls=await loadHls().catch(()=>null);
+    let levels, pick, label=()=>'', paint=()=>{};
+    if(Hls&&Hls.isSupported()){
+      const h=new Hls(); h.loadSource(src); h.attachMedia(v);
+      await new Promise(r=>{ h.once(Hls.Events.MANIFEST_PARSED,r); h.once(Hls.Events.ERROR,r); });
+      levels=h.levels.map((l,i)=>[l.height+'p',i]).reverse();
+      pick=i=>{ h.currentLevel=i; };
+      label=()=>h.autoLevelEnabled&&h.levels[h.currentLevel]?` · ${h.levels[h.currentLevel].height}p`:'';
+      h.on(Hls.Events.LEVEL_SWITCHED,()=>paint());
+    }else{
+      v.src=src;
+      const base=src.replace(/[^/]*$/,''), txt=await fetch(src).then(r=>r.text()).catch(()=>'');
+      levels=[...txt.matchAll(/RESOLUTION=\d+x(\d+)[^\n]*\n([^\n#]+)/g)].map(m=>[m[1]+'p',base+m[2].trim()]);
+      pick=i=>{ const t=v.currentTime, play=!v.paused; v.src=i===-1?src:i;
+        v.addEventListener('loadedmetadata',()=>{ v.currentTime=t; if(play) v.play(); },{ once:true }); };
+    }
+    if(levels.length<2) continue;
+    let cur=-1;
+    paint=()=>{ seg.innerHTML=[['Авто'+label(),-1],...levels].map(([n,i])=>
+      `<button type="button" aria-pressed="${i===cur}" data-q="${esc(String(i))}">${n}</button>`).join(''); };
+    seg.onclick=e=>{ const b=e.target.closest('button'); if(!b) return;
+      cur=/^-?\d+$/.test(b.dataset.q)?+b.dataset.q:b.dataset.q; pick(cur); paint(); };
+    seg.setAttribute('aria-label','Качество видео'); seg.hidden=false; paint();
+  }
+}
 
 let curLesson=null;
 /* уроки по блокам курса: блоки по номеру, внутри — от первого урока к последнему; без номера блока — в конце */
@@ -1125,6 +1162,7 @@ async function lessonView(id){
     ${l.files.length?`<div class="lab">Материалы</div><div class="flist">${fileLinksHTML(l.files)}</div>`:''}
     ${teacher?`<button class="btn ghost" onclick="lessonEdit('${esc(l.id)}')">Редактировать урок</button>`:''}
   </div>`);
+  hlsMount();
 }
 
 /* ---- учитель: список и редактор уроков ---- */
@@ -1188,6 +1226,7 @@ function lessonVideoPreview(){
   const v=$('#lv').value.trim(), box=$('#vprev'), src=v&&videoEmbed(v);
   box.innerHTML = !v ? `<div class="vnote">Можно оставить пустым.</div>`
     : src ? videoFrame(src) : `<div class="vnote err">Не понимаю ссылку. Скопируйте адрес видео из браузера или кнопкой «Поделиться».</div>`;
+  hlsMount();
 }
 function paintLessonFiles(){ const box=$('#lfiles'); if(box) box.innerHTML=fileRowsHTML(editL.files,'rmLessonFile'); }
 function rmLessonFile(i){ editL.files.splice(i,1); paintLessonFiles(); }

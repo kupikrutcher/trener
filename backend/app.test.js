@@ -161,6 +161,11 @@ test('видео: YouTube, Rutube, VK, Kinescope', () => {
   assert.equal(videoEmbed('https://kinescope.io/embed/0cDWxSk1RNdwJVt4Pe8FWC'), 'https://kinescope.io/embed/0cDWxSk1RNdwJVt4Pe8FWC');
   assert.equal(videoEmbed('https://kinescope.io/0cDWxSk1RNdwJVt4Pe8FWC?t=30'), 'https://kinescope.io/embed/0cDWxSk1RNdwJVt4Pe8FWC');
   assert.equal(videoEmbed('https://kinescope.io/dashboard/x/y'), null);
+  const hls = 'https://storage.yandexcloud.net/trener-files-x/webinars/abc/index.m3u8';
+  assert.equal(videoEmbed(hls), hls);
+  assert.equal(videoEmbed(hls + '?t=1'), hls);
+  assert.equal(videoEmbed('http://storage.yandexcloud.net/b/index.m3u8'), null);
+  assert.equal(videoEmbed('https://storage.yandexcloud.net/b/file.mp4'), null);
   assert.equal(videoEmbed('https://example.com/x'), null);
   assert.equal(videoEmbed('javascript:alert(1)'), null);
 });
