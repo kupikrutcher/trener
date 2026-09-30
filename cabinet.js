@@ -1057,8 +1057,9 @@ function videoEmbed(url){
 const videoFrame = src => /\.m3u8$/.test(src)
   ? `<div class="vwrap"><video data-hls="${esc(src)}" controls playsinline preload="metadata"></video></div><div class="seg vq" hidden></div>`
   : `<div class="vwrap"><iframe src="${esc(src)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock; gyroscope; accelerometer; clipboard-write" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
-/* наши вебинары (HLS): hls.js сам подбирает качество под интернет, кнопки — выбрать вручную.
-   Где hls.js не работает (старые iPhone), играет встроенный плеер, а качество меняем сменой адреса */
+/* наши вебинары (HLS): hls.js сам подбирает качество под интернет, но «Авто» — не выше 720p (трафик);
+   1080p — только кнопкой. Где hls.js не работает (старые iPhone), играет встроенный плеер: «Авто» — auto.m3u8
+   (список качеств без 1080p, кладёт tools/webinar.sh), остальное — сменой адреса */
 let hlsLib=null;
 const loadHls=()=>hlsLib||(hlsLib=new Promise((ok,no)=>{ const s=document.createElement('script');
   s.src='vendor/hls.light.min.js'; s.onload=()=>ok(window.Hls); s.onerror=()=>{ hlsLib=null; no(); }; document.head.append(s); }));
@@ -1071,15 +1072,17 @@ async function hlsMount(){
     if(Hls&&Hls.isSupported()){
       const h=new Hls(); h.loadSource(src); h.attachMedia(v);
       await new Promise(r=>{ h.once(Hls.Events.MANIFEST_PARSED,r); h.once(Hls.Events.ERROR,r); });
+      h.autoLevelCapping=h.levels.findLastIndex(l=>l.height<=720);
       levels=h.levels.map((l,i)=>[l.height+'p',i]).reverse();
       pick=i=>{ h.currentLevel=i; };
       label=()=>h.autoLevelEnabled&&h.levels[h.currentLevel]?` · ${h.levels[h.currentLevel].height}p`:'';
       h.on(Hls.Events.LEVEL_SWITCHED,()=>paint());
     }else{
-      v.src=src;
       const base=src.replace(/[^/]*$/,''), txt=await fetch(src).then(r=>r.text()).catch(()=>'');
+      const auto=await fetch(base+'auto.m3u8',{ method:'HEAD' }).then(r=>r.ok?base+'auto.m3u8':src).catch(()=>src);
+      v.src=auto;
       levels=[...txt.matchAll(/RESOLUTION=\d+x(\d+)[^\n]*\n([^\n#]+)/g)].map(m=>[m[1]+'p',base+m[2].trim()]);
-      pick=i=>{ const t=v.currentTime, play=!v.paused; v.src=i===-1?src:i;
+      pick=i=>{ const t=v.currentTime, play=!v.paused; v.src=i===-1?auto:i;
         v.addEventListener('loadedmetadata',()=>{ v.currentTime=t; if(play) v.play(); },{ once:true }); };
     }
     if(levels.length<2) continue;

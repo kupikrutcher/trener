@@ -13,7 +13,7 @@ const ROOT = path.join(__dirname, '..'), PORT = +process.env.PORT || 8770;
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json; charset=utf-8', '.webp': 'image/webp', '.png': 'image/png' };
 /* --demo: примерные данные, чтобы посмотреть сайт целиком (вход: demo / demo1234, учитель: masha / teacherpass) */
 // настоящий вебинар в хранилище (HLS, tools/webinar.sh) — проверить плеер сайта
-const DEMO_WEBINAR = 'https://storage.yandexcloud.net/trener-files-b1g3dnesag6ss8revj0l/webinars/18948644eabd31c5/index.m3u8';
+const DEMO_WEBINAR = 'https://storage.yandexcloud.net/trener-files-b1g3dnesag6ss8revj0l/webinars/85c74e785b0c19cd/index.m3u8';
 async function seedDemo() {
   const { hashPassword } = require('./app');
   const now = Date.now(), D = 864e5, iso = (t) => new Date(t).toISOString();

@@ -26,6 +26,8 @@ for IN in "$@"; do
     -force_key_frames "expr:gte(t,n_forced*6)" -c:a aac -b:a 96k -ac 2 \
     -f hls -hls_time 6 -hls_playlist_type vod -hls_segment_filename "$OUT/%v/s%04d.ts" \
     -master_pl_name index.m3u8 -var_stream_map "${VMAP% }" "$OUT/%v/p.m3u8"
+  # «Авто» на старых iPhone (встроенный плеер) — без 1080p, чтобы не расходовать трафик
+  [ -d "$OUT/1080" ] && awk '/RESOLUTION=[0-9]+x1080/{getline; next} 1' "$OUT/index.m3u8" > "$OUT/auto.m3u8"
   echo "→ загружаю ($(du -sh "$OUT" | cut -f1))…"
   # публичное чтение по случайному адресу: сотни кусочков нельзя подписывать по одному
   D="s3://$BUCKET/webinars/$ID"
