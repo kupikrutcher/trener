@@ -1083,7 +1083,10 @@ function renderP2(q){
     <div class="verdict" id="verdict"></div>`;
   const ta=$('#essay'); ta.value=getAns(q);
   let t=null;
-  ta.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(()=>{const v=ta.value.trim();setAns(q,v);if(results[idx])results[idx].user=v;$('#saved').textContent=results[idx]?'Ответ сохранён':'Черновик сохранён'},500)});
+  ta.addEventListener('input',()=>{
+    /* правит уже сохранённый ответ — снова нужна кнопка «Сохранить ответ» */
+    if(answered&&!review&&$('#nextb')){answered=false;$('#nextb').outerHTML=`<button class="btn" id="check" onclick="saveP2()">Сохранить ответ</button>`;$('#saved').textContent=''}
+    clearTimeout(t);t=setTimeout(()=>{setAns(q,ta.value.trim());$('#saved').textContent='Черновик сохранён'},500)});
   ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();answered?next():saveP2()}});
   if(results[idx]){answered=true;ta.value=results[idx].user;showP2(q)}
   else if(review){answered=true;ta.value='';ta.placeholder='Ответ не написан';showP2(q)}
@@ -1102,7 +1105,7 @@ function saveP2(){
 function showP2(q){
   $('#essay').readOnly=review;   /* до отправки работы сохранённый ответ можно править */
   $('#saved').textContent=review?'':'Ответ сохранён';
-  $('#check').outerHTML=`<button class="btn" onclick="next()">${nextLabel()}</button>`;
+  $('#check').outerHTML=`<button class="btn" id="nextb" onclick="next()">${nextLabel()}</button>`;
   const v2=$('#verdict');
   v2.className='verdict show';
   v2.innerHTML=`${review?reviewGrade(q):`<div class="cline">Развёрнутые ответы не проверяются автоматически — ${answersOpen()?'сверь с критериями или покажи преподавателю':'их проверит учитель после отправки работы'}.</div>`}
