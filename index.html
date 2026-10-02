@@ -235,8 +235,8 @@ body{
   font:600 14px/1 inherit;font-family:inherit;cursor:pointer;white-space:nowrap}
 .tab.on{color:var(--ink);border-bottom-color:var(--accent)}
 /* переключатель внутри вкладки: «Ждут проверки» / «Все работы» */
-.seg{display:inline-flex;gap:4px;padding:4px;margin-bottom:16px;background:var(--surface-sunk);border-radius:var(--radius-pill);box-shadow:var(--shadow-press)}
-.seg button{border:0;background:none;padding:8px 14px;border-radius:var(--radius-pill);font:600 13.5px/1 var(--font-sans);color:var(--muted);cursor:pointer}
+.seg{display:inline-flex;flex-wrap:wrap;max-width:100%;gap:4px;padding:4px;margin-bottom:16px;background:var(--surface-sunk);border-radius:var(--radius-pill);box-shadow:var(--shadow-press)}
+.seg button{flex:none;white-space:nowrap;border:0;background:none;padding:8px 14px;border-radius:var(--radius-pill);font:600 13.5px/1 var(--font-sans);color:var(--muted);cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--cobalt);box-shadow:var(--shadow-soft)}
 /* банк заданий: фильтры блок / тема / номер */
 .bank-f{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:var(--space-3)}

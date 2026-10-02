@@ -271,7 +271,6 @@ function statusLine(s){
   return [p1,p2].filter(Boolean).join(' · ');
 }
 function subBadge(s){
-  if(!s.p2_n) return '';
   return s.checked_at ? '<span class="st-ok">проверено</span>' : '<span class="st-wait">ждёт проверки</span>';
 }
 async function cabStudent(){
@@ -416,7 +415,7 @@ async function cabSubmission(id){
         <button class="etog" onclick="tog(this)">Показать разбор</button>
         <div class="expl"><div class="expl-inner">${p1rows}</div></div>`:''}
       ${s.p2.length?`<div class="review"><h3>Часть 2</h3></div>${total}${p2items}`:''}
-      ${teacher&&s.p2.length?`
+      ${teacher?`
         <div class="gfoot">
           <div><div class="uans-lab">Общий комментарий</div>
             <textarea class="essay cm" id="gcm">${esc(s.comment||'')}</textarea></div>
@@ -428,7 +427,7 @@ async function cabSubmission(id){
       : (!teacher&&s.checked_at?`${s.comment?`<div class="uans-lab">Общий комментарий учителя</div><div class="uans tc">${esc(s.comment)}</div>`:''}
         ${(s.files||[]).length?`<div class="uans-lab">Файлы от учителя</div><div class="flist" style="margin-top:8px">${fileLinksHTML(s.files)}</div>`:''}`:'')}
     </div>`);
-  if(teacher&&s.p2.length) initGradeFiles(s);
+  if(teacher) initGradeFiles(s);
 }
 /* файлы, которые учитель прикрепляет к проверке */
 let gradeFiles=[];
@@ -477,7 +476,7 @@ async function saveGrade(){
   try{ await api('grade',{ id:s.id, grades, comment:$('#gcm').value.trim()||null,
     files:gradeFiles.filter(f=>f.key).map(f=>({ key:f.key, name:f.name, size:f.size })) }); }
   catch(e){ busy(btn,false,'Сохранить проверку'); toast('Не сохранилось: '+e.message); return; }
-  toast('Проверка сохранена: '+sum+' из '+s.p2_max);
+  toast(s.p2.length?'Проверка сохранена: '+sum+' из '+s.p2_max:'Проверка сохранена');
   cabTeacher(teacherTab);
 }
 
@@ -491,7 +490,7 @@ function tabsHTML(){
   const T=[['check','Проверка'],['lessons','Уроки'],['tests','Готовые ДЗ']];
   return `<div class="tabs">${T.map(([k,l])=>`<button class="tab${teacherTab===k?' on':''}" onclick="cabTeacher('${k}')">${l}</button>`).join('')}</div>`;
 }
-/* «Проверка»: ждут проверки / все работы */
+/* «Проверка»: ждут проверки / сдано после дедлайна / проверено / все работы */
 function checkShow(mode){ checkMode=mode; if(mode==='todo') filterStudent=null; cabTeacher('check'); }
 async function cabTeacher(tab){
   teacherTab=['check','lessons','tests'].includes(tab)?tab:'check';
@@ -503,23 +502,32 @@ async function cabTeacher(tab){
     let err=''; try{ await loadTests(); }catch(e){ err=e.message; }
     const b=$('#tbody'); if(!b) return; b.className=''; if(err) b.textContent=err; else b.innerHTML=testsListHTML(); return;
   }
-  const todo=checkMode==='todo'&&!filterStudent;
-  let studs, data;
+  const mode=filterStudent?'all':checkMode;
+  let studs, data, lessons;
   try{
-    [studs, data] = await Promise.all([loadStudents(),
-      api('subs_list',{ student:filterStudent||undefined }).then(r=>r.subs)]);
+    [studs, data, lessons] = await Promise.all([loadStudents(),
+      api('subs_list',{ student:filterStudent||undefined }).then(r=>r.subs),
+      api('lessons_list').then(r=>r.lessons)]);
   }catch(e){ const b=$('#tbody'); if(b){ b.className=''; b.textContent='Не удалось загрузить: '+e.message; } return; }
   const names=Object.fromEntries(studs.map(p=>[p.login,p.full_name]));
-  const all=data, wait=all.filter(s=>s.p2_n>0&&!s.checked_at).reverse();   /* ждущие — от старых к новым */
-  if(todo) data=wait;
+  const dl={};   /* дедлайн ДЗ по названию теста (если ДЗ в нескольких уроках — самый поздний) */
+  lessons.forEach(l=>{ if(l.deadline&&l.test_name) dl[l.test_name]=Math.max(dl[l.test_name]||0, +new Date(l.deadline)); });
+  /* непроверенные делятся на «в срок» и «после дедлайна»; после проверки обе идут в «Проверено» */
+  const late=s=>dl[s.test_name]&&+new Date(s.created_at)>dl[s.test_name];
+  const all=data, wait=all.filter(s=>!s.checked_at).reverse(), G={   /* ждущие — от старых к новым */
+    todo: wait.filter(s=>!late(s)),
+    late: wait.filter(late),
+    done: all.filter(s=>s.checked_at),
+    all };
+  data=G[mode]||all;
   const box=$('#tbody'); if(!box) return;
   box.className='';
   const head = filterStudent ? `<div class="fbar">Ученик: <b>${esc(names[filterStudent]||'')}</b>
       <button class="linkbtn" onclick="filterStudent=null;checkShow('all')">показать всех</button></div>
       <div id="prog" style="margin-bottom:18px"></div>`
     : `<div class="seg" role="group" aria-label="Какие работы показать">
-        <button aria-pressed="${todo}" onclick="checkShow('todo')">Ждут проверки · ${wait.length}</button>
-        <button aria-pressed="${!todo}" onclick="checkShow('all')">Все работы · ${all.length}</button></div>`;
+        ${[['todo','Ждут проверки'],['late','Сдано после дедлайна'],['done','Проверено'],['all','Все работы']].map(([k,l])=>
+          `<button aria-pressed="${mode===k}" onclick="checkShow('${k}')">${l} · ${G[k].length}</button>`).join('')}</div>`;
   box.innerHTML = head + (data.length ? `<div class="tlist">${data.map(s=>`
       <div class="tcard" onclick="cabSubmission('${s.id}')">
         <div class="tinfo"><div class="tname">${esc(names[s.student]||'Удалённый ученик')}</div>
@@ -527,7 +535,7 @@ async function cabTeacher(tab){
           <div class="tmeta">${fmtDate(s.created_at)} · ${statusLine(s)}</div></div>
         ${subBadge(s)}<span class="tgo">→</span>
       </div>`).join('')}</div>`
-    : `<div class="empty">${todo?'Непроверенных работ нет':'Работ пока нет'}</div>`);
+    : `<div class="empty">${{todo:'Непроверенных работ нет',late:'Работ после дедлайна нет',done:'Проверенных работ пока нет'}[mode]||'Работ пока нет'}</div>`);
   if(filterStudent) drawProgress($('#prog'), data);
 }
 /* личный кабинет учителя: ученики, пароль, выход */
