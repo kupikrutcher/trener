@@ -507,17 +507,19 @@ async function cabTeacher(tab){
   let studs, data;
   try{
     [studs, data] = await Promise.all([loadStudents(),
-      api('subs_list',{ todo, student:filterStudent||undefined }).then(r=>r.subs)]);
+      api('subs_list',{ student:filterStudent||undefined }).then(r=>r.subs)]);
   }catch(e){ const b=$('#tbody'); if(b){ b.className=''; b.textContent='Не удалось загрузить: '+e.message; } return; }
   const names=Object.fromEntries(studs.map(p=>[p.login,p.full_name]));
+  const all=data, wait=all.filter(s=>s.p2_n>0&&!s.checked_at).reverse();   /* ждущие — от старых к новым */
+  if(todo) data=wait;
   const box=$('#tbody'); if(!box) return;
   box.className='';
   const head = filterStudent ? `<div class="fbar">Ученик: <b>${esc(names[filterStudent]||'')}</b>
       <button class="linkbtn" onclick="filterStudent=null;checkShow('all')">показать всех</button></div>
       <div id="prog" style="margin-bottom:18px"></div>`
     : `<div class="seg" role="group" aria-label="Какие работы показать">
-        <button aria-pressed="${todo}" onclick="checkShow('todo')">Ждут проверки</button>
-        <button aria-pressed="${!todo}" onclick="checkShow('all')">Все работы</button></div>`;
+        <button aria-pressed="${todo}" onclick="checkShow('todo')">Ждут проверки · ${wait.length}</button>
+        <button aria-pressed="${!todo}" onclick="checkShow('all')">Все работы · ${all.length}</button></div>`;
   box.innerHTML = head + (data.length ? `<div class="tlist">${data.map(s=>`
       <div class="tcard" onclick="cabSubmission('${s.id}')">
         <div class="tinfo"><div class="tname">${esc(names[s.student]||'Удалённый ученик')}</div>
