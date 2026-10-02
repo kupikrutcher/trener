@@ -807,6 +807,10 @@ function fmtLong(t,q){
 /* в подборке из банка номера повторяются — ключ по тексту задания */
 function ansKey(q){if(window.bankSel)return 'tr_ans_bank_'+hashStr(q.text);const t=tests.find(x=>x.name===curBase);const i=t?t.questions.indexOf(q):-1;return 'tr_ans_'+curBase+'_'+(i>=0?i:(q.n||''))}
 function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
+/* поля развёрнутого ответа и комментария растут под текст — без своей прокрутки и ручного растягивания */
+function grow(ta){if(!ta.offsetParent)return;const y=scrollY;ta.style.height='auto';ta.style.height=ta.scrollHeight+2+'px';if(scrollY!==y)scrollTo(0,y)}
+document.addEventListener('input',e=>{if(e.target.matches('textarea.essay'))grow(e.target)});
+new MutationObserver(()=>document.querySelectorAll('textarea.essay').forEach(grow)).observe(document.body,{childList:true,subtree:true});
 function getAns(q){try{return localStorage.getItem(ansKey(q))||''}catch(e){return ''}}
 function setAns(q,v){try{v?localStorage.setItem(ansKey(q),v):localStorage.removeItem(ansKey(q))}catch(e){}}
 function countP1(qs){return qs.filter(q=>!isP2(q)).length}
