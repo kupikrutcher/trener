@@ -390,7 +390,7 @@ async function cabSubmission(id){
           <div class="pts" data-i="${x.i}">${Array.from({length:(x.pts||0)+1},(_,k)=>
             `<button class="qn${gr.score===k?' done cur':''}" onclick="pickPts(this,${k})">${k}</button>`).join('')}</div>
           <span class="pmax">из ${x.pts}</span>
-          <button class="clbtn" onclick="openCliches(${x.i})">Клише</button></div>
+          <button class="clbtn" onclick="openClMenu(${x.i},this)" aria-haspopup="true">Клише ▾</button></div>
         <textarea class="essay cm" data-i="${x.i}">${esc(gr.comment||'')}</textarea>`
       : (s.checked_at
           ? `<div class="gres">Баллы: <b>${gr.score??0}</b> из ${x.pts}</div>${gr.comment?`<div class="uans-lab">Комментарий учителя</div><div class="uans tc">${esc(gr.comment)}</div>`:''}`
@@ -459,6 +459,32 @@ function openReview(){
 }
 /* клише: заготовки комментариев. Выбрал — текст дописывается в комментарий к заданию i */
 let clichesC=null;
+/* выпадающий список клише под кнопкой; внизу — «Изменить список» (окно с добавлением/правкой/удалением) */
+async function openClMenu(i,btn){
+  const old=document.querySelector('.cl-menu'); if(old){ const same=old._btn===btn; old._close(); if(same) return; }
+  const ta=document.querySelector(`textarea.cm[data-i="${i}"]`);
+  try{ if(!clichesC) clichesC=(await api('cliche_list')).cliches; }catch(e){ toast('Не удалось загрузить: '+e.message); return; }
+  const m=document.createElement('div'); m.className='cl-menu'; m._btn=btn;
+  m.innerHTML=clichesC.map((c,k)=>`<button class="cl-pick" data-ins="${k}"><b>${esc(c.title)}</b><span>${esc(c.text.replace(/\s+/g,' '))}</span></button>`).join('')
+    +`<button class="cl-pick cl-more" data-more>${clichesC.length?'Изменить список…':'Добавить первое клише…'}</button>`;
+  const close=()=>{ m.remove(); btn.setAttribute('aria-expanded','false'); document.removeEventListener('mousedown',out,true);
+    document.removeEventListener('keydown',key,true); window.removeEventListener('scroll',sc,true); window.removeEventListener('resize',close); };
+  const out=e=>{ if(!m.contains(e.target)&&e.target!==btn) close(); };
+  const key=e=>{ if(e.key==='Escape'){ e.preventDefault(); close(); btn.focus(); } };
+  const sc=e=>{ if(!m.contains(e.target)) close(); };
+  m._close=close;
+  m.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
+    if(b.dataset.more!=null){ close(); openCliches(i); return; }
+    const c=clichesC[+b.dataset.ins]; ta.value=(ta.value.trim()?ta.value.trimEnd()+'\n':'')+c.text;
+    ta.dispatchEvent(new Event('input',{bubbles:true})); close(); ta.focus(); });
+  document.body.appendChild(m);
+  const r=btn.getBoundingClientRect(), w=m.offsetWidth;
+  m.style.left=Math.max(12,Math.min(r.left,innerWidth-w-12))+'px';
+  m.style.top=(r.bottom+6+m.offsetHeight>innerHeight&&r.top>m.offsetHeight+12 ? r.top-6-m.offsetHeight : r.bottom+6)+'px';
+  btn.setAttribute('aria-expanded','true');
+  document.addEventListener('mousedown',out,true); document.addEventListener('keydown',key,true);
+  window.addEventListener('scroll',sc,true); window.addEventListener('resize',close);
+}
 async function openCliches(i){
   const ta=document.querySelector(`textarea.cm[data-i="${i}"]`);
   try{ if(!clichesC) clichesC=(await api('cliche_list')).cliches; }catch(e){ toast('Не удалось загрузить: '+e.message); return; }
