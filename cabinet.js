@@ -1163,15 +1163,13 @@ async function hlsMount(){
     v.dataset.on='1';
     const src=v.dataset.hls, seg=v.parentNode.nextElementSibling;
     const Hls=await loadHls().catch(()=>null);
-    let levels, pick, label=()=>'', paint=()=>{};
+    let levels, pick, paint=()=>{};
     if(Hls&&Hls.isSupported()){
       const h=new Hls(); h.loadSource(src); h.attachMedia(v);
       await new Promise(r=>{ h.once(Hls.Events.MANIFEST_PARSED,r); h.once(Hls.Events.ERROR,r); });
       h.autoLevelCapping=h.levels.findLastIndex(l=>l.height<=720);
       levels=h.levels.map((l,i)=>[l.height+'p',i]).reverse();
       pick=i=>{ h.currentLevel=i; };
-      label=()=>h.autoLevelEnabled&&h.levels[h.currentLevel]?` · ${h.levels[h.currentLevel].height}p`:'';
-      h.on(Hls.Events.LEVEL_SWITCHED,()=>paint());
     }else{
       const base=src.replace(/[^/]*$/,''), txt=await fetch(src).then(r=>r.text()).catch(()=>'');
       const auto=await fetch(base+'auto.m3u8',{ method:'HEAD' }).then(r=>r.ok?base+'auto.m3u8':src).catch(()=>src);
@@ -1182,7 +1180,7 @@ async function hlsMount(){
     }
     if(levels.length<2) continue;
     let cur=-1;
-    paint=()=>{ seg.innerHTML=[['Авто'+label(),-1],...levels].map(([n,i])=>
+    paint=()=>{ seg.innerHTML=[['Авто',-1],...levels].map(([n,i])=>
       `<button type="button" aria-pressed="${i===cur}" data-q="${esc(String(i))}">${n}</button>`).join(''); };
     seg.onclick=e=>{ const b=e.target.closest('button'); if(!b) return;
       cur=/^-?\d+$/.test(b.dataset.q)?+b.dataset.q:b.dataset.q; pick(cur); paint(); };
