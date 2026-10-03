@@ -566,7 +566,7 @@ async function saveGrade(){
 
 /* ---------- кабинет учителя ---------- */
 /* курс учителя: вкладки «Проверка» (первая), «Уроки», «Готовые ДЗ»; в «Проверке» — ждут проверки / все работы */
-let teacherTab='check', checkMode='todo', studentsCache=[], filterStudent=null;
+let teacherTab='check', checkMode='todo', studentsCache=[], filterStudent=null, filterLesson='';
 async function loadStudents(){
   studentsCache=(await api('students_list')).students; return studentsCache;
 }
@@ -598,6 +598,12 @@ async function cabTeacher(tab){
   lessons.forEach(l=>{ if(l.deadline&&l.test_name) dl[l.test_name]=Math.max(dl[l.test_name]||0, +new Date(l.deadline)); });
   /* непроверенные делятся на «в срок» и «после дедлайна»; после проверки обе идут в «Проверено» */
   const late=s=>dl[s.test_name]&&+new Date(s.created_at)>dl[s.test_name];
+  /* фильтр по уроку: работы по его ДЗ; в списке — уроки с ДЗ по блокам, рядом число работ */
+  const cnt={}; data.forEach(s=>{ cnt[s.test_name]=(cnt[s.test_name]||0)+1; });
+  const lsel=lessons.find(l=>l.id===filterLesson&&l.test_name); if(!lsel) filterLesson='';
+  const litems=blockGroups(lessons.filter(l=>l.test_name)).flatMap(([b,ls])=>[{ group:b?'Блок '+b:'Без блока' },
+    ...ls.map(l=>({ v:l.id, label:l.title||l.test_name, c:cnt[l.test_name]||0 }))]);
+  if(lsel) data=data.filter(s=>s.test_name===lsel.test_name);
   const all=data, wait=all.filter(s=>!s.checked_at).reverse(), G={   /* ждущие — от старых к новым */
     todo: wait.filter(s=>!late(s)),
     late: wait.filter(late),
@@ -612,7 +618,8 @@ async function cabTeacher(tab){
     : `<div class="seg" role="group" aria-label="Какие работы показать">
         ${[['todo','Ждут проверки'],['late','Сдано после дедлайна'],['done','Проверено'],['all','Все работы']].map(([k,l])=>
           `<button aria-pressed="${mode===k}" onclick="checkShow('${k}')">${l} · ${G[k].length}</button>`).join('')}</div>`;
-  box.innerHTML = head + (data.length ? `<div class="tlist">${data.map(s=>`
+  const lf = litems.length ? `<div class="chk-f">${ddHTML('chkl','Урок','Все уроки',filterLesson,litems)}</div>` : '';
+  box.innerHTML = head + lf + (data.length ? `<div class="tlist">${data.map(s=>`
       <div class="tcard" onclick="cabSubmission('${s.id}')">
         <div class="tinfo"><div class="tname">${esc(names[s.student]||'Удалённый ученик')}</div>
           <div class="tmeta">${esc(s.test_name)}</div>
@@ -1034,7 +1041,8 @@ async function hwDelete(id){
 }
 /* выпадающий список в стиле сайта вместо системного select: кнопка + listbox, клавиши ↑ ↓ Enter Esc.
    id «bf-<ключ фильтра>» — фильтр банка, остальные — обработчик в ddOn[id]; пункт с c===0 недоступен, { group } — подзаголовок */
-const ddOn={ lh:v=>{ editL.test_name=v; } };   // ДЗ урока в редакторе
+const ddOn={ lh:v=>{ editL.test_name=v; },   // ДЗ урока в редакторе
+  chkl:v=>{ filterLesson=v; cabTeacher('check'); } };   // «Проверка»: работы одного урока
 function ddHTML(id,label,ph,cur,items,multi){
   const on=v=>multi?(v===''?!cur.length:cur.includes(v)):v===cur, sel=items.filter(i=>i.v!==''&&i.group==null&&on(i.v));
   const text=!sel.length?ph:sel.length>1?'Выбрано: '+sel.length:(sel[0].code?sel[0].code+' ':'')+sel[0].label;
@@ -1074,8 +1082,8 @@ function ddPick(id,o){
     ddActive(id, ddOpts(e.pop).find(x=>x.dataset.v===v)); e.btn.focus(); return;
   }
   ddClose(id);
-  if(ddOn[id]){ ddOn[id](o.dataset.v); e.pop.querySelectorAll('.dd-o').forEach(x=>x.setAttribute('aria-selected',x===o));
-    $('#'+id+'-v').textContent=o.title; }
+  if(ddOn[id]){ e.pop.querySelectorAll('.dd-o').forEach(x=>x.setAttribute('aria-selected',x===o));
+    $('#'+id+'-v').textContent=o.title; ddOn[id](o.dataset.v); }   // обработчик последним: он может перерисовать экран
   else bankSet(id.slice(3),o.dataset.v);
   if(e) e.btn.focus();
 }
