@@ -314,49 +314,55 @@ function progressPoints(subs){
     .filter(Boolean)
     .sort((a,b)=>new Date(a.s.created_at)-new Date(b.s.created_at));
 }
-function trendLine(ys){ const n=ys.length; if(n<2) return null;
-  const mx=(n-1)/2, my=ys.reduce((a,b)=>a+b,0)/n;
-  let num=0, den=0; ys.forEach((y,x)=>{ num+=(x-mx)*(y-my); den+=(x-mx)*(x-mx); });
-  const k=num/den; return { k, at:x=>my+k*(x-mx) }; }
+/* куда идут результаты: средний первых работ против последних (по 3, а если работ мало — поровну, без пересечения) */
+function trendNote(ys){ const n=ys.length; if(n<2) return null;
+  const m=Math.min(3,Math.floor(n/2)), avg=a=>Math.round(a.reduce((x,y)=>x+y,0)/a.length);
+  const a=avg(ys.slice(0,m)), b=avg(ys.slice(-m)), d=b-a;
+  const [cls,word]= d>=3?['up','↗ Растёт']:d<=-3?['down','↘ Снижается']:['flat','→ Держится'];
+  const w=m===1?['первая работа','последняя']:[`первые ${m} ${ru(m,'работа','работы','работ')}`,`последние ${m}`];
+  return `<div class="ptrend ${cls}"><b>${word}</b><span>${w[0]} — ${a}%, ${w[1]} — ${b}%</span></div>`; }
+/* плавная линия через точки (Catmull-Rom → кривые Безье) */
+function smoothPath(p){ let d=`M${p[0][0]},${p[0][1]}`;
+  for(let i=0;i<p.length-1;i++){ const a=p[i-1]||p[i], b=p[i], c=p[i+1], e=p[i+2]||c;
+    d+=` C${b[0]+(c[0]-a[0])/6},${b[1]+(c[1]-a[1])/6} ${c[0]-(e[0]-b[0])/6},${c[1]-(e[1]-b[1])/6} ${c[0]},${c[1]}`; }
+  return d; }
 function drawProgress(el, subs){
   if(!el) return;
   const pts=progressPoints(subs||[]), wait=(subs||[]).filter(s=>s.p2_n&&!s.checked_at).length;
   const waitNote = wait ? `<div class="pnote">Ещё ${wait} ${ru(wait,'работа ждёт','работы ждут','работ ждут')} проверки — ${wait===1?'появится':'появятся'} на графике после неё.</div>` : '';
   if(!pts.length){ el.innerHTML=`<div class="empty" style="margin-bottom:0">График появится, когда будет проверена первая работа.</div>${waitNote}`; return; }
-  const ys=pts.map(p=>p.pct), avg=Math.round(ys.reduce((a,b)=>a+b,0)/ys.length), tr=trendLine(ys);
-  const dir = tr ? (Math.abs(tr.k)<0.5?'ровно':(tr.k>0?'+':'−')+Math.abs(tr.k).toFixed(1)) : '—';
+  const ys=pts.map(p=>p.pct), avg=Math.round(ys.reduce((a,b)=>a+b,0)/ys.length);
   el.innerHTML=`
-    <div class="pstats">
+    <div class="pstats" style="grid-template-columns:repeat(2,1fr)">
       <div class="pstat"><b>${avg}%</b><span>средний результат</span></div>
       <div class="pstat"><b>${ys[ys.length-1]}%</b><span>последняя работа</span></div>
-      <div class="pstat"><b>${dir}</b><span>${tr?'тренд, п.п. за работу':'тренд — после 2 работ'}</span></div>
     </div>
-    <div class="plegend"><span><i class="lb"></i>% баллов за работу</span>${tr?'<span><i class="lt"></i>тренд</span>':''}</div>
+    ${trendNote(ys)||''}
     <div class="pchart" id="pchart" role="img" aria-label="Результаты по работам: ${ys.join('%, ')}%"></div>
     ${waitNote}`;
   const box=el.querySelector('#pchart');
   const paint=()=>{
-    const W=box.clientWidth, H=210, L=34, R=6, T=10, B=24, iw=W-L-R, ih=H-T-B, n=pts.length;
-    const step=iw/n, bw=Math.max(4,Math.min(28,step-2)), y=v=>T+ih-(v/100)*ih;
-    let g='';
+    const W=box.clientWidth, H=210, L=34, R=40, T=12, B=24, iw=W-L-R, ih=H-T-B, n=pts.length;
+    const step=iw/n, y=v=>T+ih-(v/100)*ih, cx=i=>L+step*i+step/2;
+    let g='<defs><linearGradient id="parea" x1="0" x2="0" y1="0" y2="1"><stop offset="0" style="stop-color:var(--accent);stop-opacity:.22"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0"/></linearGradient></defs>';
     [0,50,100].forEach(v=>{ g+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${L-8}" y="${y(v)+4}" text-anchor="end">${v}%</text>`; });
     const every=Math.max(1,Math.ceil(n/Math.floor(iw/30)));
-    pts.forEach((p,i)=>{
-      const cx=L+step*i+step/2, x=cx-bw/2, h=Math.max(1,T+ih-y(p.pct));   // нулевой результат — полоска в 1px
-      g+=`<rect class="bar" data-i="${i}" x="${x}" y="${T+ih-h}" width="${bw}" height="${h}"/>`;
-      if(i%every===0||i===n-1) g+=`<text class="ax" x="${cx}" y="${H-6}" text-anchor="middle">${i+1}</text>`;
-    });
-    if(tr){ const x1=L+step/2, x2=L+step*(n-1)+step/2, c=v=>Math.max(0,Math.min(100,v));
-      g+=`<line class="trend" x1="${x1}" y1="${y(c(tr.at(0)))}" x2="${x2}" y2="${y(c(tr.at(n-1)))}"/>`; }
+    pts.forEach((p,i)=>{ if(i%every===0||i===n-1) g+=`<text class="ax" x="${cx(i)}" y="${H-6}" text-anchor="middle">${i+1}</text>`; });
+    const xy=pts.map((p,i)=>[cx(i),y(p.pct)]);
+    if(n>1){ const d=smoothPath(xy);
+      g+=`<path class="area" d="${d} L${cx(n-1)},${y(0)} L${cx(0)},${y(0)} Z"/><path class="ln" d="${d}"/>`; }
+    const r=n>40?2.5:3.5;   // много работ — точки мельче
+    xy.forEach(([x,yy],i)=>{ g+=`<circle class="dot${i===n-1?' last':''}" data-i="${i}" cx="${x}" cy="${yy}" r="${i===n-1?5:r}"/>`; });
+    g+=`<text class="plast" x="${cx(n-1)+10}" y="${y(ys[n-1])+4}">${ys[n-1]}%</text>`;
     pts.forEach((p,i)=>{ g+=`<rect class="hit" data-i="${i}" x="${L+step*i}" y="${T}" width="${step}" height="${ih}"/>`; });
     box.innerHTML=`<svg width="${W}" height="${H}">${g}</svg><div class="ptip" id="ptip"></div>`;
     const tip=box.querySelector('#ptip');
     box.querySelectorAll('.hit').forEach(h=>{
       const i=+h.dataset.i, p=pts[i];
-      const show=()=>{ box.classList.add('hov'); box.querySelectorAll('.bar').forEach(b=>b.classList.toggle('on',+b.dataset.i===i));
+      const show=()=>{ box.querySelectorAll('.dot').forEach(b=>b.classList.toggle('on',+b.dataset.i===i));
         tip.innerHTML=`<b>${p.pct}%</b> · ${p.got} из ${p.max} б.<br>${esc(p.s.test_name)}<br>${fmtDate(p.s.created_at)}`;
-        const cx=L+step*i+step/2; tip.style.left=Math.max(80,Math.min(W-80,cx))+'px'; tip.style.top=y(p.pct)+'px'; tip.classList.add('show'); };
-      const hide=()=>{ box.classList.remove('hov'); tip.classList.remove('show'); };
+        tip.style.left=Math.max(80,Math.min(W-80,cx(i)))+'px'; tip.style.top=y(p.pct)+'px'; tip.classList.add('show'); };
+      const hide=()=>{ box.querySelectorAll('.dot.on').forEach(b=>b.classList.remove('on')); tip.classList.remove('show'); };
       h.addEventListener('mouseenter',show); h.addEventListener('mouseleave',hide);
       h.addEventListener('click',show);
     });

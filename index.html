@@ -428,17 +428,18 @@ body{
 .pstat{border:1px solid var(--line);border-radius:var(--radius-md);padding:12px 12px;background:var(--bg)}
 .pstat b{font-family:var(--font-display);display:block;font-size:21px;font-weight:700;letter-spacing:-.01em;line-height:1.1}
 .pstat span{display:block;font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.35}
-.plegend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:6px}
-.plegend i{display:inline-block;vertical-align:middle;margin-right:6px}
-.plegend .lb{width:10px;height:10px;border-radius:var(--radius-cell);background:var(--accent)}
-.plegend .lt{width:16px;height:0;border-top:2px dashed var(--ink)}
+.ptrend{display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding:8px 14px;border-radius:var(--radius-pill);margin:0 0 10px;font-size:14px}
+.ptrend b{font-weight:600}.ptrend span{color:var(--ink);font-size:13.5px}
+.ptrend.up{background:var(--ok-soft);color:var(--ok)}.ptrend.down{background:var(--bad-soft);color:var(--bad)}.ptrend.flat{background:var(--surface-sunk);color:var(--ink)}
 .pchart{position:relative;width:100%;height:210px}
 .pchart svg{display:block;overflow:visible}
 .pchart .gl{stroke:var(--line);stroke-width:1}
 .pchart .ax{fill:var(--muted);font-size:11px;font-family:inherit}
-.pchart .bar{fill:var(--accent);transition:opacity .15s}
-.pchart.hov .bar{opacity:.35}.pchart.hov .bar.on{opacity:1}
-.pchart .trend{stroke:var(--ink);stroke-width:2;fill:none;stroke-dasharray:6 5;stroke-linecap:round;opacity:.8}
+.pchart .area{fill:url(#parea)}
+.pchart .ln{stroke:var(--accent);stroke-width:2.5;fill:none;stroke-linejoin:round}
+.pchart .dot{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.pchart .dot.last,.pchart .dot.on{fill:var(--accent)}
+.pchart .plast{fill:var(--accent);font:600 12px var(--font-sans)}
 .pchart .hit{fill:transparent;cursor:default}
 .ptip{position:absolute;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;line-height:1.45;padding:8px 10px;border-radius:var(--radius-md);
   white-space:nowrap;transform:translate(-50%,calc(-100% - 10px));opacity:0;transition:opacity .12s;z-index:2}
