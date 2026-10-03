@@ -601,8 +601,10 @@ async function cabTeacher(tab){
   /* фильтр по уроку: работы по его ДЗ; в списке — уроки с ДЗ по блокам, рядом число работ */
   const cnt={}; data.forEach(s=>{ cnt[s.test_name]=(cnt[s.test_name]||0)+1; });
   const lsel=lessons.find(l=>l.id===filterLesson&&l.test_name); if(!lsel) filterLesson='';
-  const litems=blockGroups(lessons.filter(l=>l.test_name)).flatMap(([b,ls])=>[{ group:b?'Блок '+b:'Без блока' },
-    ...ls.map(l=>({ v:l.id, label:l.title||l.test_name, c:cnt[l.test_name]||0 }))]);
+  /* урок — по номеру: сквозной счёт по порядку курса (блоки по номеру, внутри от первого к последнему) */
+  let no=0; const litems=blockGroups(lessons).flatMap(([b,ls])=>{
+    const it=ls.map(l=>(++no,l.test_name&&{ v:l.id, label:'Урок '+no, c:cnt[l.test_name]||0 })).filter(Boolean);
+    return it.length?[{ group:b?'Блок '+b:'Без блока' },...it]:[]; });
   if(lsel) data=data.filter(s=>s.test_name===lsel.test_name);
   const all=data, wait=all.filter(s=>!s.checked_at).reverse(), G={   /* ждущие — от старых к новым */
     todo: wait.filter(s=>!late(s)),
