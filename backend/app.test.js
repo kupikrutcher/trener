@@ -262,3 +262,21 @@ test('обратная связь: пишет ученик, читает и уд
   await call(db, { action: 'feedback_delete', token: T, id: feedback[0].id });
   assert.equal((await call(db, { action: 'feedback_list', token: T })).feedback.length, 0);
 });
+
+test('клише для проверки: создаёт, правит и удаляет только учитель', async () => {
+  const { db, T, S1 } = await world();
+  await rejects(call(db, { action: 'cliche_list', token: S1 }), 403);
+  await rejects(call(db, { action: 'cliche_save', token: S1, title: 'a', text: 'b' }), 403);
+  await rejects(call(db, { action: 'cliche_save', token: T, title: ' ', text: 'b' }), 400);
+  await rejects(call(db, { action: 'cliche_save', token: T, title: 'a', text: '' }), 400);
+  const { cliche } = await call(db, { action: 'cliche_save', token: T, title: ' Нет примера ', text: ' Добавь пример из жизни ' });
+  assert.equal(cliche.title, 'Нет примера');
+  await call(db, { action: 'cliche_save', token: T, id: cliche.id, title: 'Нет примера', text: 'Добавь пример' });
+  const { cliches } = await call(db, { action: 'cliche_list', token: T });
+  assert.equal(cliches.length, 1);
+  assert.equal(cliches[0].text, 'Добавь пример');
+  await rejects(call(db, { action: 'cliche_save', token: T, id: 'нет', title: 'a', text: 'b' }), 404);
+  await rejects(call(db, { action: 'cliche_delete', token: S1, id: cliche.id }), 403);
+  await call(db, { action: 'cliche_delete', token: T, id: cliche.id });
+  assert.equal((await call(db, { action: 'cliche_list', token: T })).cliches.length, 0);
+});

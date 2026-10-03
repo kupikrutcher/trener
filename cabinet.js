@@ -389,7 +389,8 @@ async function cabSubmission(id){
       ? `<div class="grade"><span class="uans-lab" style="margin:0">Баллы</span>
           <div class="pts" data-i="${x.i}">${Array.from({length:(x.pts||0)+1},(_,k)=>
             `<button class="qn${gr.score===k?' done cur':''}" onclick="pickPts(this,${k})">${k}</button>`).join('')}</div>
-          <span class="pmax">из ${x.pts}</span></div>
+          <span class="pmax">из ${x.pts}</span>
+          <button class="clbtn" onclick="openCliches(${x.i})">Клише</button></div>
         <textarea class="essay cm" data-i="${x.i}">${esc(gr.comment||'')}</textarea>`
       : (s.checked_at
           ? `<div class="gres">Баллы: <b>${gr.score??0}</b> из ${x.pts}</div>${gr.comment?`<div class="uans-lab">Комментарий учителя</div><div class="uans tc">${esc(gr.comment)}</div>`:''}`
@@ -455,6 +456,57 @@ function openReview(){
   (s.p1||[]).forEach(x=>{ const q=bank[x.i]; if(q&&x.user){ results[x.i]={q,n:q.n,user:x.user,answer:norm(q.answer),ok:!!x.ok}; if(x.ok) score++; } });
   (s.p2||[]).forEach(x=>{ const q=bank[x.i]; if(q&&x.text) results[x.i]={q,n:q.n,user:x.text,p2:true}; });
   review={ sub:s }; idx=0; render(); window.scrollTo({top:0});
+}
+/* клише: заготовки комментариев. Выбрал — текст дописывается в комментарий к заданию i */
+let clichesC=null;
+async function openCliches(i){
+  const ta=document.querySelector(`textarea.cm[data-i="${i}"]`);
+  try{ if(!clichesC) clichesC=(await api('cliche_list')).cliches; }catch(e){ toast('Не удалось загрузить: '+e.message); return; }
+  const back=document.activeElement, d=document.createElement('div'); d.className='dlg-wrap';
+  const close=()=>{ d.classList.remove('show'); document.removeEventListener('keydown',key,true); setTimeout(()=>d.remove(),220); if(back&&back.focus) back.focus(); };
+  const key=e=>{ if(e.key==='Escape'){ e.preventDefault(); close(); } };
+  const insert=c=>{ ta.value=(ta.value.trim()?ta.value.trimEnd()+'\n':'')+c.text; ta.dispatchEvent(new Event('input',{bubbles:true})); close(); ta.focus(); };
+  const list=()=>{
+    d.innerHTML=`<div class="dlg cl" role="dialog" aria-modal="true" aria-labelledby="dlg-t">
+      <h2 class="dlg-t" id="dlg-t">Клише</h2>
+      <div class="cl-list">${clichesC.length?clichesC.map((c,k)=>`<div class="cl-row">
+        <button class="cl-pick" data-ins="${k}"><b>${esc(c.title)}</b><span>${esc(c.text.replace(/\s+/g,' '))}</span></button>
+        <button class="cl-act" data-edit="${k}">Изменить</button><button class="cl-act bad" data-del="${k}">Удалить</button></div>`).join('')
+        :'<div class="cl-empty">Пока нет ни одного клише. Добавь первое — оно будет под рукой при проверке любой работы.</div>'}</div>
+      <div class="dlg-b"><button class="btn ghost" data-close>Закрыть</button><button class="btn" data-new>Добавить клише</button></div></div>`; };
+  const form=k=>{
+    const c=k==null?{title:'',text:''}:clichesC[k];
+    d.innerHTML=`<div class="dlg cl" role="dialog" aria-modal="true" aria-labelledby="dlg-t">
+      <h2 class="dlg-t" id="dlg-t">${k==null?'Новое клише':'Изменить клише'}</h2>
+      <div class="cl-f"><label for="clt">Название клише</label><input id="clt" class="tin" maxlength="100" value="${esc(c.title)}" placeholder="Например: нет примера">
+        <label for="clx" style="margin-top:8px">Текст клише</label><textarea id="clx" class="essay" maxlength="5000" style="min-height:120px" placeholder="Что дописать в комментарий">${esc(c.text)}</textarea></div>
+      <div class="dlg-b"><button class="btn ghost" data-back>Назад</button><button class="btn" data-save="${k==null?'':k}">Сохранить</button></div></div>`;
+    $('#clt').focus(); };
+  d.addEventListener('click',async e=>{
+    const b=e.target.closest('button');
+    if(!b){ if(e.target===d) close(); return; }
+    if(b.dataset.ins!=null) insert(clichesC[+b.dataset.ins]);
+    else if(b.dataset.close!=null) close();
+    else if(b.dataset.new!=null) form(null);
+    else if(b.dataset.edit!=null) form(+b.dataset.edit);
+    else if(b.dataset.back!=null) list();
+    else if(b.dataset.del!=null){
+      if(!b.dataset.sure){ b.dataset.sure=1; b.textContent='Точно?'; return; }
+      try{ await api('cliche_delete',{ id:clichesC[+b.dataset.del].id }); clichesC.splice(+b.dataset.del,1); list(); }
+      catch(er){ toast('Не удалилось: '+er.message); }
+    }
+    else if(b.dataset.save!=null){
+      const title=$('#clt').value.trim(), text=$('#clx').value.trim();
+      if(!title||!text){ toast(title?'Напиши текст клише':'Напиши название клише'); return; }
+      const k=b.dataset.save===''?null:+b.dataset.save;
+      busy(b,true,'Сохраняем…');
+      try{ const c=(await api('cliche_save',{ id:k==null?undefined:clichesC[k].id, title, text })).cliche;
+        if(k==null) clichesC.push(c); else clichesC[k]=c; list(); }
+      catch(er){ busy(b,false,'Сохранить'); toast('Не сохранилось: '+er.message); }
+    }
+  });
+  list(); document.addEventListener('keydown',key,true);
+  document.body.appendChild(d); void d.offsetWidth; d.classList.add('show');
 }
 function pickPts(b,k){
   b.parentNode.querySelectorAll('.qn').forEach(x=>x.classList.remove('done','cur'));

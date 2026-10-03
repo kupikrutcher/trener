@@ -361,6 +361,28 @@ async function handle(req, db, env, store = require('./s3').storage(env)) {
       return { ok: true };
     }
 
+    /* ---------- клише для проверки: заготовки комментариев учителя ---------- */
+    case 'cliche_list':
+      onlyTeacher();
+      return { cliches: (await db.listCliches()).sort((a, b) => a.created_at.localeCompare(b.created_at)) };
+
+    case 'cliche_save': {
+      onlyTeacher();
+      const title = str(req.title, 100, 'title').trim(), text = str(req.text, 5000, 'text').trim();
+      if (!title) fail(400, 'Нужно название клише');
+      if (!text) fail(400, 'Нужен текст клише');
+      const old = req.id ? (await db.listCliches()).find((c) => c.id === req.id) : null;
+      if (req.id && !old) fail(404, 'Клише не найдено');
+      const c = { id: old ? old.id : newId(), title, text, created_at: old ? old.created_at : new Date().toISOString() };
+      await db.putCliche(c);
+      return { cliche: c };
+    }
+
+    case 'cliche_delete':
+      onlyTeacher();
+      await db.deleteCliche(str(req.id, 40, 'id'));
+      return { ok: true };
+
     // обратная связь из левой панели: пишут ученики, читает учитель
     case 'feedback_send': {
       const text = str(req.text, 3000, 'text').trim();
